@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useAutocompleteService, usePlacesService } from "@vis.gl/react-google-maps";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useMapsLibrary, usePlacesService } from "@vis.gl/react-google-maps";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Loader2, MapPin } from "lucide-react";
@@ -12,31 +12,49 @@ interface LocationSearchProps {
 }
 
 export default function LocationSearch({ onLocationSelect }: LocationSearchProps) {
-  const { autocompleteService, placePredictions, isPlacePredictionsLoading } = useAutocompleteService();
-  const { placesService, isPlacesServiceLoading, placeDetails } = usePlacesService();
+  const places = useMapsLibrary('places');
+  const placesService = usePlacesService();
+  const [autocompleteService, setAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null);
+  
   const [inputValue, setInputValue] = useState("");
+  const [placePredictions, setPlacePredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [isPlacePredictionsLoading, setIsPlacePredictionsLoading] = useState(false);
+  const [isPlacesServiceLoading, setIsPlacesServiceLoading] = useState(false);
+
   const [showSuggestions, setShowSuggestions] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (inputValue.trim()) {
-      autocompleteService?.getPlacePredictions({ input: inputValue, types: ['geocode'] });
-      setShowSuggestions(true);
-    } else {
-      setShowSuggestions(false);
+    if (places) {
+      setAutocompleteService(new places.AutocompleteService());
     }
-  }, [inputValue, autocompleteService]);
+  }, [places]);
+
+  const fetchPredictions = useCallback((value: string) => {
+    if (!autocompleteService) {
+      return;
+    }
+    
+    setIsPlacePredictionsLoading(true);
+    autocompleteService.getPlacePredictions({ input: value, types: ['geocode'] }, (predictions, status) => {
+      setIsPlacePredictionsLoading(false);
+      if (status === google.maps.places.PlacesServiceStatus.OK) {
+        setPlacePredictions(predictions || []);
+      } else {
+        setPlacePredictions([]);
+      }
+    });
+  }, [autocompleteService]);
 
   useEffect(() => {
-    if (placeDetails) {
-      const lat = placeDetails.geometry?.location?.lat();
-      const lng = placeDetails.geometry?.location?.lng();
-      if (lat && lng) {
-        onLocationSelect(lat, lng);
-      }
+    if (inputValue.trim()) {
+      fetchPredictions(inputValue);
+      setShowSuggestions(true);
+    } else {
+      setPlacePredictions([]);
       setShowSuggestions(false);
     }
-  }, [placeDetails, onLocationSelect]);
+  }, [inputValue, fetchPredictions]);
   
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,11 +68,26 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
     };
   }, []);
 
-  const handleSelect = (placeId: string) => {
+  const handleSelect = useCallback((placeId: string) => {
+    if (!placesService) {
+        return;
+    }
+
     const prediction = placePredictions.find(p => p.place_id === placeId);
     setInputValue(prediction?.description || '');
-    placesService?.getDetails({ placeId, fields: ["geometry.location"] });
-  };
+    setPlacePredictions([]);
+    setShowSuggestions(false);
+    
+    setIsPlacesServiceLoading(true);
+    placesService.getDetails({ placeId, fields: ["geometry.location"] }, (placeDetails, status) => {
+        setIsPlacesServiceLoading(false);
+        if (status === google.maps.places.PlacesServiceStatus.OK && placeDetails?.geometry?.location) {
+            const lat = placeDetails.geometry.location.lat();
+            const lng = placeDetails.geometry.location.lng();
+            onLocationSelect(lat, lng);
+        }
+    });
+  }, [placesService, onLocationSelect, placePredictions]);
 
   return (
     <div className="relative" ref={containerRef}>
