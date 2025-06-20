@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useMapsLibrary, usePlacesService } from "@vis.gl/react-google-maps";
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Loader2, MapPin } from "lucide-react";
@@ -13,8 +13,8 @@ interface LocationSearchProps {
 
 export default function LocationSearch({ onLocationSelect }: LocationSearchProps) {
   const places = useMapsLibrary('places');
-  const placesService = usePlacesService();
   const [autocompleteService, setAutocompleteService] = useState<google.maps.places.AutocompleteService | null>(null);
+  const [placesService, setPlacesService] = useState<google.maps.places.PlacesService | null>(null);
   
   const [inputValue, setInputValue] = useState("");
   const [placePredictions, setPlacePredictions] = useState<google.maps.places.AutocompletePrediction[]>([]);
@@ -27,6 +27,7 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
   useEffect(() => {
     if (places) {
       setAutocompleteService(new places.AutocompleteService());
+      setPlacesService(new places.PlacesService(document.createElement('div')));
     }
   }, [places]);
 
