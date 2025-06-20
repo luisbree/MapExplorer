@@ -3,7 +3,6 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import { APIProvider } from "@vis.gl/react-google-maps";
-import LocationSearch from "@/components/location-search";
 import CoordinateDisplay from "@/components/coordinate-display";
 import { Skeleton } from "./ui/skeleton";
 
@@ -12,6 +11,11 @@ export type Coordinates = [number, number];
 const OpenLayersMap = dynamic(() => import('@/components/open-layers-map'), {
     ssr: false,
     loading: () => <Skeleton className="h-full w-full" />
+});
+
+const LocationSearch = dynamic(() => import('@/components/location-search'), {
+    ssr: false,
+    loading: () => <Skeleton className="h-10 w-full" />
 });
 
 export default function MapExplorer() {

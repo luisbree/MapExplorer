@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { usePlacesAutocompleteService, usePlacesService } from "@vis.gl/react-google-maps";
+import { useAutocompleteService, usePlacesService } from "@vis.gl/react-google-maps";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Loader2, MapPin } from "lucide-react";
@@ -12,7 +12,7 @@ interface LocationSearchProps {
 }
 
 export default function LocationSearch({ onLocationSelect }: LocationSearchProps) {
-  const { placesAutocompleteService, placePredictions, isPlacePredictionsLoading } = usePlacesAutocompleteService();
+  const { autocompleteService, placePredictions, isPlacePredictionsLoading } = useAutocompleteService();
   const { placesService, isPlacesServiceLoading, placeDetails } = usePlacesService();
   const [inputValue, setInputValue] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -20,12 +20,12 @@ export default function LocationSearch({ onLocationSelect }: LocationSearchProps
 
   useEffect(() => {
     if (inputValue.trim()) {
-      placesAutocompleteService?.getPlacePredictions({ input: inputValue, types: ['geocode'] });
+      autocompleteService?.getPlacePredictions({ input: inputValue, types: ['geocode'] });
       setShowSuggestions(true);
     } else {
       setShowSuggestions(false);
     }
-  }, [inputValue, placesAutocompleteService]);
+  }, [inputValue, autocompleteService]);
 
   useEffect(() => {
     if (placeDetails) {
