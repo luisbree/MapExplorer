@@ -1,9 +1,5 @@
-import MapExplorer from "@/components/map-explorer";
+import GeoMapperClient from '@/components/geo-mapper-client';
 
-export default function Home() {
-  return (
-    <main>
-      <MapExplorer />
-    </main>
-  );
+export default function HomePage() {
+  return <GeoMapperClient />;
 }

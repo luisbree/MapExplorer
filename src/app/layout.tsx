@@ -1,10 +1,23 @@
-import type {Metadata} from 'next';
+
+import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import { Toaster } from '@/components/ui/toaster';
+// import { Toaster } from "@/components/ui/toaster"; // No longer used
+import { SimpleNotification } from '@/components/simple-notification';
+
+const geistSans = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
 
 export const metadata: Metadata = {
-  title: 'Map Explorer',
-  description: 'Explore the world with an interactive map.',
+  title: 'Genesis Canvas',
+  description: 'A digital canvas with AI-powered expansion features.',
 };
 
 export default function RootLayout({
@@ -14,14 +27,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
-      </head>
-      <body className="font-body antialiased">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
-        <Toaster />
+        {/* <Toaster /> */}
+        <SimpleNotification />
       </body>
     </html>
   );
