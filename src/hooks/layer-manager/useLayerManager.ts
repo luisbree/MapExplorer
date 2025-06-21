@@ -128,43 +128,75 @@ export const useLayerManager = ({
     }));
   }, []);
 
-  const changeLayerStyle = useCallback((layerId: string, colorName: string) => {
+  const changeLayerStyle = useCallback((layerId: string, styleOptions: { color?: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; lineWidth?: number }) => {
     const layer = layers.find(l => l.id === layerId);
     if (!layer || !(layer.olLayer instanceof VectorLayer)) {
         toast({ description: "Solo se puede cambiar el estilo de capas vectoriales." });
         return;
     }
 
-    const colorHex = colorMap[colorName.toLowerCase()];
-    if (!colorHex) {
-        toast({ description: `Color "${colorName}" no reconocido.` });
+    const olLayer = layer.olLayer as VectorLayer<any>;
+    const existingStyle = olLayer.getStyle();
+    let originalStyle: Style;
+
+    if (typeof existingStyle === 'function') {
+        toast({ description: "No se puede modificar una capa con estilo dinámico."});
         return;
+    } else if (Array.isArray(existingStyle)) {
+        originalStyle = existingStyle[0].clone();
+    } else if (existingStyle instanceof Style) {
+        originalStyle = existingStyle.clone();
+    } else {
+        originalStyle = new Style({
+            stroke: new Stroke({ color: '#FFD700', width: 2 }), // gold
+            fill: new Fill({ color: 'rgba(255, 215, 0, 0.2)' }),
+            image: new CircleStyle({
+                radius: 5,
+                fill: new Fill({ color: 'rgba(255, 215, 0, 0.2)' }),
+                stroke: new Stroke({ color: '#FFD700', width: 2 })
+            })
+        });
     }
 
-    const olLayer = layer.olLayer as VectorLayer<any>;
+    const stroke = originalStyle.getStroke() ?? new Stroke();
+    const fill = originalStyle.getFill() ?? new Fill();
+    const image = originalStyle.getImage() ?? new CircleStyle({ radius: 5, fill: new Fill() });
     
-    const newStyle = new Style({
-        stroke: new Stroke({
-            color: colorHex,
-            width: 3,
-        }),
-        fill: new Fill({
-            color: asOlColorArray(colorHex).slice(0, 3).concat(0.4) as [number, number, number, number],
-        }),
-        image: new CircleStyle({
-            radius: 7,
-            fill: new Fill({
-                color: asOlColorArray(colorHex).slice(0, 3).concat(0.4) as [number, number, number, number],
-            }),
-            stroke: new Stroke({
-                color: colorHex,
-                width: 2,
-            }),
-        }),
-    });
+    let styleChanged = false;
 
-    olLayer.setStyle(newStyle);
-    toast({ description: `Color de la capa "${layer.name}" cambiado a ${colorName}.` });
+    if (styleOptions.color) {
+        const colorHex = colorMap[styleOptions.color.toLowerCase()];
+        if (colorHex) {
+            styleChanged = true;
+            const olColor = asOlColorArray(colorHex);
+            stroke.setColor(olColor);
+            fill.setColor([...olColor.slice(0, 3), 0.4] as [number, number, number, number]);
+            if (image instanceof CircleStyle && image.getStroke()) image.getStroke().setColor(olColor);
+            if (image instanceof CircleStyle && image.getFill()) image.getFill().setColor([...olColor.slice(0, 3), 0.4] as [number, number, number, number]);
+        } else {
+            toast({ description: `Color "${styleOptions.color}" no reconocido.` });
+        }
+    }
+
+    if (styleOptions.lineWidth) {
+        styleChanged = true;
+        stroke.setWidth(styleOptions.lineWidth);
+        if (image instanceof CircleStyle && image.getStroke()) image.getStroke().setWidth(styleOptions.lineWidth / 2 || 1);
+    }
+
+    if (styleOptions.lineStyle) {
+        styleChanged = true;
+        let lineDash: number[] | undefined;
+        if (styleOptions.lineStyle === 'dashed') lineDash = [10, 10];
+        else if (styleOptions.lineStyle === 'dotted') lineDash = [1, 5];
+        stroke.setLineDash(lineDash);
+    }
+    
+    if (styleChanged) {
+        const newStyle = new Style({ stroke, fill, image });
+        olLayer.setStyle(newStyle);
+        toast({ description: `Estilo de la capa "${layer.name}" actualizado.` });
+    }
   }, [layers, toast]);
 
   const zoomToLayerExtent = useCallback((layerId: string) => {

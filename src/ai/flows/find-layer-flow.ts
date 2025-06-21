@@ -35,7 +35,9 @@ const MapAssistantOutputSchema = z.object({
   zoomToLayer: z.string().describe("The machine-readable name of an active layer to zoom to.").optional(),
   layersToStyle: z.array(z.object({
     layerName: z.string().describe("The machine-readable name of the layer to style."),
-    color: z.string().describe("The requested color in Spanish, e.g., 'rojo', 'verde', 'azul'.")
+    color: z.string().describe("The requested color in Spanish, e.g., 'rojo', 'verde', 'azul'.").optional(),
+    lineStyle: z.enum(['solid', 'dashed', 'dotted']).describe("The requested line style. Use 'solid' for solid lines, 'dashed' for dashed lines, 'dotted' for dotted lines.").optional(),
+    lineWidth: z.number().describe("The requested line width in pixels, e.g., 2 for normal, 5 for thick.").optional(),
   })).describe("A list of layers to change the style of.").optional(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
@@ -69,9 +71,11 @@ Analyze the user's message and the provided lists of layers to decide which acti
 - TO ZOOM: If the user asks to zoom, focus on, or go to a layer, find the single best matching layer from the 'Active Layers' list.
   - If you find a match, formulate a response confirming the zoom and set the 'zoomToLayer' field to the exact 'name' of that layer.
 
-- TO CHANGE STYLE: If the user asks to change the color of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta las rutas de amarillo"), identify the target layer(s) from the 'Active Layers' list and the requested color.
-  - IMPORTANT: You can only change the style of layers with type 'wfs', 'vector', or 'osm'. Do not attempt to style layers of type 'wms'. If the user asks to style a 'wms' layer, you must politely inform them that it is not possible and do not populate the 'layersToStyle' field. For example: "Lo siento, no puedo cambiar el color de la capa 'Cuencas' porque es una capa de tipo imagen (WMS)."
-  - If you find a stylable match, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object should contain the 'layerName' (the exact 'name' of the layer) and the 'color' (the requested color name in Spanish).
+- TO CHANGE STYLE: If the user asks to change the color, line style, or line width of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta las rutas con línea de puntos", "haz las rutas más gruesas"), identify the target layer(s) from the 'Active Layers' list and the requested style changes.
+  - IMPORTANT: You can only change the style of layers with type 'wfs', 'vector', or 'osm'. If the user asks to style a 'wms' layer, you must politely inform them that it is not possible and do not populate the 'layersToStyle' field. For example: "Lo siento, no puedo cambiar el estilo de la capa 'Cuencas' porque es una capa de tipo imagen (WMS)."
+  - For line style, use 'solid' for solid lines, 'dashed' (for 'punteada', 'discontinua', 'a trazos'), or 'dotted' (for 'de puntos').
+  - For line width, interpret phrases like 'más gruesa' as a larger number (e.g., 5) and 'más fina' as a smaller number (e.g., 1). A normal width is 2 or 3. If a specific number is given, use it.
+  - If you find a stylable match, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object must contain the 'layerName' and at least one style property: 'color', 'lineStyle', or 'lineWidth'.
 
 - If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, just respond naturally and leave all action fields empty.
 

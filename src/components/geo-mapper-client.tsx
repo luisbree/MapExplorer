@@ -284,15 +284,19 @@ export default function GeoMapperClient() {
     }
 
     if (action.layersToStyle && action.layersToStyle.length > 0) {
-        action.layersToStyle.forEach(item => {
+        action.layersToStyle.forEach(styleRequest => {
             const layerToStyle = layerManagerHook.layers.find(l => {
                 const machineName = l.olLayer.get('gsLayerName') || l.name;
-                return machineName === item.layerName;
+                return machineName === styleRequest.layerName;
             });
             if (layerToStyle) {
-                layerManagerHook.changeLayerStyle(layerToStyle.id, item.color);
+                layerManagerHook.changeLayerStyle(layerToStyle.id, {
+                    color: styleRequest.color,
+                    lineStyle: styleRequest.lineStyle,
+                    lineWidth: styleRequest.lineWidth
+                });
             } else {
-                toast({description: `Drax intentó colorear una capa no encontrada: ${item.layerName}`});
+                toast({description: `Drax intentó aplicar un estilo a una capa no encontrada: ${styleRequest.layerName}`});
             }
         });
     }
