@@ -121,22 +121,25 @@ export const useFeatureInspection = ({
   }, [isInspectModeActive, mapRef, clearHighlight, processAndDisplayFeatures]);
 
   const toggleInspectMode = useCallback(() => {
-    setIsInspectModeActive(prev => {
-      const newMode = !prev;
-      if (newMode) {
-        if (activeDrawTool) {
-          stopDrawingTool();
-        }
-        toast({ description: 'Modo inspector activado.' });
-        if (mapElementRef.current) mapElementRef.current.style.cursor = 'help';
-      } else {
-        toast({ description: 'Modo inspector desactivado.' });
-        if (mapElementRef.current) mapElementRef.current.style.cursor = 'default';
-        clearHighlight();
+    const newMode = !isInspectModeActive;
+    setIsInspectModeActive(newMode);
+
+    if (newMode) {
+      if (activeDrawTool) {
+        stopDrawingTool();
       }
-      return newMode;
-    });
-  }, [activeDrawTool, stopDrawingTool, toast, mapElementRef, clearHighlight]);
+      toast({ description: 'Modo inspector activado.' });
+      if (mapElementRef.current) {
+        mapElementRef.current.style.cursor = 'help';
+      }
+    } else {
+      toast({ description: 'Modo inspector desactivado.' });
+      if (mapElementRef.current) {
+        mapElementRef.current.style.cursor = 'default';
+      }
+      clearHighlight();
+    }
+  }, [isInspectModeActive, activeDrawTool, stopDrawingTool, toast, mapElementRef, clearHighlight]);
 
   const clearInspectedAttributes = useCallback(() => {
     setSelectedFeatureAttributes(null);
