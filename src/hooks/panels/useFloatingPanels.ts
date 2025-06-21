@@ -42,19 +42,39 @@ export const useFloatingPanels = ({
     legend: legendPanelRef,
     attributes: attributesPanelRef,
     ai: aiPanelRef,
-  }), [attributesPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, aiPanelRef]);
+  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
     layers: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
     tools: { isMinimized: true, isCollapsed: false, position: { x: panelWidth + (panelPadding*2), y: panelPadding }, zIndex: initialZIndex },
     legend: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex + 1 }, // Initially open
     attributes: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 300 }, zIndex: initialZIndex },
-    ai: { isMinimized: true, isCollapsed: false, position: { x: panelWidth + (panelPadding * 2), y: 300 }, zIndex: initialZIndex },
+    ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: 48 }, zIndex: initialZIndex + 2 },
   });
 
   const activeDragRef = useRef<{ panelId: PanelId | null, offsetX: number, offsetY: number }>({ panelId: null, offsetX: 0, offsetY: 0 });
-  const zIndexCounterRef = useRef(initialZIndex + 1);
+  const zIndexCounterRef = useRef(initialZIndex + 2); // Start above AI panel
+  const positionInitialized = useRef(false);
   
+  useEffect(() => {
+    // This effect runs once to set the initial position of the AI panel to the right side.
+    if (mapAreaRef.current && !positionInitialized.current) {
+        const mapWidth = mapAreaRef.current.clientWidth;
+        const rightX = mapWidth - panelWidth - panelPadding;
+
+        // Only adjust the AI panel's position as requested.
+        setPanels(prev => ({
+            ...prev,
+            ai: {
+                ...prev.ai,
+                position: { x: rightX, y: prev.ai.position.y }
+            }
+        }));
+        positionInitialized.current = true;
+    }
+  }, [mapAreaRef, panelWidth, panelPadding]);
+
+
   const bringToFront = useCallback((panelId: PanelId) => {
     zIndexCounterRef.current += 1;
     setPanels(prev => ({

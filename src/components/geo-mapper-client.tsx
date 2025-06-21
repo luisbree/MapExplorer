@@ -33,7 +33,7 @@ import { useFloatingPanels } from '@/hooks/panels/useFloatingPanels';
 import { useMapCapture } from '@/hooks/map-tools/useMapCapture';
 import { useToast } from "@/hooks/use-toast";
 
-import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer } from '@/lib/types';
+import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage } from '@/lib/types';
 import type { MapAssistantOutput } from '@/ai/flows/find-layer-flow';
 
 
@@ -130,6 +130,10 @@ export default function GeoMapperClient() {
 
   const [isWfsLoading, setIsWfsLoading] = useState(false);
   const [discoveredGeoServerLayers, setDiscoveredGeoServerLayers] = useState<GeoServerDiscoveredLayer[]>([]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+    { role: 'assistant', content: "Hola, soy Drax, tu asistente de mapas. Pídeme que cargue una capa, que la elimine o que haga zoom en ella." }
+  ]);
+
 
   const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
     setDiscoveredGeoServerLayers(prev => prev.map(l => {
@@ -450,6 +454,8 @@ export default function GeoMapperClient() {
             availableLayers={discoveredGeoServerLayers.map(l => ({ name: l.name, title: l.title }))}
             activeLayers={layerManagerHook.layers.map(l => ({ name: l.name, title: l.name }))}
             onLayerAction={handleAiAction}
+            messages={chatMessages}
+            setMessages={setChatMessages}
             style={{ top: `${panels.ai.position.y}px`, left: `${panels.ai.position.x}px`, zIndex: panels.ai.zIndex }}
           />
         )}

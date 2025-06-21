@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -9,6 +10,8 @@ import { Sparkles, Loader2, Send, User, Bot } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import * as ai from '@/ai/flows/find-layer-flow';
 import { cn } from '@/lib/utils';
+import type { ChatMessage } from '@/lib/types';
+
 
 interface AIPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -19,13 +22,11 @@ interface AIPanelProps {
   availableLayers: { name: string; title: string }[];
   activeLayers: { name: string; title: string }[];
   onLayerAction: (action: ai.MapAssistantOutput) => void;
+  messages: ChatMessage[];
+  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   style?: React.CSSProperties;
 }
 
-interface ChatMessage {
-    role: 'user' | 'assistant';
-    content: string;
-}
 
 const AIPanel: React.FC<AIPanelProps> = ({
   panelRef,
@@ -36,19 +37,26 @@ const AIPanel: React.FC<AIPanelProps> = ({
   availableLayers,
   activeLayers,
   onLayerAction,
+  messages,
+  setMessages,
   style,
 }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: "Hola, soy Drax, tu asistente de mapas. Pídeme que cargue una capa, que la elimine o que haga zoom en ella." }
-  ]);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  useEffect(() => {
+    // Focus the input when Drax finishes responding or on initial load.
+    if (!isLoading) {
+        inputRef.current?.focus();
+    }
+  }, [isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,6 +142,7 @@ const AIPanel: React.FC<AIPanelProps> = ({
         </ScrollArea>
         <form onSubmit={handleSubmit} className="flex items-center gap-2 mt-auto border-t border-gray-700/80 pt-3">
           <Input
+            ref={inputRef}
             type="text"
             placeholder="Pide una capa o chatea..."
             value={query}
