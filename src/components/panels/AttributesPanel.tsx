@@ -105,8 +105,8 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
       initialSize={{ width: 450, height: 350 }} 
       minSize={{ width: 300, height: 250 }}
       style={style} 
-      overflowX="hidden" 
-      overflowY="auto"   
+      overflowX="auto"
+      overflowY="auto"
       zIndex={style?.zIndex as number | undefined}
     >
       <div className="flex-grow flex flex-col"> 

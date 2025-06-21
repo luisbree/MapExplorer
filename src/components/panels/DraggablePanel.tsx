@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X as LucideX } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DraggablePanelProps {
   title: string;
@@ -65,7 +64,7 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className={`absolute bg-gray-800/70 backdrop-blur-md text-white shadow-xl rounded-lg border border-gray-700/80 flex flex-col ${className}`}
+      className={`absolute bg-gray-800/70 backdrop-blur-md text-white shadow-xl rounded-lg border border-gray-700/80 flex flex-col overflow-auto ${className}`}
       style={{
         // Position (top, left) and zIndex are now expected to be part of the style prop passed from parent
         ...style, 
@@ -76,9 +75,6 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
         maxWidth: maxSize.width ? `${maxSize.width}px` : '90vw',
         maxHeight: maxSize.height ? `${maxSize.height}px` : '80vh',
         resize: isCollapsed ? 'none' : 'both',
-        overflow: 'visible',
-        // zIndex is managed by the style prop, using the passed zIndex prop as fallback or default
-        // zIndex: zIndex ?? 30, // This is now directly in `style` from `useFloatingPanels`
       }}
       onMouseUpCapture={handleResizeStop} // Use onMouseUpCapture for resize stop
     >
@@ -104,15 +100,8 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
         </div>
       </CardHeader>
       {!isCollapsed && (
-        <CardContent className="p-0 flex-grow flex flex-col overflow-hidden">
-          <ScrollArea 
-            className="flex-grow h-0 w-full" 
-            style={{ overflowX: overflowX, overflowY: overflowY }}
-          >
-            <div className="p-3">
-             {children}
-            </div>
-          </ScrollArea>
+        <CardContent className="p-3 flex-grow flex flex-col overflow-auto">
+           {children}
         </CardContent>
       )}
     </div>
