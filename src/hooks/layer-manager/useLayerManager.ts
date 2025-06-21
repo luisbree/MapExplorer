@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { Map } from 'ol';
 import type VectorSource from 'ol/source/Vector';
-import type VectorLayer from 'ol/layer/Vector';
+import VectorLayer from 'ol/layer/Vector';
 import type Feature from 'ol/Feature';
 import type { Geometry } from 'ol/geom';
 import { useToast } from "@/hooks/use-toast";
@@ -77,8 +76,10 @@ export const useLayerManager = ({
   const zoomToLayerExtent = useCallback((layerId: string) => {
     if (!mapRef.current) return;
     const layer = layers.find(l => l.id === layerId);
-    if (layer && 'getSource' in layer.olLayer) {
-        const source = (layer.olLayer as VectorLayer<VectorSource>).getSource();
+    
+    // Check if it's a vector layer with features
+    if (layer && layer.olLayer instanceof VectorLayer) {
+        const source = layer.olLayer.getSource();
         if (source && source.getFeatures().length > 0) {
             const extent = source.getExtent();
             mapRef.current.getView().fit(extent, {
@@ -87,10 +88,10 @@ export const useLayerManager = ({
                 maxZoom: 16,
             });
         } else {
-            toast({ description: "La capa no tiene extensión o está vacía." });
+            toast({ description: "La capa no tiene entidades para hacer zoom." });
         }
     } else {
-        toast({ description: "No se puede obtener la extensión de esta capa." });
+        toast({ description: "No se puede hacer zoom a la extensión de este tipo de capa." });
     }
   }, [mapRef, layers, toast]);
 
@@ -231,4 +232,3 @@ export const useLayerManager = ({
     clearSentinel2FootprintsLayer
   };
 };
-
