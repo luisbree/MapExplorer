@@ -70,7 +70,7 @@ const AIPanel: React.FC<AIPanelProps> = ({
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.response };
       setMessages(prev => [...prev, assistantMessage]);
 
-      if (result?.layerToAdd || result?.layerToRemove || result?.zoomToLayer) {
+      if ((result?.layersToAdd && result.layersToAdd.length > 0) || (result?.layersToRemove && result.layersToRemove.length > 0) || result?.zoomToLayer) {
         onLayerAction(result);
       }
     } catch (error) {
