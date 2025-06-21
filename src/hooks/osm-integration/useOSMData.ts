@@ -61,8 +61,8 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
         const selectedConfigs = osmCategoryConfigs.filter(c => selectedOSMCategoryIds.includes(c.id));
 
         const queryFragments = selectedConfigs.map(c => c.overpassQueryFragment(bboxStr)).join('');
-        // Use [out:geojson] to get a valid GeoJSON FeatureCollection directly from Overpass API
-        const overpassQuery = `[out:geojson][timeout:60];(${queryFragments});out;`;
+        // Correctly formatted query. `out geojson;` is the statement for GeoJSON output.
+        const overpassQuery = `[timeout:60];(${queryFragments});out geojson;`;
         
         const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
         if (!response.ok) {
