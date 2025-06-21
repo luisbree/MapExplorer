@@ -129,21 +129,23 @@ export default function GeoMapperClient() {
   const [isWfsLoading, setIsWfsLoading] = useState(false);
   const [discoveredGeoServerLayers, setDiscoveredGeoServerLayers] = useState<GeoServerDiscoveredLayer[]>([]);
 
+  const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
+    setDiscoveredGeoServerLayers(prev => prev.map(l => {
+      if (l.name === layerName) {
+        if (type === 'wms') return { ...l, wmsAddedToMap: added };
+        if (type === 'wfs') return { ...l, wfsAddedToMap: added };
+      }
+      return l;
+    }));
+  }, []);
+
   const layerManagerHook = useLayerManager({
     mapRef,
     isMapReady,
     drawingLayerRef,
     drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
-    updateGeoServerDiscoveredLayerState: (layerName, added, type) => {
-      setDiscoveredGeoServerLayers(prev => prev.map(l => {
-        if (l.name === layerName) {
-          if (type === 'wms') return { ...l, wmsAddedToMap: added };
-          if (type === 'wfs') return { ...l, wfsAddedToMap: added };
-        }
-        return l;
-      }));
-    }
+    updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState
   });
   
   const {
@@ -153,7 +155,7 @@ export default function GeoMapperClient() {
       mapRef,
       isMapReady,
       addLayer: layerManagerHook.addLayer,
-      onLayerStateUpdate: layerManagerHook.updateGeoServerDiscoveredLayerState,
+      onLayerStateUpdate: updateDiscoveredLayerState,
       setIsWfsLoading
   });
 
