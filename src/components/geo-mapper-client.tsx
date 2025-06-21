@@ -301,6 +301,18 @@ export default function GeoMapperClient() {
         });
     }
 
+    if (action.showTableForLayer) {
+        const layerToShowTable = layerManagerHook.layers.find(l => {
+            const machineName = l.olLayer.get('gsLayerName') || l.name;
+            return machineName === action.showTableForLayer;
+        });
+        if (layerToShowTable) {
+            layerManagerHook.handleShowLayerTable(layerToShowTable.id);
+        } else {
+            toast({description: `Drax intentó mostrar la tabla de una capa no encontrada: ${action.showTableForLayer}`});
+        }
+    }
+
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, toast, layerManagerHook]);
 
 
