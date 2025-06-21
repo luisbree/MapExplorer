@@ -15,13 +15,13 @@ const LayerSchema = z.object({
   title: z.string().describe('The human-readable title of the layer, e.g., "Cuencas Hidrográficas Light".'),
 });
 
-export const FindLayerInputSchema = z.object({
+const FindLayerInputSchema = z.object({
   query: z.string().describe('The user\'s request in natural language, e.g., "muéstrame las cuencas".'),
   availableLayers: z.array(LayerSchema).describe('The list of available layers to search through.'),
 });
 export type FindLayerInput = z.infer<typeof FindLayerInputSchema>;
 
-export const FindLayerOutputSchema = z.object({
+const FindLayerOutputSchema = z.object({
   name: z.string().describe('The machine-readable name of the best matching layer found. Should be one of the names from the input list.'),
 }).optional();
 export type FindLayerOutput = z.infer<typeof FindLayerOutputSchema>;
