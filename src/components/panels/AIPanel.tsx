@@ -20,7 +20,7 @@ interface AIPanelProps {
   onClosePanel: () => void;
   onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
   availableLayers: { name: string; title: string }[];
-  activeLayers: { name: string; title: string }[];
+  activeLayers: { name: string; title: string; type: string }[];
   onLayerAction: (action: ai.MapAssistantOutput) => void;
   messages: ChatMessage[];
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
@@ -78,7 +78,12 @@ const AIPanel: React.FC<AIPanelProps> = ({
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.response };
       setMessages(prev => [...prev, assistantMessage]);
 
-      if ((result?.layersToAdd && result.layersToAdd.length > 0) || (result?.layersToRemove && result.layersToRemove.length > 0) || result?.zoomToLayer) {
+      if (
+        (result?.layersToAdd && result.layersToAdd.length > 0) || 
+        (result?.layersToRemove && result.layersToRemove.length > 0) || 
+        (result?.layersToStyle && result.layersToStyle.length > 0) ||
+        result?.zoomToLayer
+      ) {
         onLayerAction(result);
       }
     } catch (error) {

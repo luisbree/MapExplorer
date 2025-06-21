@@ -10,15 +10,21 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const LayerSchema = z.object({
+const AvailableLayerSchema = z.object({
   name: z.string().describe('The machine-readable name of the layer, e.g., "cuencas_light".'),
   title: z.string().describe('The human-readable title of the layer, e.g., "Cuencas Hidrográficas Light".'),
 });
 
+const ActiveLayerSchema = z.object({
+  name: z.string().describe('The machine-readable name of the layer, e.g., "cuencas_light".'),
+  title: z.string().describe('The human-readable title of the layer, e.g., "Cuencas Hidrográficas Light".'),
+  type: z.string().describe("The layer type, e.g. 'wms', 'wfs', 'vector'. Only 'wfs', 'vector', and 'osm' layers can be styled."),
+});
+
 const MapAssistantInputSchema = z.object({
   query: z.string().describe("The user's message to the assistant."),
-  availableLayers: z.array(LayerSchema).describe('The list of available layers to search through for adding.'),
-  activeLayers: z.array(LayerSchema).describe('The list of layers currently on the map, for removing or zooming.'),
+  availableLayers: z.array(AvailableLayerSchema).describe('The list of available layers to search through for adding.'),
+  activeLayers: z.array(ActiveLayerSchema).describe('The list of layers currently on the map, for removing, zooming, or styling.'),
 });
 export type MapAssistantInput = z.infer<typeof MapAssistantInputSchema>;
 
@@ -64,7 +70,8 @@ Analyze the user's message and the provided lists of layers to decide which acti
   - If you find a match, formulate a response confirming the zoom and set the 'zoomToLayer' field to the exact 'name' of that layer.
 
 - TO CHANGE STYLE: If the user asks to change the color of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta las rutas de amarillo"), identify the target layer(s) from the 'Active Layers' list and the requested color.
-  - If you find matches, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object should contain the 'layerName' (the exact 'name' of the layer) and the 'color' (the requested color name in Spanish).
+  - IMPORTANT: You can only change the style of layers with type 'wfs', 'vector', or 'osm'. Do not attempt to style layers of type 'wms'. If the user asks to style a 'wms' layer, you must politely inform them that it is not possible and do not populate the 'layersToStyle' field. For example: "Lo siento, no puedo cambiar el color de la capa 'Cuencas' porque es una capa de tipo imagen (WMS)."
+  - If you find a stylable match, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object should contain the 'layerName' (the exact 'name' of the layer) and the 'color' (the requested color name in Spanish).
 
 - If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, just respond naturally and leave all action fields empty.
 
@@ -77,7 +84,7 @@ Available Layers (for adding):
 
 Active Layers (on the map, for removing, zooming, or styling):
 {{#each activeLayers}}
-- Name: {{name}}, Title: "{{title}}"
+- Name: {{name}}, Title: "{{title}}", Type: {{type}}
 {{/each}}
 `,
   prompt: `User's message: "{{query}}"`,

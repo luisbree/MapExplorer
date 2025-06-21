@@ -259,7 +259,10 @@ export default function GeoMapperClient() {
 
     if (action.layersToRemove && action.layersToRemove.length > 0) {
         action.layersToRemove.forEach(layerNameToRemove => {
-            const layerToRemove = layerManagerHook.layers.find(l => l.name === layerNameToRemove);
+            const layerToRemove = layerManagerHook.layers.find(l => {
+                const machineName = l.olLayer.get('gsLayerName') || l.name;
+                return machineName === layerNameToRemove;
+            });
             if (layerToRemove) {
                 layerManagerHook.removeLayer(layerToRemove.id);
             } else {
@@ -269,7 +272,10 @@ export default function GeoMapperClient() {
     }
 
     if (action.zoomToLayer) {
-      const layerToZoom = layerManagerHook.layers.find(l => l.name === action.zoomToLayer);
+      const layerToZoom = layerManagerHook.layers.find(l => {
+          const machineName = l.olLayer.get('gsLayerName') || l.name;
+          return machineName === action.zoomToLayer;
+      });
        if (layerToZoom) {
         layerManagerHook.zoomToLayerExtent(layerToZoom.id);
       } else {
@@ -279,7 +285,10 @@ export default function GeoMapperClient() {
 
     if (action.layersToStyle && action.layersToStyle.length > 0) {
         action.layersToStyle.forEach(item => {
-            const layerToStyle = layerManagerHook.layers.find(l => l.name === item.layerName);
+            const layerToStyle = layerManagerHook.layers.find(l => {
+                const machineName = l.olLayer.get('gsLayerName') || l.name;
+                return machineName === item.layerName;
+            });
             if (layerToStyle) {
                 layerManagerHook.changeLayerStyle(layerToStyle.id, item.color);
             } else {
@@ -463,7 +472,10 @@ export default function GeoMapperClient() {
             onClosePanel={() => togglePanelMinimize('ai')}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'ai')}
             availableLayers={discoveredGeoServerLayers.map(l => ({ name: l.name, title: l.title }))}
-            activeLayers={layerManagerHook.layers.map(l => ({ name: l.name, title: l.name }))}
+            activeLayers={layerManagerHook.layers.map(l => {
+              const machineName = l.olLayer.get('gsLayerName') || l.name;
+              return { name: machineName, title: l.name, type: l.type };
+            })}
             onLayerAction={handleAiAction}
             messages={chatMessages}
             setMessages={setChatMessages}
