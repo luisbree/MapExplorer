@@ -76,7 +76,7 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
         maxWidth: maxSize.width ? `${maxSize.width}px` : '90vw',
         maxHeight: maxSize.height ? `${maxSize.height}px` : '80vh',
         resize: isCollapsed ? 'none' : 'both',
-        overflow: 'hidden',
+        overflow: 'visible',
         // zIndex is managed by the style prop, using the passed zIndex prop as fallback or default
         // zIndex: zIndex ?? 30, // This is now directly in `style` from `useFloatingPanels`
       }}
