@@ -27,7 +27,7 @@ export async function findSentinel2Footprints(extent: Extent, mapProjection: Pro
       processingLevel: 'LEVEL2A',
       cloudCover: '[0,30]',
       box: `${minX},${minY},${maxX},${maxY}`,
-      sortParam: 'ingestionDate', 
+      sortParam: 'startDate', 
       sortOrder: 'descending'
     });
 
