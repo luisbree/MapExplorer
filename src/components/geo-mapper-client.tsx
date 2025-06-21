@@ -277,6 +277,17 @@ export default function GeoMapperClient() {
       }
     }
 
+    if (action.layersToStyle && action.layersToStyle.length > 0) {
+        action.layersToStyle.forEach(item => {
+            const layerToStyle = layerManagerHook.layers.find(l => l.name === item.layerName);
+            if (layerToStyle) {
+                layerManagerHook.changeLayerStyle(layerToStyle.id, item.color);
+            } else {
+                toast({description: `Drax intentó colorear una capa no encontrada: ${item.layerName}`});
+            }
+        });
+    }
+
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, toast, layerManagerHook]);
 
 

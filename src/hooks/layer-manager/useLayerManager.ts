@@ -11,8 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { findSentinel2Footprints as fetchSentinelFootprints } from '@/services/sentinel';
 import type { MapLayer, VectorMapLayer } from '@/lib/types';
 import { nanoid } from 'nanoid';
-import { Style, Stroke, Fill } from 'ol/style';
+import { Style, Stroke, Fill, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
+import { asArray as asOlColorArray } from 'ol/color';
+
 
 interface UseLayerManagerProps {
   mapRef: React.RefObject<Map | null>;
@@ -25,6 +27,20 @@ interface UseLayerManagerProps {
 
 const USER_LAYER_START_Z_INDEX = 10;
 const DEAS_LAYER_Z_INDEX = 1;
+
+const colorMap: { [key: string]: string } = {
+  rojo: '#e63946',
+  verde: '#2a9d8f',
+  azul: '#0077b6',
+  amarillo: '#ffbe0b',
+  naranja: '#f4a261',
+  violeta: '#8338ec',
+  negro: '#000000',
+  blanco: '#ffffff',
+  gris: '#adb5bd',
+  cian: '#00ffff',
+  magenta: '#ff00ff',
+};
 
 export const useLayerManager = ({
   mapRef,
@@ -111,6 +127,45 @@ export const useLayerManager = ({
       return l;
     }));
   }, []);
+
+  const changeLayerStyle = useCallback((layerId: string, colorName: string) => {
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer || !(layer.olLayer instanceof VectorLayer)) {
+        toast({ description: "Solo se puede cambiar el estilo de capas vectoriales." });
+        return;
+    }
+
+    const colorHex = colorMap[colorName.toLowerCase()];
+    if (!colorHex) {
+        toast({ description: `Color "${colorName}" no reconocido.` });
+        return;
+    }
+
+    const olLayer = layer.olLayer as VectorLayer<any>;
+    
+    const newStyle = new Style({
+        stroke: new Stroke({
+            color: colorHex,
+            width: 3,
+        }),
+        fill: new Fill({
+            color: asOlColorArray(colorHex).slice(0, 3).concat(0.4) as [number, number, number, number],
+        }),
+        image: new CircleStyle({
+            radius: 7,
+            fill: new Fill({
+                color: asOlColorArray(colorHex).slice(0, 3).concat(0.4) as [number, number, number, number],
+            }),
+            stroke: new Stroke({
+                color: colorHex,
+                width: 2,
+            }),
+        }),
+    });
+
+    olLayer.setStyle(newStyle);
+    toast({ description: `Color de la capa "${layer.name}" cambiado a ${colorName}.` });
+  }, [layers, toast]);
 
   const zoomToLayerExtent = useCallback((layerId: string) => {
     if (!mapRef.current) return;
@@ -280,6 +335,7 @@ export const useLayerManager = ({
     reorderLayers,
     toggleLayerVisibility,
     setLayerOpacity,
+    changeLayerStyle,
     zoomToLayerExtent,
     handleShowLayerTable,
     isDrawingSourceEmptyOrNotPolygon,

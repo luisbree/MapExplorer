@@ -27,6 +27,10 @@ const MapAssistantOutputSchema = z.object({
   layersToAdd: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map.").optional(),
   layersToRemove: z.array(z.string()).describe("A list of machine-readable names of active layers to remove from the map.").optional(),
   zoomToLayer: z.string().describe("The machine-readable name of an active layer to zoom to.").optional(),
+  layersToStyle: z.array(z.object({
+    layerName: z.string().describe("The machine-readable name of the layer to style."),
+    color: z.string().describe("The requested color in Spanish, e.g., 'rojo', 'verde', 'azul'.")
+  })).describe("A list of layers to change the style of.").optional(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
 
@@ -42,10 +46,11 @@ const assistantPrompt = ai.definePrompt({
 Your goal is to have a conversation with the user and help them with their tasks.
 Your response must always be in a conversational, human-like text.
 
-You can perform three types of actions based on the user's request:
+You can perform four types of actions based on the user's request:
 1. ADD one or more layers to the map.
 2. REMOVE one or more layers from the map.
 3. ZOOM to a single layer's extent.
+4. CHANGE STYLE of one or more layers currently on the map.
 
 Analyze the user's message and the provided lists of layers to decide which action to take.
 
@@ -58,16 +63,19 @@ Analyze the user's message and the provided lists of layers to decide which acti
 - TO ZOOM: If the user asks to zoom, focus on, or go to a layer, find the single best matching layer from the 'Active Layers' list.
   - If you find a match, formulate a response confirming the zoom and set the 'zoomToLayer' field to the exact 'name' of that layer.
 
-- If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, just respond naturally and leave the action fields ('layersToAdd', 'layersToRemove', 'zoomToLayer') empty.
+- TO CHANGE STYLE: If the user asks to change the color of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta las rutas de amarillo"), identify the target layer(s) from the 'Active Layers' list and the requested color.
+  - If you find matches, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object should contain the 'layerName' (the exact 'name' of the layer) and the 'color' (the requested color name in Spanish).
 
-IMPORTANT: You can perform multiple actions of the SAME type at once (e.g., add multiple layers). If the request is ambiguous, prioritize adding over removing, and removing over zooming. Do not mix action types in a single response.
+- If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, just respond naturally and leave all action fields empty.
+
+IMPORTANT: You can perform multiple actions of the SAME type at once (e.g., add multiple layers, or style multiple layers). If the request is ambiguous, prioritize adding over removing, removing over zooming, and zooming over styling. Do not mix action types in a single response.
 
 Available Layers (for adding):
 {{#each availableLayers}}
 - Name: {{name}}, Title: "{{title}}"
 {{/each}}
 
-Active Layers (on the map, for removing or zooming):
+Active Layers (on the map, for removing, zooming, or styling):
 {{#each activeLayers}}
 - Name: {{name}}, Title: "{{title}}"
 {{/each}}
