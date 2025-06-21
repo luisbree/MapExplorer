@@ -34,6 +34,8 @@ import { useMapCapture } from '@/hooks/map-tools/useMapCapture';
 import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer } from '@/lib/types';
+import type { MapAssistantOutput } from '@/ai/flows/find-layer-flow';
+
 
 const osmCategoryConfig: OSMCategoryConfig[] = [
   {
@@ -238,15 +240,36 @@ export default function GeoMapperClient() {
     }
   }, [mapRef, toast]);
 
-  const handleAiFindLayer = useCallback((layerName: string) => {
-    const layerData = discoveredGeoServerLayers.find(l => l.name === layerName);
-    if (layerData) {
-        const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
-        handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
-    } else {
-        toast({description: `AI returned a layer name not found in the list: ${layerName}`});
+  const handleAiAction = useCallback((action: MapAssistantOutput) => {
+    if (action.layerToAdd) {
+      const layerData = discoveredGeoServerLayers.find(l => l.name === action.layerToAdd);
+      if (layerData) {
+          const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+          handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
+      } else {
+          toast({description: `Drax sugirió una capa no encontrada: ${action.layerToAdd}`});
+      }
     }
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, toast]);
+
+    if (action.layerToRemove) {
+      const layerToRemove = layerManagerHook.layers.find(l => l.name === action.layerToRemove);
+      if (layerToRemove) {
+        layerManagerHook.removeLayer(layerToRemove.id);
+      } else {
+        toast({description: `Drax intentó eliminar una capa no encontrada: ${action.layerToRemove}`});
+      }
+    }
+
+    if (action.zoomToLayer) {
+      const layerToZoom = layerManagerHook.layers.find(l => l.name === action.zoomToLayer);
+       if (layerToZoom) {
+        layerManagerHook.zoomToLayerExtent(layerToZoom.id);
+      } else {
+        toast({description: `Drax intentó hacer zoom a una capa no encontrada: ${action.zoomToLayer}`});
+      }
+    }
+
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, toast, layerManagerHook]);
 
 
   useEffect(() => {
@@ -421,7 +444,8 @@ export default function GeoMapperClient() {
             onClosePanel={() => togglePanelMinimize('ai')}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'ai')}
             availableLayers={discoveredGeoServerLayers.map(l => ({ name: l.name, title: l.title }))}
-            onLayerFound={handleAiFindLayer}
+            activeLayers={layerManagerHook.layers.map(l => ({ name: l.name, title: l.name }))}
+            onLayerAction={handleAiAction}
             style={{ top: `${panels.ai.position.y}px`, left: `${panels.ai.position.x}px`, zIndex: panels.ai.zIndex }}
           />
         )}

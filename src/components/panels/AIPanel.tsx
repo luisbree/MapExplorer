@@ -17,7 +17,8 @@ interface AIPanelProps {
   onClosePanel: () => void;
   onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
   availableLayers: { name: string; title: string }[];
-  onLayerFound: (layerName: string) => void;
+  activeLayers: { name: string; title: string }[];
+  onLayerAction: (action: ai.MapAssistantOutput) => void;
   style?: React.CSSProperties;
 }
 
@@ -33,13 +34,14 @@ const AIPanel: React.FC<AIPanelProps> = ({
   onClosePanel,
   onMouseDownHeader,
   availableLayers,
-  onLayerFound,
+  activeLayers,
+  onLayerAction,
   style,
 }) => {
   const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: "Hola, soy tu asistente de mapas. Pídeme que cargue una capa, por ejemplo: 'muéstrame las rutas'." }
+    { role: 'assistant', content: "Hola, soy Drax, tu asistente de mapas. Pídeme que cargue una capa, que la elimine o que haga zoom en ella." }
   ]);
   const { toast } = useToast();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -62,13 +64,14 @@ const AIPanel: React.FC<AIPanelProps> = ({
       const result = await ai.chatWithMapAssistant({
         query: currentQuery,
         availableLayers: availableLayers,
+        activeLayers: activeLayers,
       });
 
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.response };
       setMessages(prev => [...prev, assistantMessage]);
 
-      if (result?.layerToAdd) {
-        onLayerFound(result.layerToAdd);
+      if (result?.layerToAdd || result?.layerToRemove || result?.zoomToLayer) {
+        onLayerAction(result);
       }
     } catch (error) {
       console.error("AI chat error:", error);
@@ -82,7 +85,7 @@ const AIPanel: React.FC<AIPanelProps> = ({
 
   return (
     <DraggablePanel
-      title="Asistente IA"
+      title="Asistente Drax"
       icon={Sparkles}
       panelRef={panelRef}
       initialPosition={{ x: 0, y: 0 }}
