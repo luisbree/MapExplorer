@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { Map } from 'ol';
-import type VectorSource from 'ol/source/Vector';
+import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import type Feature from 'ol/Feature';
 import type { Geometry } from 'ol/geom';
