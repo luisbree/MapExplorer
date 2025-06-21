@@ -241,23 +241,27 @@ export default function GeoMapperClient() {
   }, [mapRef, toast]);
 
   const handleAiAction = useCallback((action: MapAssistantOutput) => {
-    if (action.layerToAdd) {
-      const layerData = discoveredGeoServerLayers.find(l => l.name === action.layerToAdd);
-      if (layerData) {
-          const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
-          handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
-      } else {
-          toast({description: `Drax sugirió una capa no encontrada: ${action.layerToAdd}`});
-      }
+    if (action.layersToAdd && action.layersToAdd.length > 0) {
+      const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+      action.layersToAdd.forEach(layerNameToAdd => {
+        const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
+        if (layerData) {
+            handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
+        } else {
+            toast({description: `Drax sugirió una capa no encontrada: ${layerNameToAdd}`});
+        }
+      });
     }
 
-    if (action.layerToRemove) {
-      const layerToRemove = layerManagerHook.layers.find(l => l.name === action.layerToRemove);
-      if (layerToRemove) {
-        layerManagerHook.removeLayer(layerToRemove.id);
-      } else {
-        toast({description: `Drax intentó eliminar una capa no encontrada: ${action.layerToRemove}`});
-      }
+    if (action.layersToRemove && action.layersToRemove.length > 0) {
+        action.layersToRemove.forEach(layerNameToRemove => {
+            const layerToRemove = layerManagerHook.layers.find(l => l.name === layerNameToRemove);
+            if (layerToRemove) {
+                layerManagerHook.removeLayer(layerToRemove.id);
+            } else {
+                toast({description: `Drax intentó eliminar una capa no encontrada: ${layerNameToRemove}`});
+            }
+        });
     }
 
     if (action.zoomToLayer) {
