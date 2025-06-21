@@ -125,7 +125,6 @@ export default function GeoMapperClient() {
     stopDrawingTool: () => {}, 
   });
 
-  const [geoServerDiscoveredLayers, setGeoServerDiscoveredLayers] = useState<GeoServerDiscoveredLayer[]>([]);
   const [isWfsLoading, setIsWfsLoading] = useState(false);
 
   const layerManagerHook = useLayerManager({
@@ -135,28 +134,11 @@ export default function GeoMapperClient() {
     drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
     updateGeoServerDiscoveredLayerState: (layerName, added, type) => {
-        setGeoServerDiscoveredLayers(prev => prev.map(l => {
-            if (l.name === layerName) {
-                if (type === 'wms') return { ...l, wmsAddedToMap: added };
-                if (type === 'wfs') return { ...l, wfsAddedToMap: added };
-            }
-            return l;
-        }));
+        // This function might be needed if we want to track layer state for other purposes
+        // For now, it's connected but doesn't drive any UI lists for discovered layers.
     }
   });
-
-  const drawingInteractions = useDrawingInteractions({
-    mapRef, isMapReady, drawingSourceRef,
-    isInspectModeActive: featureInspectionHook.isInspectModeActive,
-    toggleInspectMode: featureInspectionHook.toggleInspectMode,
-  });
-
-
-  const {
-    isFetchingOSM, selectedOSMCategoryIds, setSelectedOSMCategoryIds, fetchOSMData,
-    downloadFormat, setDownloadFormat, isDownloading, handleDownloadOSMLayers,
-  } = useOSMData({ drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
-
+  
   const {
     geoServerUrlInput, setGeoServerUrlInput, isLoadingGeoServerLayers,
     handleFetchGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS
@@ -165,15 +147,44 @@ export default function GeoMapperClient() {
       isMapReady,
       addLayer: layerManagerHook.addLayer,
       onLayerStateUpdate: (layerName, added, type) => {
-        setGeoServerDiscoveredLayers(prev => prev.map(l => {
-            if (l.name === layerName) {
-                if (type === 'wms') return { ...l, wmsAddedToMap: added };
-                if (type === 'wfs') return { ...l, wfsAddedToMap: added };
-            }
-            return l;
-        }));
+         // This function might be needed if we want to track layer state for other purposes
       },
       setIsWfsLoading
+  });
+
+  // Effect for initial GeoServer layer loading
+  useEffect(() => {
+    const loadInitialLayers = async () => {
+      const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+      try {
+        const discovered = await handleFetchGeoServerLayers(initialUrl);
+        if (discovered && discovered.length > 0) {
+          discovered.forEach(layer => {
+            handleAddGeoServerLayerToMap(layer.name, layer.title, false, initialUrl);
+          });
+          toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
+        }
+      } catch (error) {
+        // The hook itself will show a toast on failure
+        console.error("Failed to load initial GeoServer layers:", error);
+      }
+    };
+    
+    if (isMapReady) {
+       loadInitialLayers();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMapReady]);
+
+  const {
+    isFetchingOSM, selectedOSMCategoryIds, setSelectedOSMCategoryIds, fetchOSMData,
+    downloadFormat, setDownloadFormat, isDownloading, handleDownloadOSMLayers,
+  } = useOSMData({ drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
+
+  const drawingInteractions = useDrawingInteractions({
+    mapRef, isMapReady, drawingSourceRef,
+    isInspectModeActive: featureInspectionHook.isInspectModeActive,
+    toggleInspectMode: featureInspectionHook.toggleInspectMode,
   });
 
   const { panels, handlePanelMouseDown, togglePanelCollapse, togglePanelMinimize } = useFloatingPanels({
@@ -301,21 +312,15 @@ export default function GeoMapperClient() {
             geoServerUrlInput={geoServerUrlInput}
             onGeoServerUrlChange={setGeoServerUrlInput}
             onFetchGeoServerLayers={async () => {
-              const discovered = await handleFetchGeoServerLayers();
+              const discovered = await handleFetchGeoServerLayers(); // Uses state URL from input
               if(discovered && discovered.length > 0) {
-                setGeoServerDiscoveredLayers(discovered);
                 discovered.forEach(layer => {
-                  handleAddGeoServerLayerToMap(layer.name, layer.title, false);
+                  handleAddGeoServerLayerToMap(layer.name, layer.title, false); // Uses state URL
                 });
                 toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
               }
-              return discovered;
             }}
-            geoServerDiscoveredLayers={geoServerDiscoveredLayers}
-            setGeoServerDiscoveredLayers={setGeoServerDiscoveredLayers}
             isLoadingGeoServerLayers={isLoadingGeoServerLayers}
-            onAddGeoServerLayerToMap={handleAddGeoServerLayerToMap}
-            onAddGeoServerLayerAsWFS={handleAddGeoServerLayerAsWFS}
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}

@@ -42,14 +42,14 @@ export const useFloatingPanels = ({
   }), [attributesPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
-    layers: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
-    tools: { isMinimized: false, isCollapsed: false, position: { x: panelWidth + (panelPadding*2), y: panelPadding }, zIndex: initialZIndex },
-    legend: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 150 }, zIndex: initialZIndex },
+    layers: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
+    tools: { isMinimized: true, isCollapsed: false, position: { x: panelWidth + (panelPadding*2), y: panelPadding }, zIndex: initialZIndex },
+    legend: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex + 1 }, // Initially open
     attributes: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 300 }, zIndex: initialZIndex },
   });
 
   const activeDragRef = useRef<{ panelId: PanelId | null, offsetX: number, offsetY: number }>({ panelId: null, offsetX: 0, offsetY: 0 });
-  const zIndexCounterRef = useRef(initialZIndex);
+  const zIndexCounterRef = useRef(initialZIndex + 1);
   
   const bringToFront = useCallback((panelId: PanelId) => {
     zIndexCounterRef.current += 1;
@@ -128,9 +128,17 @@ export const useFloatingPanels = ({
   }, []);
 
   useEffect(() => {
+    const mm = (e: MouseEvent) => handleMouseMove(e);
+    const mu = (e: MouseEvent) => handleMouseUp();
+    
+    // Add event listeners with proper types
+    document.addEventListener('mousemove', mm);
+    document.addEventListener('mouseup', mu);
+    
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      // Clean up event listeners
+      document.removeEventListener('mousemove', mm);
+      document.removeEventListener('mouseup', mu);
     };
   }, [handleMouseMove, handleMouseUp]);
   

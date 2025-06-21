@@ -7,10 +7,9 @@ import BaseLayerSelector from '@/components/layer-manager/BaseLayerSelector';
 import LocationSearch, { type NominatimResult } from '@/components/location-search/LocationSearch';
 import MapCaptureControl from '@/components/map-tools/MapCaptureControl';
 import GeoServerUrlInput from '@/components/geoserver-connection/GeoServerUrlInput';
-import GeoServerLayerList from '@/components/geoserver-connection/GeoServerLayerList';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import type { BaseLayerOptionForSelect, GeoServerDiscoveredLayer } from '@/lib/types'; 
+import type { BaseLayerOptionForSelect } from '@/lib/types'; 
 import { Database, Search, ImageUp, Cloud, ImageOff, Loader2 } from 'lucide-react'; 
 
 interface LayersPanelProps {
@@ -31,12 +30,8 @@ interface LayersPanelProps {
 
   geoServerUrlInput: string;
   onGeoServerUrlChange: (url: string) => void;
-  onFetchGeoServerLayers: () => Promise<GeoServerDiscoveredLayer[]>; 
-  geoServerDiscoveredLayers: GeoServerDiscoveredLayer[];
-  setGeoServerDiscoveredLayers: React.Dispatch<React.SetStateAction<GeoServerDiscoveredLayer[]>>;
+  onFetchGeoServerLayers: () => void; 
   isLoadingGeoServerLayers: boolean;
-  onAddGeoServerLayerToMap: (layerName: string, layerTitle: string, isVisible?: boolean) => void;
-  onAddGeoServerLayerAsWFS: (layerName: string, layerTitle: string) => Promise<void>;
   
   onFindSentinel2Footprints: () => void;
   onClearSentinel2Footprints: () => void;
@@ -52,8 +47,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   onZoomToBoundingBox,
   captureMap, isCapturingMap,
   geoServerUrlInput, onGeoServerUrlChange, onFetchGeoServerLayers, 
-  geoServerDiscoveredLayers, setGeoServerDiscoveredLayers,
-  isLoadingGeoServerLayers, onAddGeoServerLayerToMap, onAddGeoServerLayerAsWFS,
+  isLoadingGeoServerLayers,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
   style, 
 }) => {
@@ -63,16 +57,6 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
     onZoomToBoundingBox([wLon, sLat, eLon, nLat]);
   };
   
-  const handleFetchGeoServer = async () => {
-    const discovered = await onFetchGeoServerLayers();
-    setGeoServerDiscoveredLayers(discovered);
-    if(discovered && discovered.length > 0) {
-        discovered.forEach(layer => {
-            onAddGeoServerLayerToMap(layer.name, layer.title, false);
-        });
-    }
-  };
-
   return (
     <DraggablePanel
       title="Datos"
@@ -115,19 +99,10 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
             <GeoServerUrlInput
                 geoServerUrlInput={geoServerUrlInput}
                 onGeoServerUrlChange={onGeoServerUrlChange}
-                onFetchGeoServerLayers={handleFetchGeoServer}
+                onFetchGeoServerLayers={onFetchGeoServerLayers}
                 isLoadingGeoServerLayers={isLoadingGeoServerLayers}
                 uniqueIdPrefix="layerspanel-geoserver"
             />
-            {geoServerDiscoveredLayers && geoServerDiscoveredLayers.length > 0 && (
-            <div className="mt-2">
-                <GeoServerLayerList
-                geoServerDiscoveredLayers={geoServerDiscoveredLayers}
-                onAddGeoServerLayerToMap={onAddGeoServerLayerToMap}
-                onAddGeoServerLayerAsWFS={onAddGeoServerLayerAsWFS}
-                />
-            </div>
-            )}
         </div>
         
         <Separator className="bg-white/15" />
