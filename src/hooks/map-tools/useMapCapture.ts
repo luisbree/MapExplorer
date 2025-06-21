@@ -7,13 +7,14 @@ import { useToast } from "@/hooks/use-toast";
 
 interface UseMapCaptureProps {
   mapRef: React.RefObject<Map | null>;
+  activeBaseLayerId: string;
 }
 
-export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
+export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps) => {
   const { toast } = useToast();
   const [isCapturing, setIsCapturing] = useState(false);
 
-  const captureMap = useCallback(async (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => {
+  const captureMap = useCallback((outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => {
     if (!mapRef.current) {
       toast({ description: 'El mapa no está listo para ser capturado.' });
       return;
@@ -23,17 +24,35 @@ export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
 
     const map = mapRef.current;
     
-    // Find the ESRI satellite layer
-    const esriLayer = map.getLayers().getArray().find(layer => 
-      layer.get('baseLayerId') === 'esri-satellite'
-    );
+    const allLayers = map.getLayers().getArray();
+    const esriLayer = allLayers.find(layer => layer.get('baseLayerId') === 'esri-satellite');
+    const currentActiveBaseLayer = allLayers.find(layer => layer.get('baseLayerId') === activeBaseLayerId);
 
-    if (!esriLayer || !esriLayer.getVisible()) {
-        toast({ description: 'La capa "ESRI Satelital" debe estar visible para la captura.' });
+    if (!esriLayer) {
+        toast({ description: 'No se encontró la capa base satelital de ESRI.' });
         setIsCapturing(false);
         return;
     }
 
+    const wasEsriVisible = esriLayer.getVisible();
+
+    const restoreOriginalState = () => {
+        if (!wasEsriVisible) {
+            esriLayer.setVisible(false);
+            if (currentActiveBaseLayer) {
+                currentActiveBaseLayer.setVisible(true);
+            }
+        }
+        setIsCapturing(false);
+    };
+
+    if (!wasEsriVisible) {
+        if (currentActiveBaseLayer) {
+            currentActiveBaseLayer.setVisible(false);
+        }
+        esriLayer.setVisible(true);
+    }
+    
     map.once('rendercomplete', () => {
       try {
         const mapCanvas = document.createElement('canvas');
@@ -89,18 +108,20 @@ export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
 
         toast({ description: 'Captura de mapa guardada exitosamente.' });
       } catch (error) {
         console.error('Error capturing map:', error);
         toast({ description: `Error al capturar el mapa: ${error instanceof Error ? error.message : String(error)}` });
       } finally {
-        setIsCapturing(false);
+        restoreOriginalState();
+        map.renderSync();
       }
     });
 
     map.renderSync();
-  }, [mapRef, toast]);
+  }, [mapRef, toast, activeBaseLayerId]);
 
   return {
     captureMap,

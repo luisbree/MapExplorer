@@ -214,7 +214,7 @@ export default function GeoMapperClient() {
     panelPadding: PANEL_PADDING,
   });
 
-  const { captureMap, isCapturing: isMapCapturing } = useMapCapture({ mapRef });
+  const { captureMap, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
 
   const zoomToBoundingBox = useCallback((bbox: [number, number, number, number]) => {
     if (!mapRef.current) return;
