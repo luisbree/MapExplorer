@@ -61,22 +61,64 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
         const selectedConfigs = osmCategoryConfigs.filter(c => selectedOSMCategoryIds.includes(c.id));
 
         const queryFragments = selectedConfigs.map(c => c.overpassQueryFragment(bboxStr)).join('');
-        // Correctly formatted query. `out geojson;` is the statement for GeoJSON output.
-        const overpassQuery = `[timeout:60];(${queryFragments});out geojson;`;
+        // Query for JSON output with geometries. This is not GeoJSON, but a custom format.
+        const overpassQuery = `[out:json][timeout:60];(${queryFragments});out geom;`;
         
         const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Overpass API error: ${response.status} ${errorText}`);
         }
-        const osmDataAsGeoJSON = await response.json();
+        const osmData = await response.json();
+
+        // Convert the Overpass custom JSON format to a standard GeoJSON FeatureCollection
+        const geojsonFeatures = osmData.elements.map((element: any) => {
+            if (!element.type) return null;
+
+            const properties = element.tags || {};
+            properties.osm_id = element.id;
+            properties.osm_type = element.type;
+            let geometry = null;
+
+            if (element.type === 'node' && element.lat !== undefined && element.lon !== undefined) {
+                geometry = {
+                    type: 'Point',
+                    coordinates: [element.lon, element.lat]
+                };
+            } else if (element.type === 'way' && element.geometry) {
+                const coordinates = element.geometry.map((node: { lat: number, lon: number }) => [node.lon, node.lat]);
+                if (coordinates.length >= 2) {
+                    const first = coordinates[0];
+                    const last = coordinates[coordinates.length - 1];
+                    if (coordinates.length >= 4 && first[0] === last[0] && first[1] === last[1]) {
+                        geometry = { type: 'Polygon', coordinates: [coordinates] };
+                    } else {
+                        geometry = { type: 'LineString', coordinates: coordinates };
+                    }
+                }
+            }
+            // Note: Relations are complex and are skipped in this conversion for simplicity.
+
+            if (!geometry) return null;
+
+            return {
+                type: 'Feature',
+                id: element.id,
+                properties,
+                geometry
+            };
+        }).filter(Boolean); // Remove any null elements
+
+        const osmDataAsGeoJSON = {
+            type: 'FeatureCollection',
+            features: geojsonFeatures
+        };
 
         const geojsonFormat = new GeoJSON({
             featureProjection: 'EPSG:3857',
             dataProjection: 'EPSG:4326'
         });
         
-        // Parse all features from the GeoJSON response
         const allFeatures = geojsonFormat.readFeatures(osmDataAsGeoJSON);
 
         // Separate features by category
