@@ -59,6 +59,34 @@ export const useFloatingPanels = ({
     }));
   }, []);
 
+  const handleMouseMove = useCallback((event: MouseEvent) => {
+    const { panelId, offsetX, offsetY } = activeDragRef.current;
+    if (!panelId) return;
+
+    const mapArea = mapAreaRef.current;
+    const panelRef = panelRefs[panelId].current;
+    if (!mapArea || !panelRef) return;
+
+    const mapRect = mapArea.getBoundingClientRect();
+    let newX = event.clientX - mapRect.left - offsetX;
+    let newY = event.clientY - mapRect.top - offsetY;
+
+    // Constrain to map area has been removed to allow free dragging
+    // newX = Math.max(0, Math.min(newX, mapRect.width - panelRef.offsetWidth));
+    // newY = Math.max(0, Math.min(newY, mapRect.height - panelRef.offsetHeight));
+
+    setPanels(prev => ({
+      ...prev,
+      [panelId]: { ...prev[panelId], position: { x: newX, y: newY } }
+    }));
+  }, [mapAreaRef, panelRefs]);
+
+  const handleMouseUp = useCallback(() => {
+    activeDragRef.current = { panelId: null, offsetX: 0, offsetY: 0 };
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+  
   const handlePanelMouseDown = useCallback((event: React.MouseEvent<HTMLDivElement>, panelId: PanelId) => {
     const panelRef = panelRefs[panelId].current;
     if (!panelRef) return;
@@ -75,36 +103,8 @@ export const useFloatingPanels = ({
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
     event.preventDefault();
-  }, [panelRefs, bringToFront]);
+  }, [panelRefs, bringToFront, handleMouseMove, handleMouseUp]);
 
-  const handleMouseMove = useCallback((event: MouseEvent) => {
-    const { panelId, offsetX, offsetY } = activeDragRef.current;
-    if (!panelId) return;
-
-    const mapArea = mapAreaRef.current;
-    const panelRef = panelRefs[panelId].current;
-    if (!mapArea || !panelRef) return;
-
-    const mapRect = mapArea.getBoundingClientRect();
-    let newX = event.clientX - mapRect.left - offsetX;
-    let newY = event.clientY - mapRect.top - offsetY;
-
-    // Constrain to map area
-    newX = Math.max(0, Math.min(newX, mapRect.width - panelRef.offsetWidth));
-    newY = Math.max(0, Math.min(newY, mapRect.height - panelRef.offsetHeight));
-
-    setPanels(prev => ({
-      ...prev,
-      [panelId]: { ...prev[panelId], position: { x: newX, y: newY } }
-    }));
-  }, [mapAreaRef, panelRefs]);
-
-  const handleMouseUp = useCallback(() => {
-    activeDragRef.current = { panelId: null, offsetX: 0, offsetY: 0 };
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  }, [handleMouseMove]);
-  
   const togglePanelCollapse = useCallback((panelId: PanelId) => {
     setPanels(prev => ({
       ...prev,
@@ -145,4 +145,3 @@ export const useFloatingPanels = ({
     togglePanelMinimize,
   };
 };
-
