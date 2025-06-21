@@ -235,6 +235,7 @@ export default function GeoMapperClient() {
 
   useEffect(() => {
     const fetchAndAddInitialGeoServerLayers = async () => {
+      if (!isMapReady) return; // Ensure map is ready before fetching
       const discovered = await handleFetchGeoServerLayers();
       setGeoServerDiscoveredLayers(discovered);
       if (discovered && discovered.length > 0) {
@@ -250,7 +251,7 @@ export default function GeoMapperClient() {
     };
     fetchAndAddInitialGeoServerLayers(); 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Keep dependencies minimal for on-mount fetch, hook functions are stable
+  }, [isMapReady]); // Rerun when map is ready
 
 
   return (
@@ -401,9 +402,3 @@ export default function GeoMapperClient() {
     </div>
   );
 }
-
-    
-
-    
-
-    
