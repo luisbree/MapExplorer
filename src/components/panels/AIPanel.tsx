@@ -78,11 +78,14 @@ const AIPanel: React.FC<AIPanelProps> = ({
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.response };
       setMessages(prev => [...prev, assistantMessage]);
 
+      // Check for any possible action and trigger it
       if (
         (result?.layersToAdd && result.layersToAdd.length > 0) || 
+        (result?.layersToAddAsWFS && result.layersToAddAsWFS.length > 0) || 
         (result?.layersToRemove && result.layersToRemove.length > 0) || 
         (result?.layersToStyle && result.layersToStyle.length > 0) ||
-        result?.zoomToLayer
+        result?.zoomToLayer ||
+        result?.showTableForLayer
       ) {
         onLayerAction(result);
       }
