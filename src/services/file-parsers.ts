@@ -102,14 +102,24 @@ export const handleFileUpload = async ({
     };
 
     if (selectedFile) {
+        const fileExtension = getFileExtension(selectedFile.name);
+        if (['shp', 'dbf', 'shx', 'prj'].includes(fileExtension)) {
+            toast({
+                title: "Shapefile Incompleto",
+                description: "Para un Shapefile, suba un .zip o seleccione todos sus archivos componentes a la vez.",
+                variant: 'destructive',
+            });
+            return;
+        }
+
         try {
             await processFile(selectedFile);
         } catch (error: any) {
             console.error("Error processing file:", error);
-            toast({ description: `Error al procesar ${selectedFile.name}: ${error.message}` });
+            toast({ description: `Error al procesar ${selectedFile.name}: ${error.message}`, variant: 'destructive' });
         }
     } else if (selectedMultipleFiles) {
-        // Handle Shapefile components
+        // Handle Shapefile components by zipping them on the fly
         const files = Array.from(selectedMultipleFiles);
         const shpFile = files.find(f => getFileExtension(f.name) === 'shp');
         const dbfFile = files.find(f => getFileExtension(f.name) === 'dbf');
@@ -118,13 +128,14 @@ export const handleFileUpload = async ({
             const zip = new JSZip();
             files.forEach(file => zip.file(file.name, file));
             const zipBlob = await zip.generateAsync({ type: 'blob' });
-            const zipFile = new File([zipBlob], 'shapefile.zip');
+            // Use a specific name for the created zip to identify it in processFile
+            const zipFile = new File([zipBlob], 'shapefile-components.zip');
 
             try {
                 await processFile(zipFile);
             } catch (error: any) {
                 console.error("Error processing shapefile components:", error);
-                toast({ description: `Error al procesar shapefile: ${error.message}` });
+                toast({ description: `Error al procesar shapefile: ${error.message}`, variant: 'destructive' });
             }
         } else {
              for (const file of files) {
@@ -132,7 +143,7 @@ export const handleFileUpload = async ({
                     await processFile(file);
                 } catch (error: any) {
                     console.error(`Error processing file ${file.name}:`, error);
-                    toast({ description: `Error al procesar ${file.name}: ${error.message}` });
+                    toast({ description: `Error al procesar ${file.name}: ${error.message}`, variant: 'destructive' });
                 }
             }
         }
