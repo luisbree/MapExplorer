@@ -43,9 +43,6 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
   style,
 }) => {
 
-  const userLayers = layers.filter(l => !l.isDeas);
-  const deasLayers = layers.filter(l => l.isDeas);
-
   return (
     <DraggablePanel
       title="Capas"
@@ -70,7 +67,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
         </div>
         <Separator className="bg-white/10" /> 
         <LayerList
-          layers={userLayers}
+          layers={layers}
           onToggleVisibility={onToggleLayerVisibility}
           onZoomToExtent={onZoomToLayerExtent}
           onShowTable={onShowLayerTable}
@@ -79,32 +76,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
           onSetLayerOpacity={onSetLayerOpacity}
           onReorderLayers={onReorderLayers}
-          isDraggable={true}
         />
-        <Separator className="bg-white/15 mt-3" />
-        <div>
-          <h3 className="text-xs font-semibold text-white/90 mb-1.5 mt-2 flex items-center">
-            <Library className="h-3.5 w-3.5 mr-1.5 text-primary/80" /> 
-            DEAS
-          </h3>
-           {deasLayers.length > 0 ? (
-            <LayerList
-              layers={deasLayers}
-              onToggleVisibility={onToggleLayerVisibility}
-              onZoomToExtent={onZoomToLayerExtent}
-              onShowTable={onShowLayerTable}
-              onRemoveLayer={onRemoveLayer}
-              onExtractByPolygon={onExtractByPolygon}
-              isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
-              onSetLayerOpacity={onSetLayerOpacity}
-              isDraggable={false}
-            />
-          ) : (
-            <p className="text-xs text-gray-400/70 mt-1">
-              Las capas de GeoServer (WMS) aparecerán aquí.
-            </p>
-          )}
-        </div>
       </div>
     </DraggablePanel>
   );

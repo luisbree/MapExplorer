@@ -71,8 +71,19 @@ export const useLayerManager = ({
   const addLayer = useCallback((newLayer: MapLayer) => {
     if (!mapRef.current) return;
     mapRef.current.addLayer(newLayer.olLayer);
-    // Add to the start of the list so it appears at the top in the UI.
-    setLayers(prev => [newLayer, ...prev]);
+    
+    setLayers(prev => {
+        // New user layers go to the top of the user layer section.
+        // DEAS layers go to the bottom of the list.
+        if (newLayer.isDeas) {
+            return [...prev, newLayer];
+        } else {
+            const deasLayers = prev.filter(l => l.isDeas);
+            const userLayers = prev.filter(l => !l.isDeas);
+            return [newLayer, ...userLayers, ...deasLayers];
+        }
+    });
+
   }, [mapRef]);
 
   const removeLayer = useCallback((layerId: string) => {
@@ -91,31 +102,43 @@ export const useLayerManager = ({
 
   const reorderLayers = useCallback((startIndex: number, endIndex: number) => {
       setLayers(prevLayers => {
-        const userLayers = prevLayers.filter(l => !l.isDeas);
-        const deasLayers = prevLayers.filter(l => l.isDeas);
+          // Prevent reordering DEAS layers or dropping onto them.
+          // This assumes that all user layers appear before all DEAS layers in the array.
+          if (prevLayers[startIndex].isDeas || prevLayers[endIndex].isDeas) {
+              return prevLayers;
+          }
 
-        const [movedItem] = userLayers.splice(startIndex, 1);
-        userLayers.splice(endIndex, 0, movedItem);
-
-        return [...userLayers, ...deasLayers];
+          const result = Array.from(prevLayers);
+          const [removed] = result.splice(startIndex, 1);
+          result.splice(endIndex, 0, removed);
+          
+          return result;
       });
       toast({ description: 'Orden de capas actualizado.' });
   }, [toast]);
   
   const toggleLayerVisibility = useCallback((layerId: string) => {
-    setLayers(prev => prev.map(l => {
-      if (l.id === layerId) {
-        const newVisibility = !l.visible;
-        l.olLayer.setVisible(newVisibility);
-        
-        if (l.isDeas && newVisibility) {
-          return { ...l, visible: newVisibility, isDeas: false };
-        }
-        
-        return { ...l, visible: newVisibility };
-      }
-      return l;
-    }));
+    setLayers(prev => {
+        const newLayers = prev.map(l => {
+            if (l.id === layerId) {
+                const newVisibility = !l.visible;
+                l.olLayer.setVisible(newVisibility);
+                
+                // If a DEAS layer is made visible, it becomes a user layer
+                if (l.isDeas && newVisibility) {
+                    return { ...l, visible: newVisibility, isDeas: false };
+                }
+                
+                return { ...l, visible: newVisibility };
+            }
+            return l;
+        });
+
+        // Re-sort the array so that user layers are always first
+        const userLayers = newLayers.filter(l => !l.isDeas);
+        const deasLayers = newLayers.filter(l => l.isDeas);
+        return [...userLayers, ...deasLayers];
+    });
   }, []);
 
   const setLayerOpacity = useCallback((layerId: string, opacity: number) => {

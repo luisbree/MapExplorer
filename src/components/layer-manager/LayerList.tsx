@@ -16,7 +16,6 @@ interface LayerListProps {
   isDrawingSourceEmptyOrNotPolygon: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
   onReorderLayers?: (startIndex: number, endIndex: number) => void;
-  isDraggable?: boolean;
 }
 
 const LayerList: React.FC<LayerListProps> = ({
@@ -29,18 +28,27 @@ const LayerList: React.FC<LayerListProps> = ({
   isDrawingSourceEmptyOrNotPolygon,
   onSetLayerOpacity,
   onReorderLayers,
-  isDraggable = false,
 }) => {
   const dragItemIndex = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent<HTMLLIElement>, index: number) => {
+      // Prevent dragging DEAS layers
+      if (layers[index].isDeas) {
+          e.preventDefault();
+          return;
+      }
       dragItemIndex.current = index;
       e.dataTransfer.effectAllowed = 'move';
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLLIElement>, index: number) => {
       e.preventDefault();
+       // Prevent showing drop indicator over DEAS layers
+      if (layers[index].isDeas) {
+          setDragOverIndex(null);
+          return;
+      }
       setDragOverIndex(index);
   };
   
@@ -52,6 +60,14 @@ const LayerList: React.FC<LayerListProps> = ({
   const handleDrop = (e: React.DragEvent<HTMLLIElement>, dropIndex: number) => {
       e.preventDefault();
       if (dragItemIndex.current === null) return;
+      
+      // Prevent dropping on DEAS layers
+      if (layers[dropIndex].isDeas) {
+          dragItemIndex.current = null;
+          setDragOverIndex(null);
+          return;
+      }
+      
       if (dragItemIndex.current !== dropIndex && onReorderLayers) {
           onReorderLayers(dragItemIndex.current, dropIndex);
       }
@@ -70,7 +86,7 @@ const LayerList: React.FC<LayerListProps> = ({
       <div className="text-center py-6 px-3">
         <Layers className="mx-auto h-10 w-10 text-gray-400/40" />
         <p className="mt-1.5 text-xs text-gray-300/90">No hay capas cargadas.</p>
-        <p className="text-xs text-gray-400/70">Use el botón \"Importar\" para añadir.</p>
+        <p className="text-xs text-gray-400/70">Use el botón "Importar" para añadir.</p>
       </div>
     );
   }
@@ -88,7 +104,7 @@ const LayerList: React.FC<LayerListProps> = ({
           onExtractByPolygon={onExtractByPolygon}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
           onSetLayerOpacity={onSetLayerOpacity}
-          isDraggable={isDraggable}
+          isDraggable={!layer.isDeas}
           onDragStart={(e) => handleDragStart(e, index)}
           onDragEnter={(e) => handleDragEnter(e, index)}
           onDragLeave={handleDragLeave}

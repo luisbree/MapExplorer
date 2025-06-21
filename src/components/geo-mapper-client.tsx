@@ -324,19 +324,12 @@ export default function GeoMapperClient() {
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground">
-      <header className="bg-gray-800/60 backdrop-blur-md text-white p-2 shadow-md flex items-center">
-        <MapPin className="mr-2 h-6 w-6 text-primary" />
-        <h1 className="text-xl font-semibold">Departamento de Estudios Ambientales y Sociales</h1>
-      </header>
-      <div ref={mapAreaRef} className="relative flex-1 overflow-visible">
-        <MapView
-          setMapInstanceAndElement={setMapInstanceAndElement}
-          activeBaseLayerId={activeBaseLayerId}
-        />
-
-        <WfsLoadingIndicator isVisible={isWfsLoading} />
-        
-        <div className="absolute top-2 right-2 z-20 flex flex-row space-x-1">
+      <header className="bg-gray-800/60 backdrop-blur-md text-white p-2 shadow-md flex items-center justify-between z-30">
+        <div className="flex items-center">
+          <MapPin className="mr-2 h-6 w-6 text-primary" />
+          <h1 className="text-xl font-semibold">Departamento de Estudios Ambientales y Sociales</h1>
+        </div>
+        <div className="flex flex-row space-x-1">
           <TooltipProvider delayDuration={200}>
             {panelToggleConfigs.map((panelConfig) => {
               const panelState = panels[panelConfig.id as keyof typeof panels];
@@ -372,6 +365,14 @@ export default function GeoMapperClient() {
             })}
           </TooltipProvider>
         </div>
+      </header>
+      <div ref={mapAreaRef} className="relative flex-1 overflow-visible">
+        <MapView
+          setMapInstanceAndElement={setMapInstanceAndElement}
+          activeBaseLayerId={activeBaseLayerId}
+        />
+
+        <WfsLoadingIndicator isVisible={isWfsLoading} />
 
         {panels.layers && !panels.layers.isMinimized && (
           <LayersPanel
