@@ -160,30 +160,36 @@ export const useLayerManager = ({
 
     const olLayer = layer.olLayer as VectorLayer<any>;
     const existingStyle = olLayer.getStyle();
-    let originalStyle: Style;
+    let baseStyle: Style;
 
-    if (typeof existingStyle === 'function') {
-        toast({ description: "No se puede modificar una capa con estilo dinámico."});
-        return;
-    } else if (Array.isArray(existingStyle)) {
-        originalStyle = existingStyle[0].clone();
-    } else if (existingStyle instanceof Style) {
-        originalStyle = existingStyle.clone();
+    // If there is an existing style object (not a function), clone it.
+    // Otherwise, create a new default style. This effectively replaces style functions.
+    if (existingStyle instanceof Style) {
+        baseStyle = existingStyle.clone();
+    } else if (Array.isArray(existingStyle) && existingStyle.length > 0 && existingStyle[0] instanceof Style) {
+        baseStyle = existingStyle[0].clone();
     } else {
-        originalStyle = new Style({
-            stroke: new Stroke({ color: '#FFD700', width: 2 }), // gold
-            fill: new Fill({ color: 'rgba(255, 215, 0, 0.2)' }),
+        // This will be the case for layers with no style or a style function.
+        // We create a new default style to be modified.
+        baseStyle = new Style({
+            stroke: new Stroke({ color: '#3399CC', width: 2 }), // Default blue-ish stroke
+            fill: new Fill({ color: 'rgba(51, 153, 204, 0.2)' }), // Default blue-ish fill
             image: new CircleStyle({
                 radius: 5,
-                fill: new Fill({ color: 'rgba(255, 215, 0, 0.2)' }),
-                stroke: new Stroke({ color: '#FFD700', width: 2 })
+                fill: new Fill({ color: 'rgba(51, 153, 204, 0.2)' }),
+                stroke: new Stroke({ color: '#3399CC', width: 1 })
             })
         });
     }
 
-    const stroke = originalStyle.getStroke() ?? new Stroke();
-    const fill = originalStyle.getFill() ?? new Fill();
-    const image = originalStyle.getImage() ?? new CircleStyle({ radius: 5, fill: new Fill() });
+    const stroke = baseStyle.getStroke() ?? new Stroke();
+    const fill = baseStyle.getFill() ?? new Fill();
+    // For point geometries, we need to handle the image style
+    const image = baseStyle.getImage() instanceof CircleStyle ? baseStyle.getImage().clone() as CircleStyle : new CircleStyle({
+        radius: 5,
+        fill: new Fill({ color: 'rgba(51, 153, 204, 0.2)' }),
+        stroke: new Stroke({ color: '#3399CC', width: 1 })
+    });
     
     let styleChanged = false;
 
@@ -192,7 +198,7 @@ export const useLayerManager = ({
         if (colorHex) {
             styleChanged = true;
             stroke.setColor(colorHex);
-            if (image instanceof CircleStyle && image.getStroke()) {
+            if (image.getStroke()) {
                 image.getStroke().setColor(colorHex);
             }
         } else {
@@ -205,9 +211,9 @@ export const useLayerManager = ({
         if (colorHex) {
             styleChanged = true;
             const olColor = asOlColorArray(colorHex);
-            const fillColorRgba = [...olColor.slice(0, 3), 0.4] as [number, number, number, number];
+            const fillColorRgba = [...olColor.slice(0, 3), 0.6] as [number, number, number, number];
             fill.setColor(fillColorRgba);
-            if (image instanceof CircleStyle && image.getFill()) {
+            if (image.getFill()) {
                 image.getFill().setColor(fillColorRgba);
             }
         } else {
@@ -219,8 +225,8 @@ export const useLayerManager = ({
     if (styleOptions.lineWidth) {
         styleChanged = true;
         stroke.setWidth(styleOptions.lineWidth);
-        if (image instanceof CircleStyle && image.getStroke()) {
-            image.getStroke().setWidth(styleOptions.lineWidth / 2 || 1);
+        if (image.getStroke()) {
+            image.getStroke().setWidth(styleOptions.lineWidth > 3 ? styleOptions.lineWidth / 2 : 1.5);
         }
     }
 
