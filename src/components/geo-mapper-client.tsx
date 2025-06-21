@@ -121,8 +121,6 @@ export default function GeoMapperClient() {
 
   const featureInspectionHook = useFeatureInspection({
     mapRef, mapElementRef, isMapReady, drawingSourceRef, drawingLayerRef,
-    activeDrawTool: null, 
-    stopDrawingTool: () => {}, 
   });
 
   const [isWfsLoading, setIsWfsLoading] = useState(false);
@@ -156,20 +154,16 @@ export default function GeoMapperClient() {
   useEffect(() => {
     const loadInitialLayers = async () => {
       const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
-      // Do not set the URL in the input. Keep it clean for the user.
-      // setGeoServerUrlInput(initialUrl);
       try {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
           discovered.forEach(layer => {
-            // Make 'cuencas_light' visible by default
             const isVisible = layer.name === 'cuencas_light';
-            handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl);
+            handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl, layer.bbox);
           });
           toast({ description: `${discovered.length} capas de GeoServer cargadas en segundo plano.` });
         }
       } catch (error) {
-        // The hook itself will show a toast on failure
         console.error("Failed to load initial GeoServer layers:", error);
       }
     };
@@ -319,7 +313,7 @@ export default function GeoMapperClient() {
               const discovered = await handleFetchGeoServerLayers(); // Uses state URL from input
               if(discovered && discovered.length > 0) {
                 discovered.forEach(layer => {
-                  handleAddGeoServerLayerToMap(layer.name, layer.title, false); // Uses state URL
+                  handleAddGeoServerLayerToMap(layer.name, layer.title, false, undefined, layer.bbox); 
                 });
                 toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
               }

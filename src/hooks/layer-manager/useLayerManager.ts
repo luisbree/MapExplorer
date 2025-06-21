@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -11,6 +12,7 @@ import { findSentinel2Footprints as fetchSentinelFootprints } from '@/services/s
 import type { MapLayer, VectorMapLayer } from '@/lib/types';
 import { nanoid } from 'nanoid';
 import { Style, Stroke, Fill } from 'ol/style';
+import { transformExtent } from 'ol/proj';
 
 interface UseLayerManagerProps {
   mapRef: React.RefObject<Map | null>;
@@ -58,7 +60,6 @@ export const useLayerManager = ({
         const newVisibility = !l.visible;
         l.olLayer.setVisible(newVisibility);
         
-        // If a DEAS layer is being turned on, move it to the main user layers section
         if (l.isDeas && newVisibility) {
           return { ...l, visible: newVisibility, isDeas: false };
         }
@@ -82,9 +83,9 @@ export const useLayerManager = ({
   const zoomToLayerExtent = useCallback((layerId: string) => {
     if (!mapRef.current) return;
     const layer = layers.find(l => l.id === layerId);
+    if (!layer) return;
     
-    // Check if it's a vector layer with features
-    if (layer && layer.olLayer instanceof VectorLayer) {
+    if (layer.olLayer instanceof VectorLayer) {
         const source = layer.olLayer.getSource();
         if (source && source.getFeatures().length > 0) {
             const extent = source.getExtent();
@@ -95,6 +96,23 @@ export const useLayerManager = ({
             });
         } else {
             toast({ description: "La capa no tiene entidades para hacer zoom." });
+        }
+    } else if (layer.olLayer.get('bbox')) { // Check for WMS layers with a bbox
+        const bbox4326: [number, number, number, number] = layer.olLayer.get('bbox');
+        try {
+            const extent3857 = transformExtent(bbox4326, 'EPSG:4326', 'EPSG:3857');
+            if (extent3857 && extent3857.every(isFinite) && (extent3857[2] - extent3857[0] > 0) && (extent3857[3] - extent3857[1] > 0)) {
+                mapRef.current.getView().fit(extent3857, {
+                    padding: [50, 50, 50, 50],
+                    duration: 1000,
+                    maxZoom: 16
+                });
+            } else {
+                toast({ description: 'La extensión de la capa WMS no es válida.' });
+            }
+        } catch (e) {
+            console.error('Error transforming WMS extent:', e);
+            toast({ description: 'Error al calcular la extensión de la capa WMS.' });
         }
     } else {
         toast({ description: "No se puede hacer zoom a la extensión de este tipo de capa." });

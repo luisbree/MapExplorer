@@ -56,11 +56,38 @@ export const useGeoServerLayers = ({
       }
       const layerNodes = Array.from(xml.querySelectorAll('Layer[queryable="1"]'));
 
-      const discoveredLayers = layerNodes.map(node => {
+      const discoveredLayers: GeoServerDiscoveredLayer[] = layerNodes.map(node => {
           const name = node.querySelector('Name')?.textContent ?? '';
           const title = node.querySelector('Title')?.textContent ?? name;
-          return { name, title, wmsAddedToMap: false, wfsAddedToMap: false };
-      }).filter(l => l.name); // Filter out layers without a name
+          
+          // Look for CRS:84 (lon/lat) first as it's unambiguous
+          let bboxNode = node.querySelector('BoundingBox[CRS="CRS:84"]');
+          let bbox: [number, number, number, number] | undefined = undefined;
+
+          if (bboxNode) {
+              const minx = parseFloat(bboxNode.getAttribute('minx') || '0');
+              const miny = parseFloat(bboxNode.getAttribute('miny') || '0');
+              const maxx = parseFloat(bboxNode.getAttribute('maxx') || '0');
+              const maxy = parseFloat(bboxNode.getAttribute('maxy') || '0');
+              if (!isNaN(minx) && !isNaN(miny) && !isNaN(maxx) && !isNaN(maxy)) {
+                bbox = [minx, miny, maxx, maxy]; // lon, lat order
+              }
+          } else {
+              // Fallback to EPSG:4326, assuming WMS 1.3.0 (lat/lon axis order)
+              bboxNode = node.querySelector('BoundingBox[CRS="EPSG:4326"]');
+              if (bboxNode) {
+                  const minx_lat = parseFloat(bboxNode.getAttribute('minx') || '0');
+                  const miny_lon = parseFloat(bboxNode.getAttribute('miny') || '0');
+                  const maxx_lat = parseFloat(bboxNode.getAttribute('maxx') || '0');
+                  const maxy_lon = parseFloat(bboxNode.getAttribute('maxy') || '0');
+                  if (!isNaN(minx_lat) && !isNaN(miny_lon) && !isNaN(maxx_lat) && !isNaN(maxy_lon)) {
+                    bbox = [miny_lon, minx_lat, maxy_lon, maxx_lat]; // reorder to lon, lat
+                  }
+              }
+          }
+          
+          return { name, title, bbox, wmsAddedToMap: false, wfsAddedToMap: false };
+      }).filter(l => l.name);
 
       if (!urlOverride && discoveredLayers.length > 0) {
         toast({ description: `${discoveredLayers.length} capas encontradas en GeoServer.` });
@@ -78,7 +105,7 @@ export const useGeoServerLayers = ({
     }
   }, [geoServerUrlInput, toast]);
 
-  const handleAddGeoServerLayerToMap = useCallback((layerName: string, layerTitle: string, isVisible: boolean = true, urlOverride?: string) => {
+  const handleAddGeoServerLayerToMap = useCallback((layerName: string, layerTitle: string, isVisible: boolean = true, urlOverride?: string, bbox?: [number, number, number, number]) => {
     const urlToUse = urlOverride || geoServerUrlInput;
     if (!isMapReady || !mapRef.current || !urlToUse) return;
 
@@ -97,7 +124,8 @@ export const useGeoServerLayers = ({
         id: `wms-${layerName}-${nanoid()}`,
         name: layerTitle || layerName,
         type: 'wms',
-        gsLayerName: layerName
+        gsLayerName: layerName,
+        bbox: bbox,
       }
     });
 
@@ -108,7 +136,7 @@ export const useGeoServerLayers = ({
       visible: isVisible,
       opacity: 1,
       type: 'wms',
-      isDeas: true,
+      isDeas: !isVisible,
     });
     
     onLayerStateUpdate(layerName, true, 'wms');

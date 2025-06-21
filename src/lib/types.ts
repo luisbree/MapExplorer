@@ -32,6 +32,7 @@ export interface OSMCategoryConfig {
 export interface GeoServerDiscoveredLayer {
   name: string;
   title: string;
+  bbox?: [number, number, number, number]; // [minLon, minLat, maxLon, maxLat]
   wmsAddedToMap: boolean;
   wfsAddedToMap: boolean;
 }
