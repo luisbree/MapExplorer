@@ -303,7 +303,8 @@ export default function GeoMapperClient() {
             });
             if (layerToStyle) {
                 layerManagerHook.changeLayerStyle(layerToStyle.id, {
-                    color: styleRequest.color,
+                    strokeColor: styleRequest.strokeColor,
+                    fillColor: styleRequest.fillColor,
                     lineStyle: styleRequest.lineStyle,
                     lineWidth: styleRequest.lineWidth
                 });

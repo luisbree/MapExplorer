@@ -151,7 +151,7 @@ export const useLayerManager = ({
     }));
   }, []);
 
-  const changeLayerStyle = useCallback((layerId: string, styleOptions: { color?: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; lineWidth?: number }) => {
+  const changeLayerStyle = useCallback((layerId: string, styleOptions: { strokeColor?: string; fillColor?: string; lineStyle?: 'solid' | 'dashed' | 'dotted'; lineWidth?: number }) => {
     const layer = layers.find(l => l.id === layerId);
     if (!layer || !(layer.olLayer instanceof VectorLayer)) {
         toast({ description: "Solo se puede cambiar el estilo de capas vectoriales." });
@@ -187,24 +187,41 @@ export const useLayerManager = ({
     
     let styleChanged = false;
 
-    if (styleOptions.color) {
-        const colorHex = colorMap[styleOptions.color.toLowerCase()];
+    if (styleOptions.strokeColor) {
+        const colorHex = colorMap[styleOptions.strokeColor.toLowerCase()];
+        if (colorHex) {
+            styleChanged = true;
+            stroke.setColor(colorHex);
+            if (image instanceof CircleStyle && image.getStroke()) {
+                image.getStroke().setColor(colorHex);
+            }
+        } else {
+            toast({ description: `Color de borde "${styleOptions.strokeColor}" no reconocido.` });
+        }
+    }
+
+    if (styleOptions.fillColor) {
+        const colorHex = colorMap[styleOptions.fillColor.toLowerCase()];
         if (colorHex) {
             styleChanged = true;
             const olColor = asOlColorArray(colorHex);
-            stroke.setColor(olColor);
-            fill.setColor([...olColor.slice(0, 3), 0.4] as [number, number, number, number]);
-            if (image instanceof CircleStyle && image.getStroke()) image.getStroke().setColor(olColor);
-            if (image instanceof CircleStyle && image.getFill()) image.getFill().setColor([...olColor.slice(0, 3), 0.4] as [number, number, number, number]);
+            const fillColorRgba = [...olColor.slice(0, 3), 0.4] as [number, number, number, number];
+            fill.setColor(fillColorRgba);
+            if (image instanceof CircleStyle && image.getFill()) {
+                image.getFill().setColor(fillColorRgba);
+            }
         } else {
-            toast({ description: `Color "${styleOptions.color}" no reconocido.` });
+            toast({ description: `Color de relleno "${styleOptions.fillColor}" no reconocido.` });
         }
     }
+
 
     if (styleOptions.lineWidth) {
         styleChanged = true;
         stroke.setWidth(styleOptions.lineWidth);
-        if (image instanceof CircleStyle && image.getStroke()) image.getStroke().setWidth(styleOptions.lineWidth / 2 || 1);
+        if (image instanceof CircleStyle && image.getStroke()) {
+            image.getStroke().setWidth(styleOptions.lineWidth / 2 || 1);
+        }
     }
 
     if (styleOptions.lineStyle) {

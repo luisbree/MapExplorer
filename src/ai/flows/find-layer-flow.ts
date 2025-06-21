@@ -36,9 +36,10 @@ const MapAssistantOutputSchema = z.object({
   zoomToLayer: z.string().describe("The machine-readable name of an active layer to zoom to.").optional(),
   layersToStyle: z.array(z.object({
     layerName: z.string().describe("The machine-readable name of the layer to style."),
-    color: z.string().describe("The requested color in Spanish, e.g., 'rojo', 'verde', 'azul'.").optional(),
+    strokeColor: z.string().describe("The requested stroke/outline color in Spanish, e.g., 'rojo', 'verde'.").optional(),
+    fillColor: z.string().describe("The requested fill color in Spanish, e.g., 'azul', 'amarillo'.").optional(),
     lineStyle: z.enum(['solid', 'dashed', 'dotted']).describe("The requested line style. Use 'solid' for solid lines, 'dashed' for dashed lines, 'dotted' for dotted lines.").optional(),
-    lineWidth: z.number().describe("The requested line width in pixels, e.g., 2 for normal, 5 for thick.").optional(),
+    lineWidth: z.number().describe("The requested line width in pixels. Affects the stroke/outline width.").optional(),
   })).describe("A list of layers to change the style of.").optional(),
   showTableForLayer: z.string().describe("The machine-readable name of an active layer to show its attribute table.").optional(),
 });
@@ -77,11 +78,15 @@ Analyze the user's message and the provided lists of layers to decide which acti
 - TO ZOOM: If the user asks to zoom, focus on, or go to a layer, find the single best matching layer from the 'Active Layers' list.
   - If you find a match, formulate a response confirming the zoom and set the 'zoomToLayer' field to the exact 'name' of that layer.
 
-- TO CHANGE STYLE: If the user asks to change the color, line style, or line width of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta las rutas con línea de puntos", "haz las rutas más gruesas"), identify the target layer(s) from the 'Active Layers' list and the requested style changes.
+- TO CHANGE STYLE: If the user asks to change the style of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta el relleno de las parcelas de amarillo", "pon el borde de las rutas más grueso y de color azul"), identify the target layer(s) from the 'Active Layers' list and the requested style changes.
+  - You can change stroke color (\`strokeColor\`), fill color (\`fillColor\`), line style (\`lineStyle\`), and line width (\`lineWidth\`).
+  - For polygons, "color de relleno" or "relleno" refers to \`fillColor\`. "Color de borde" or "borde" or "contorno" refers to \`strokeColor\`.
+  - For lines, any color request refers to \`strokeColor\`.
+  - If the user just says "color" or "pinta de..." for a polygon, you must apply the color to BOTH \`strokeColor\` and \`fillColor\` to change the whole feature's appearance.
   - IMPORTANT: You can only change the style of layers with type 'wfs', 'vector', or 'osm'. If the user asks to style a 'wms' layer, you must politely inform them that it is not possible and do not populate the 'layersToStyle' field. For example: "Lo siento, no puedo cambiar el estilo de la capa 'Cuencas' porque es una capa de tipo imagen (WMS)."
   - For line style, use 'solid' for solid lines, 'dashed' (for 'punteada', 'discontinua', 'a trazos'), or 'dotted' (for 'de puntos').
-  - For line width, interpret phrases like 'más gruesa' as a larger number (e.g., 5) and 'más fina' as a smaller number (e.g., 1). A normal width is 2 or 3. If a specific number is given, use it.
-  - If you find a stylable match, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object must contain the 'layerName' and at least one style property: 'color', 'lineStyle', or 'lineWidth'.
+  - For line width, interpret phrases like 'más gruesa' as a larger number (e.g., 5) and 'más fina' as a smaller number (e.g., 1). A normal width is 2 or 3. If a specific number is given, use it. This affects the stroke/outline width.
+  - If you find a stylable match, formulate a response confirming the action and populate the 'layersToStyle' field with an array of objects. Each object must contain the 'layerName' and at least one style property.
 
 - TO SHOW ATTRIBUTE TABLE: If the user asks to see the attributes, data, or table of a layer (e.g., "muéstrame los datos de las cuencas", "abrir tabla de atributos para rutas"), find the best matching layer from the 'Active Layers' list.
   - IMPORTANT: You can only show attributes for layers with type 'wfs', 'vector', or 'osm'. If the user asks to see the table for a 'wms' layer, you must politely inform them that it is not possible. For example: "Lo siento, no puedo mostrar los atributos de la capa 'Cuencas' porque es una capa de tipo imagen (WMS)."
