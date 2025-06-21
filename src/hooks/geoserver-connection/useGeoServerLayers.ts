@@ -28,7 +28,7 @@ export const useGeoServerLayers = ({
   setIsWfsLoading
 }: UseGeoServerLayersProps) => {
   const { toast } = useToast();
-  const [geoServerUrlInput, setGeoServerUrlInput] = useState('http://localhost:8080/geoserver');
+  const [geoServerUrlInput, setGeoServerUrlInput] = useState('https://www.minfra.gba.gob.ar/ambientales/geoserver');
   const [isLoadingGeoServerLayers, setIsLoadingGeoServerLayers] = useState(false);
 
   const handleFetchGeoServerLayers = useCallback(async (): Promise<GeoServerDiscoveredLayer[]> => {
@@ -177,4 +177,3 @@ export const useGeoServerLayers = ({
     handleAddGeoServerLayerAsWFS,
   };
 };
-

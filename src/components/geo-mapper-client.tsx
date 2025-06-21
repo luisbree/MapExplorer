@@ -248,7 +248,7 @@ export default function GeoMapperClient() {
         toast({ description: "No se encontraron capas en GeoServer para cargar automáticamente." });
       }
     };
-    // fetchAndAddInitialGeoServerLayers();
+    fetchAndAddInitialGeoServerLayers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Keep dependencies minimal for on-mount fetch, hook functions are stable
 
