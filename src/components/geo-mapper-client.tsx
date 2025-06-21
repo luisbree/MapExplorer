@@ -248,7 +248,7 @@ export default function GeoMapperClient() {
         toast({ description: "No se encontraron capas en GeoServer para cargar automáticamente." });
       }
     };
-    fetchAndAddInitialGeoServerLayers();
+    // fetchAndAddInitialGeoServerLayers(); // Deactivated to avoid localhost errors on startup
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Keep dependencies minimal for on-mount fetch, hook functions are stable
 
@@ -259,7 +259,7 @@ export default function GeoMapperClient() {
         <MapPin className="mr-2 h-6 w-6 text-primary" />
         <h1 className="text-xl font-semibold">Departamento de Estudios Ambientales y Sociales</h1>
       </header>
-      <div ref={mapAreaRef} className="relative flex-1 overflow-hidden">
+      <div ref={mapAreaRef} className="relative flex-1">
         <MapView
           setMapInstanceAndElement={setMapInstanceAndElement}
           activeBaseLayerId={activeBaseLayerId}
