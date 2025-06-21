@@ -233,26 +233,6 @@ export default function GeoMapperClient() {
     } 
   }, [featureInspectionHook.selectedFeatureAttributes, panels.attributes, togglePanelMinimize]);
 
-  useEffect(() => {
-    const fetchAndAddInitialGeoServerLayers = async () => {
-      if (!isMapReady) return; // Ensure map is ready before fetching
-      const discovered = await handleFetchGeoServerLayers();
-      setGeoServerDiscoveredLayers(discovered);
-      if (discovered && discovered.length > 0) {
-        discovered.forEach(layer => {
-          // Add as WMS layer, initially invisible
-          handleAddGeoServerLayerToMap(layer.name, layer.title, false);
-        });
-        toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
-      } else if (discovered && discovered.length === 0 && !isLoadingGeoServerLayers) {
-        // Only toast if not loading and no layers found after attempt
-        toast({ description: "No se encontraron capas en GeoServer para cargar automáticamente." });
-      }
-    };
-    fetchAndAddInitialGeoServerLayers(); 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMapReady]); // Rerun when map is ready
-
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground">
@@ -322,7 +302,13 @@ export default function GeoMapperClient() {
             onGeoServerUrlChange={setGeoServerUrlInput}
             onFetchGeoServerLayers={async () => {
               const discovered = await handleFetchGeoServerLayers();
-              setGeoServerDiscoveredLayers(discovered);
+              if(discovered && discovered.length > 0) {
+                setGeoServerDiscoveredLayers(discovered);
+                discovered.forEach(layer => {
+                  handleAddGeoServerLayerToMap(layer.name, layer.title, false);
+                });
+                toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
+              }
               return discovered;
             }}
             geoServerDiscoveredLayers={geoServerDiscoveredLayers}

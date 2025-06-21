@@ -35,7 +35,7 @@ interface LayersPanelProps {
   geoServerDiscoveredLayers: GeoServerDiscoveredLayer[];
   setGeoServerDiscoveredLayers: React.Dispatch<React.SetStateAction<GeoServerDiscoveredLayer[]>>;
   isLoadingGeoServerLayers: boolean;
-  onAddGeoServerLayerToMap: (layerName: string, layerTitle: string) => void;
+  onAddGeoServerLayerToMap: (layerName: string, layerTitle: string, isVisible?: boolean) => void;
   onAddGeoServerLayerAsWFS: (layerName: string, layerTitle: string) => Promise<void>;
   
   onFindSentinel2Footprints: () => void;
@@ -66,6 +66,11 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   const handleFetchGeoServer = async () => {
     const discovered = await onFetchGeoServerLayers();
     setGeoServerDiscoveredLayers(discovered);
+    if(discovered && discovered.length > 0) {
+        discovered.forEach(layer => {
+            onAddGeoServerLayerToMap(layer.name, layer.title, false);
+        });
+    }
   };
 
   return (
