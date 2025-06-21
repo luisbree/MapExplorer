@@ -57,6 +57,12 @@ export const useLayerManager = ({
       if (l.id === layerId) {
         const newVisibility = !l.visible;
         l.olLayer.setVisible(newVisibility);
+        
+        // If a DEAS layer is being turned on, move it to the main user layers section
+        if (l.isDeas && newVisibility) {
+          return { ...l, visible: newVisibility, isDeas: false };
+        }
+        
         return { ...l, visible: newVisibility };
       }
       return l;
