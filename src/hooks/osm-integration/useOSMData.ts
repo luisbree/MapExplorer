@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState, useCallback } from 'react';
-import type VectorSource from 'ol/source/Vector';
+import VectorSource from 'ol/source/Vector';
 import { useToast } from "@/hooks/use-toast";
 import type { MapLayer, OSMCategoryConfig } from '@/lib/types';
 import { nanoid } from 'nanoid';
