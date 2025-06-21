@@ -160,9 +160,10 @@ export default function GeoMapperClient() {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
           discovered.forEach(layer => {
-            handleAddGeoServerLayerToMap(layer.name, layer.title, false, initialUrl);
+            const isVisible = layer.name === 'cuencas_pba';
+            handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl);
           });
-          toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
+          toast({ description: `${discovered.length} capas de GeoServer cargadas.` });
         }
       } catch (error) {
         // The hook itself will show a toast on failure

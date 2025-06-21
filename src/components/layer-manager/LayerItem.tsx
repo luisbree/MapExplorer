@@ -15,6 +15,7 @@ import { Slider } from "@/components/ui/slider";
 import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent } from 'lucide-react';
 import type { MapLayer } from '@/lib/types';
 import VectorLayer from 'ol/layer/Vector'; 
+import { cn } from '@/lib/utils';
 
 interface LayerItemProps {
   layer: MapLayer;
@@ -52,7 +53,13 @@ const LayerItem: React.FC<LayerItemProps> = ({
       >
         {layer.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
       </Button>
-      <span className="flex-1 cursor-default text-xs font-medium text-white truncate min-w-0" title={layer.name}>
+      <span
+        className={cn(
+          "flex-1 cursor-default text-xs font-medium truncate min-w-0",
+          layer.visible ? "text-white" : "text-gray-400"
+        )}
+        title={layer.name}
+      >
         {layer.name}
       </span>
       <div className="flex items-center space-x-0.5 flex-shrink-0">
