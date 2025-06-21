@@ -13,6 +13,8 @@ import GeoJSON from 'ol/format/GeoJSON';
 import KML from 'ol/format/KML';
 import shp from 'shpjs';
 import JSZip from 'jszip';
+import type Feature from 'ol/Feature';
+import type { Geometry } from 'ol/geom';
 
 
 interface UseOSMDataProps {
@@ -59,55 +61,44 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
         const selectedConfigs = osmCategoryConfigs.filter(c => selectedOSMCategoryIds.includes(c.id));
 
         const queryFragments = selectedConfigs.map(c => c.overpassQueryFragment(bboxStr)).join('');
-        const overpassQuery = `[out:json][timeout:60];(${queryFragments});out geom;`;
+        // Use [out:geojson] to get a valid GeoJSON FeatureCollection directly from Overpass API
+        const overpassQuery = `[out:geojson][timeout:60];(${queryFragments});out;`;
         
         const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Overpass API error: ${response.status} ${errorText}`);
         }
-        const osmData = await response.json();
+        const osmDataAsGeoJSON = await response.json();
+
+        const geojsonFormat = new GeoJSON({
+            featureProjection: 'EPSG:3857',
+            dataProjection: 'EPSG:4326'
+        });
+        
+        // Parse all features from the GeoJSON response
+        const allFeatures = geojsonFormat.readFeatures(osmDataAsGeoJSON);
 
         // Separate features by category
-        const featuresByCategory: Record<string, any[]> = {};
+        const featuresByCategory: Record<string, Feature<Geometry>[]> = {};
         selectedConfigs.forEach(c => featuresByCategory[c.id] = []);
 
-        osmData.elements.forEach((element: any) => {
+        allFeatures.forEach((feature) => {
+            const properties = feature.getProperties(); // OSM tags are in properties
             for (const config of selectedConfigs) {
-                if (config.matcher(element.tags)) {
-                    featuresByCategory[config.id].push(element);
+                if (config.matcher(properties)) {
+                    featuresByCategory[config.id].push(feature);
                     break; // Add to first matching category only
                 }
             }
         });
         
-        const geojsonFormat = new GeoJSON({
-            featureProjection: 'EPSG:3857',
-            dataProjection: 'EPSG:4326'
-        });
-
         let totalFeaturesAdded = 0;
         for (const config of selectedConfigs) {
             const categoryFeatures = featuresByCategory[config.id];
             if (categoryFeatures.length > 0) {
-                // This is a simplification. A real OSM to GeoJSON converter is complex.
-                // We're creating a mock GeoJSON structure for the parser.
-                const geoJsonObjects = {
-                    type: 'FeatureCollection',
-                    features: categoryFeatures.map(el => ({
-                        type: 'Feature',
-                        geometry: el.geometry ? { type: el.geometry.type, coordinates: el.geometry.coordinates } : null,
-                        properties: el.tags,
-                    })).filter(f => f.geometry) // basic geometry conversion from overpass json
-                };
-                
-                // Overpass JSON to GeoJSON conversion is complex. For simplicity, we'll assume a library or more complex logic handles this.
-                // Here, we just use the GeoJSON features that Overpass API can provide in geojson output mode.
-                // The above logic is a placeholder. A better approach is to use `[out:json]` and a robust parser, or `[out:geojson]`
-                const features = geojsonFormat.readFeatures(geoJsonObjects);
-                
-                const vectorSource = new VectorSource({ features });
-                const layerName = `${config.name} (${features.length})`;
+                const vectorSource = new VectorSource({ features: categoryFeatures });
+                const layerName = `${config.name} (${categoryFeatures.length})`;
                 const newLayer = new VectorLayer({
                     source: vectorSource,
                     style: config.style,
@@ -126,7 +117,7 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
                     opacity: 1,
                     type: 'osm'
                 });
-                totalFeaturesAdded += features.length;
+                totalFeaturesAdded += categoryFeatures.length;
             }
         }
         
@@ -213,4 +204,3 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
     handleDownloadOSMLayers,
   };
 };
-
