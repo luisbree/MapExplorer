@@ -20,16 +20,14 @@ export async function findSentinel2Footprints(extent: Extent, mapProjection: Pro
     const extent4326 = transformExtent(extent, mapProjection, 'EPSG:4326');
     const [minX, minY, maxX, maxY] = extent4326;
 
-    // Construct the search query
-    // See API docs: https://documentation.dataspace.copernicus.eu/APIs/OData.html
+    // Construct the search query using correct OpenSearch parameters
+    // See API docs: https://documentation.dataspace.copernicus.eu/APIs/OpenSearch.html
     const params = new URLSearchParams({
       maxRecords: '50',
       processingLevel: 'LEVEL2A',
-      cloudCover: '[0,30]', // Example: 0-30% cloud cover
-      // Using OData filter for geometry intersection
-      $filter: `OData.CSC.Intersects(area=geography'SRID=4326;POLYGON((${minX} ${minY}, ${minX} ${maxY}, ${maxX} ${maxY}, ${maxX} ${minY}, ${minX} ${minY}))')`,
-      // sort by ingestion date
-      sort: 'ingestionDate', 
+      cloudCover: '[0,30]',
+      box: `${minX},${minY},${maxX},${maxY}`,
+      sortParam: 'ingestionDate', 
       sortOrder: 'descending'
     });
 
