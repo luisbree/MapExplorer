@@ -106,6 +106,7 @@ export const useGeoServerLayers = ({
       visible: isVisible,
       opacity: 1,
       type: 'wms',
+      isDeas: true,
     });
     
     onLayerStateUpdate(layerName, true, 'wms');

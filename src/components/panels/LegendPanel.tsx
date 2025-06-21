@@ -41,6 +41,9 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
   style,
 }) => {
 
+  const userLayers = layers.filter(l => !l.isDeas);
+  const deasLayers = layers.filter(l => l.isDeas);
+
   return (
     <DraggablePanel
       title="Capas"
@@ -65,7 +68,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
         </div>
         <Separator className="bg-white/10" /> 
         <LayerList
-          layers={layers}
+          layers={userLayers}
           onToggleVisibility={onToggleLayerVisibility}
           onZoomToExtent={onZoomToLayerExtent}
           onShowTable={onShowLayerTable}
@@ -80,10 +83,22 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
             <Library className="h-3.5 w-3.5 mr-1.5 text-primary/80" /> 
             DEAS
           </h3>
-          <p className="text-xs text-gray-400/70 mt-1">
-            Herramientas y datos específicos de DEAS se gestionarán aquí.
-          </p>
-          {/* Aquí puedes añadir botones, selectores u otros controles para la sección DEAS */}
+           {deasLayers.length > 0 ? (
+            <LayerList
+              layers={deasLayers}
+              onToggleVisibility={onToggleLayerVisibility}
+              onZoomToExtent={onZoomToLayerExtent}
+              onShowTable={onShowLayerTable}
+              onRemoveLayer={onRemoveLayer}
+              onExtractByPolygon={onExtractByPolygon}
+              isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
+              onSetLayerOpacity={onSetLayerOpacity}
+            />
+          ) : (
+            <p className="text-xs text-gray-400/70 mt-1">
+              Las capas de GeoServer (WMS) aparecerán aquí.
+            </p>
+          )}
         </div>
       </div>
     </DraggablePanel>

@@ -14,6 +14,7 @@ export interface MapLayer {
   visible: boolean;
   opacity: number;
   type: 'wms' | 'wfs' | 'vector' | 'osm' | 'drawing' | 'sentinel';
+  isDeas?: boolean;
 }
 
 export interface VectorMapLayer extends MapLayer {
