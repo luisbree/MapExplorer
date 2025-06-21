@@ -156,14 +156,17 @@ export default function GeoMapperClient() {
   useEffect(() => {
     const loadInitialLayers = async () => {
       const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+      // Do not set the URL in the input. Keep it clean for the user.
+      // setGeoServerUrlInput(initialUrl);
       try {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
           discovered.forEach(layer => {
-            const isVisible = layer.name === 'cuencas_pba';
+            // Make 'cuencas_light' visible by default
+            const isVisible = layer.name === 'cuencas_light';
             handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl);
           });
-          toast({ description: `${discovered.length} capas de GeoServer cargadas.` });
+          toast({ description: `${discovered.length} capas de GeoServer cargadas en segundo plano.` });
         }
       } catch (error) {
         // The hook itself will show a toast on failure
