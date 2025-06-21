@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
@@ -22,6 +23,9 @@ interface UseLayerManagerProps {
   updateGeoServerDiscoveredLayerState: (layerName: string, added: boolean, type: 'wms' | 'wfs') => void;
 }
 
+const USER_LAYER_START_Z_INDEX = 10;
+const DEAS_LAYER_Z_INDEX = 1;
+
 export const useLayerManager = ({
   mapRef,
   isMapReady,
@@ -33,9 +37,25 @@ export const useLayerManager = ({
   const { toast } = useToast();
   const [isFindingSentinelFootprints, setIsFindingSentinelFootprints] = useState(false);
 
+  useEffect(() => {
+    // This effect ensures z-ordering is correct whenever the layers array changes.
+    const userLayers = layers.filter(l => !l.isDeas);
+    const userLayerCount = userLayers.length;
+    userLayers.forEach((layer, index) => {
+      // UI has top layer at index 0. Map has top layer at highest z-index.
+      layer.olLayer.setZIndex(USER_LAYER_START_Z_INDEX + (userLayerCount - 1 - index));
+    });
+
+    const deasLayers = layers.filter(l => l.isDeas);
+    deasLayers.forEach(l => {
+      l.olLayer.setZIndex(DEAS_LAYER_Z_INDEX);
+    });
+  }, [layers]);
+
   const addLayer = useCallback((newLayer: MapLayer) => {
     if (!mapRef.current) return;
     mapRef.current.addLayer(newLayer.olLayer);
+    // Add to the start of the list so it appears at the top in the UI.
     setLayers(prev => [newLayer, ...prev]);
   }, [mapRef]);
 
@@ -52,6 +72,19 @@ export const useLayerManager = ({
       toast({ description: `Capa "${layerToRemove.name}" eliminada.` });
     }
   }, [mapRef, layers, toast, updateGeoServerDiscoveredLayerState]);
+
+  const reorderLayers = useCallback((startIndex: number, endIndex: number) => {
+      setLayers(prevLayers => {
+        const userLayers = prevLayers.filter(l => !l.isDeas);
+        const deasLayers = prevLayers.filter(l => l.isDeas);
+
+        const [movedItem] = userLayers.splice(startIndex, 1);
+        userLayers.splice(endIndex, 0, movedItem);
+
+        return [...userLayers, ...deasLayers];
+      });
+      toast({ description: 'Orden de capas actualizado.' });
+  }, [toast]);
   
   const toggleLayerVisibility = useCallback((layerId: string) => {
     setLayers(prev => prev.map(l => {
@@ -244,6 +277,7 @@ export const useLayerManager = ({
     layers,
     addLayer,
     removeLayer,
+    reorderLayers,
     toggleLayerVisibility,
     setLayerOpacity,
     zoomToLayerExtent,

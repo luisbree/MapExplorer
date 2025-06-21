@@ -389,6 +389,7 @@ export default function GeoMapperClient() {
             onExtractByPolygon={layerManagerHook.handleExtractFeaturesByPolygon}
             isDrawingSourceEmptyOrNotPolygon={layerManagerHook.isDrawingSourceEmptyOrNotPolygon}
             onSetLayerOpacity={layerManagerHook.setLayerOpacity}
+            onReorderLayers={layerManagerHook.reorderLayers}
             onAddLayer={layerManagerHook.addLayer as (layer: MapLayer) => void}
             isInspectModeActive={featureInspectionHook.isInspectModeActive}
             onToggleInspectMode={featureInspectionHook.toggleInspectMode}

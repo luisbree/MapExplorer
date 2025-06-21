@@ -25,6 +25,8 @@ interface LegendPanelProps {
   onExtractByPolygon: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void; 
+  onReorderLayers: (startIndex: number, endIndex: number) => void;
+
 
   onAddLayer: (layer: MapLayer) => void;
   isInspectModeActive: boolean;
@@ -36,7 +38,7 @@ interface LegendPanelProps {
 const LegendPanel: React.FC<LegendPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
   layers, onToggleLayerVisibility, onRemoveLayer, onZoomToLayerExtent, onShowLayerTable,
-  onExtractByPolygon, isDrawingSourceEmptyOrNotPolygon, onSetLayerOpacity, 
+  onExtractByPolygon, isDrawingSourceEmptyOrNotPolygon, onSetLayerOpacity, onReorderLayers,
   onAddLayer, isInspectModeActive, onToggleInspectMode,
   style,
 }) => {
@@ -75,7 +77,9 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           onRemoveLayer={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
-          onSetLayerOpacity={onSetLayerOpacity} 
+          onSetLayerOpacity={onSetLayerOpacity}
+          onReorderLayers={onReorderLayers}
+          isDraggable={true}
         />
         <Separator className="bg-white/15 mt-3" />
         <div>
@@ -93,6 +97,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
               onExtractByPolygon={onExtractByPolygon}
               isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
               onSetLayerOpacity={onSetLayerOpacity}
+              isDraggable={false}
             />
           ) : (
             <p className="text-xs text-gray-400/70 mt-1">

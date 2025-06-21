@@ -12,7 +12,7 @@ import {
   DropdownMenuLabel, 
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider"; 
-import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent } from 'lucide-react';
+import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent, GripVertical } from 'lucide-react';
 import type { MapLayer } from '@/lib/types';
 import VectorLayer from 'ol/layer/Vector'; 
 import { cn } from '@/lib/utils';
@@ -26,6 +26,17 @@ interface LayerItemProps {
   onExtractByPolygon: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
+  
+  // Drag and Drop props
+  isDraggable: boolean;
+  onDragStart?: (e: React.DragEvent<HTMLLIElement>) => void;
+  onDragEnd?: (e: React.DragEvent<HTMLLIElement>) => void;
+  onDragOver?: (e: React.DragEvent<HTMLLIElement>) => void;
+  onDragEnter?: (e: React.DragEvent<HTMLLIElement>) => void;
+  onDragLeave?: (e: React.DragEvent<HTMLLIElement>) => void;
+  onDrop?: (e: React.DragEvent<HTMLLIElement>) => void;
+  isDragging?: boolean;
+  isDragOver?: boolean;
 }
 
 const LayerItem: React.FC<LayerItemProps> = ({
@@ -37,12 +48,36 @@ const LayerItem: React.FC<LayerItemProps> = ({
   onExtractByPolygon,
   isDrawingSourceEmptyOrNotPolygon,
   onSetLayerOpacity,
+  isDraggable,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+  isDragging,
+  isDragOver
 }) => {
   const isVectorLayer = layer.olLayer instanceof VectorLayer;
   const currentOpacityPercentage = Math.round(layer.opacity * 100);
 
   return (
-    <li className="flex items-center px-1.5 py-1 hover:bg-gray-700/30 transition-colors overflow-hidden">
+    <li 
+      className={cn(
+        "flex items-center px-1.5 py-1 hover:bg-gray-700/30 transition-all overflow-hidden relative",
+        isDraggable && "cursor-grab",
+        isDragging && "opacity-50 bg-primary/20",
+        isDragOver && "border-t-2 border-accent"
+      )}
+      draggable={isDraggable}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      {isDraggable && <GripVertical className="h-4 w-4 text-gray-500 mr-1 flex-shrink-0" />}
       <Button
         variant="ghost"
         size="icon"
