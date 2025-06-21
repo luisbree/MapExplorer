@@ -7,9 +7,10 @@ import BaseLayerSelector from '@/components/layer-manager/BaseLayerSelector';
 import LocationSearch, { type NominatimResult } from '@/components/location-search/LocationSearch';
 import MapCaptureControl from '@/components/map-tools/MapCaptureControl';
 import GeoServerUrlInput from '@/components/geoserver-connection/GeoServerUrlInput';
+import GeoServerLayerList from '@/components/geoserver-connection/GeoServerLayerList';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import type { BaseLayerOptionForSelect } from '@/lib/types'; 
+import type { BaseLayerOptionForSelect, GeoServerDiscoveredLayer } from '@/lib/types'; 
 import { Database, Search, ImageUp, Cloud, ImageOff, Loader2 } from 'lucide-react'; 
 
 interface LayersPanelProps {
@@ -33,6 +34,10 @@ interface LayersPanelProps {
   onFetchGeoServerLayers: () => void; 
   isLoadingGeoServerLayers: boolean;
   
+  geoServerDiscoveredLayers: GeoServerDiscoveredLayer[];
+  onAddGeoServerLayerToMap: (layerName: string, layerTitle: string) => void;
+  onAddGeoServerLayerAsWFS: (layerName: string, layerTitle: string) => Promise<void>;
+
   onFindSentinel2Footprints: () => void;
   onClearSentinel2Footprints: () => void;
   isFindingSentinelFootprints: boolean; 
@@ -48,6 +53,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   captureMap, isCapturingMap,
   geoServerUrlInput, onGeoServerUrlChange, onFetchGeoServerLayers, 
   isLoadingGeoServerLayers,
+  geoServerDiscoveredLayers, onAddGeoServerLayerToMap, onAddGeoServerLayerAsWFS,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
   style, 
 }) => {
@@ -103,6 +109,13 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
                 isLoadingGeoServerLayers={isLoadingGeoServerLayers}
                 uniqueIdPrefix="layerspanel-geoserver"
             />
+            <div className="mt-2">
+                <GeoServerLayerList
+                    geoServerDiscoveredLayers={geoServerDiscoveredLayers}
+                    onAddGeoServerLayerToMap={onAddGeoServerLayerToMap}
+                    onAddGeoServerLayerAsWFS={onAddGeoServerLayerAsWFS}
+                />
+            </div>
         </div>
         
         <Separator className="bg-white/15" />

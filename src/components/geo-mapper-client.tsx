@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -20,6 +20,7 @@ import AttributesPanel from '@/components/panels/AttributesPanel';
 import LayersPanel from '@/components/panels/LayersPanel';
 import ToolsPanel from '@/components/panels/ToolsPanel';
 import LegendPanel from '@/components/panels/LegendPanel';
+import AIPanel from '@/components/panels/AIPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
@@ -100,7 +101,8 @@ const panelToggleConfigs = [
   { id: 'layers', IconComponent: Database, name: "Datos" },
   { id: 'tools', IconComponent: Wrench, name: "Herramientas" },
   { id: 'legend', IconComponent: ListTree, name: "Capas" },
-  { id: 'attributes', IconComponent: ListChecks, name: "Atributos" }, 
+  { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
+  { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
 ];
 
 
@@ -109,7 +111,8 @@ export default function GeoMapperClient() {
   const layersPanelRef = useRef<HTMLDivElement>(null);
   const toolsPanelRef = useRef<HTMLDivElement>(null);
   const legendPanelRef = useRef<HTMLDivElement>(null);
-  const attributesPanelRef = useRef<HTMLDivElement>(null); 
+  const attributesPanelRef = useRef<HTMLDivElement>(null);
+  const aiPanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, drawingSourceRef, drawingLayerRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
@@ -124,6 +127,7 @@ export default function GeoMapperClient() {
   });
 
   const [isWfsLoading, setIsWfsLoading] = useState(false);
+  const [discoveredGeoServerLayers, setDiscoveredGeoServerLayers] = useState<GeoServerDiscoveredLayer[]>([]);
 
   const layerManagerHook = useLayerManager({
     mapRef,
@@ -132,8 +136,13 @@ export default function GeoMapperClient() {
     drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
     updateGeoServerDiscoveredLayerState: (layerName, added, type) => {
-        // This function might be needed if we want to track layer state for other purposes
-        // For now, it's connected but doesn't drive any UI lists for discovered layers.
+      setDiscoveredGeoServerLayers(prev => prev.map(l => {
+        if (l.name === layerName) {
+          if (type === 'wms') return { ...l, wmsAddedToMap: added };
+          if (type === 'wfs') return { ...l, wfsAddedToMap: added };
+        }
+        return l;
+      }));
     }
   });
   
@@ -144,9 +153,7 @@ export default function GeoMapperClient() {
       mapRef,
       isMapReady,
       addLayer: layerManagerHook.addLayer,
-      onLayerStateUpdate: (layerName, added, type) => {
-         // This function might be needed if we want to track layer state for other purposes
-      },
+      onLayerStateUpdate: layerManagerHook.updateGeoServerDiscoveredLayerState,
       setIsWfsLoading
   });
 
@@ -157,9 +164,12 @@ export default function GeoMapperClient() {
       try {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
+          setDiscoveredGeoServerLayers(discovered);
           discovered.forEach(layer => {
             const isVisible = layer.name === 'cuencas_light';
-            handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl, layer.bbox);
+            if (isVisible) {
+              handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl, layer.bbox);
+            }
           });
           toast({ description: `${discovered.length} capas de GeoServer cargadas en segundo plano.` });
         }
@@ -189,7 +199,8 @@ export default function GeoMapperClient() {
     layersPanelRef,
     toolsPanelRef,
     legendPanelRef,
-    attributesPanelRef, 
+    attributesPanelRef,
+    aiPanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -224,6 +235,17 @@ export default function GeoMapperClient() {
         }, 0);
     }
   }, [mapRef, toast]);
+
+  const handleAiFindLayer = useCallback((layerName: string) => {
+    const layerData = discoveredGeoServerLayers.find(l => l.name === layerName);
+    if (layerData) {
+        const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+        handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
+    } else {
+        toast({description: `AI returned a layer name not found in the list: ${layerName}`});
+    }
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, toast]);
+
 
   useEffect(() => {
     featureInspectionHook.updateLayers(layerManagerHook.layers);
@@ -260,7 +282,7 @@ export default function GeoMapperClient() {
         <div className="absolute top-2 right-2 z-20 flex flex-row space-x-1">
           <TooltipProvider delayDuration={200}>
             {panelToggleConfigs.map((panelConfig) => {
-              const panelState = panels[panelConfig.id];
+              const panelState = panels[panelConfig.id as keyof typeof panels];
               if (!panelState) return null;
 
               const isPanelOpen = !panelState.isMinimized;
@@ -279,7 +301,7 @@ export default function GeoMapperClient() {
                           ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary/80'
                           : 'bg-gray-700/80 text-white hover:bg-gray-600/90 border-gray-600/70'
                       }`}
-                      onClick={() => togglePanelMinimize(panelConfig.id)}
+                      onClick={() => togglePanelMinimize(panelConfig.id as any)}
                       aria-label={tooltipText}
                     >
                       <panelConfig.IconComponent className="h-4 w-4" />
@@ -310,15 +332,15 @@ export default function GeoMapperClient() {
             geoServerUrlInput={geoServerUrlInput}
             onGeoServerUrlChange={setGeoServerUrlInput}
             onFetchGeoServerLayers={async () => {
-              const discovered = await handleFetchGeoServerLayers(); // Uses state URL from input
+              const discovered = await handleFetchGeoServerLayers();
               if(discovered && discovered.length > 0) {
-                discovered.forEach(layer => {
-                  handleAddGeoServerLayerToMap(layer.name, layer.title, false, undefined, layer.bbox); 
-                });
-                toast({ description: `${discovered.length} capas de GeoServer cargadas (inicialmente ocultas).` });
+                setDiscoveredGeoServerLayers(discovered);
               }
             }}
             isLoadingGeoServerLayers={isLoadingGeoServerLayers}
+            geoServerDiscoveredLayers={discoveredGeoServerLayers}
+            onAddGeoServerLayerToMap={(layerName, layerTitle) => handleAddGeoServerLayerToMap(layerName, layerTitle, true, geoServerUrlInput)}
+            onAddGeoServerLayerAsWFS={(layerName, layerTitle) => handleAddGeoServerLayerAsWFS(layerName, layerTitle, geoServerUrlInput)}
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}
@@ -385,6 +407,19 @@ export default function GeoMapperClient() {
             featuresAttributes={featureInspectionHook.selectedFeatureAttributes}
             layerName={featureInspectionHook.currentInspectedLayerName}
             style={{ top: `${panels.attributes.position.y}px`, left: `${panels.attributes.position.x}px`, zIndex: panels.attributes.zIndex }}
+          />
+        )}
+
+        {panels.ai && !panels.ai.isMinimized && (
+          <AIPanel
+            panelRef={aiPanelRef}
+            isCollapsed={panels.ai.isCollapsed}
+            onToggleCollapse={() => togglePanelCollapse('ai')}
+            onClosePanel={() => togglePanelMinimize('ai')}
+            onMouseDownHeader={(e) => handlePanelMouseDown(e, 'ai')}
+            availableLayers={discoveredGeoServerLayers.map(l => ({ name: l.name, title: l.title }))}
+            onLayerFound={handleAiFindLayer}
+            style={{ top: `${panels.ai.position.y}px`, left: `${panels.ai.position.x}px`, zIndex: panels.ai.zIndex }}
           />
         )}
       </div>

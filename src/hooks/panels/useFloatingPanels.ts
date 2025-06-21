@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-type PanelId = 'layers' | 'tools' | 'legend' | 'attributes';
+type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai';
 
 interface PanelState {
   isMinimized: boolean;
@@ -17,6 +17,7 @@ interface UseFloatingPanelsProps {
   toolsPanelRef: React.RefObject<HTMLDivElement>;
   legendPanelRef: React.RefObject<HTMLDivElement>;
   attributesPanelRef: React.RefObject<HTMLDivElement>;
+  aiPanelRef: React.RefObject<HTMLDivElement>;
   mapAreaRef: React.RefObject<HTMLDivElement>;
   panelWidth: number;
   panelPadding: number;
@@ -29,6 +30,7 @@ export const useFloatingPanels = ({
   toolsPanelRef,
   legendPanelRef,
   attributesPanelRef,
+  aiPanelRef,
   mapAreaRef,
   panelWidth,
   panelPadding
@@ -39,13 +41,15 @@ export const useFloatingPanels = ({
     tools: toolsPanelRef,
     legend: legendPanelRef,
     attributes: attributesPanelRef,
-  }), [attributesPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef]);
+    ai: aiPanelRef,
+  }), [attributesPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, aiPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
     layers: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
     tools: { isMinimized: true, isCollapsed: false, position: { x: panelWidth + (panelPadding*2), y: panelPadding }, zIndex: initialZIndex },
     legend: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex + 1 }, // Initially open
     attributes: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 300 }, zIndex: initialZIndex },
+    ai: { isMinimized: true, isCollapsed: false, position: { x: panelWidth + (panelPadding * 2), y: 300 }, zIndex: initialZIndex },
   });
 
   const activeDragRef = useRef<{ panelId: PanelId | null, offsetX: number, offsetY: number }>({ panelId: null, offsetX: 0, offsetY: 0 });
