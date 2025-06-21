@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
 type PanelId = 'layers' | 'tools' | 'legend' | 'attributes';
 
@@ -34,12 +34,12 @@ export const useFloatingPanels = ({
   panelPadding
 }: UseFloatingPanelsProps) => {
 
-  const panelRefs = {
+  const panelRefs = useMemo(() => ({
     layers: layersPanelRef,
     tools: toolsPanelRef,
     legend: legendPanelRef,
     attributes: attributesPanelRef,
-  };
+  }), [attributesPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
     layers: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
@@ -70,10 +70,6 @@ export const useFloatingPanels = ({
     const mapRect = mapArea.getBoundingClientRect();
     let newX = event.clientX - mapRect.left - offsetX;
     let newY = event.clientY - mapRect.top - offsetY;
-
-    // Constrain to map area has been removed to allow free dragging
-    // newX = Math.max(0, Math.min(newX, mapRect.width - panelRef.offsetWidth));
-    // newY = Math.max(0, Math.min(newY, mapRect.height - panelRef.offsetHeight));
 
     setPanels(prev => ({
       ...prev,
