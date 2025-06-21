@@ -245,14 +245,26 @@ export default function GeoMapperClient() {
   }, [mapRef, toast]);
 
   const handleAiAction = useCallback((action: MapAssistantOutput) => {
+    const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+
     if (action.layersToAdd && action.layersToAdd.length > 0) {
-      const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
       action.layersToAdd.forEach(layerNameToAdd => {
         const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
         if (layerData) {
             handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
         } else {
             toast({description: `Drax sugirió una capa no encontrada: ${layerNameToAdd}`});
+        }
+      });
+    }
+
+    if (action.layersToAddAsWFS && action.layersToAddAsWFS.length > 0) {
+      action.layersToAddAsWFS.forEach(layerNameToAdd => {
+        const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
+        if (layerData) {
+            handleAddGeoServerLayerAsWFS(layerData.name, layerData.title, initialUrl);
+        } else {
+            toast({description: `Drax sugirió una capa WFS no encontrada: ${layerNameToAdd}`});
         }
       });
     }
@@ -313,7 +325,7 @@ export default function GeoMapperClient() {
         }
     }
 
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, toast, layerManagerHook]);
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook]);
 
 
   useEffect(() => {

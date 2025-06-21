@@ -30,7 +30,8 @@ export type MapAssistantInput = z.infer<typeof MapAssistantInputSchema>;
 
 const MapAssistantOutputSchema = z.object({
   response: z.string().describe("The assistant's conversational response to the user."),
-  layersToAdd: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map.").optional(),
+  layersToAdd: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map as WMS (image layers).").optional(),
+  layersToAddAsWFS: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map as WFS (vector data layers, which can be styled).").optional(),
   layersToRemove: z.array(z.string()).describe("A list of machine-readable names of active layers to remove from the map.").optional(),
   zoomToLayer: z.string().describe("The machine-readable name of an active layer to zoom to.").optional(),
   layersToStyle: z.array(z.object({
@@ -56,7 +57,7 @@ Your goal is to have a conversation with the user and help them with their tasks
 Your response must always be in a conversational, human-like text.
 
 You can perform five types of actions based on the user's request:
-1. ADD one or more layers to the map.
+1. ADD one or more layers to the map (as WMS images or WFS vectors).
 2. REMOVE one or more layers from the map.
 3. ZOOM to a single layer's extent.
 4. CHANGE STYLE of one or more layers currently on the map.
@@ -64,8 +65,11 @@ You can perform five types of actions based on the user's request:
 
 Analyze the user's message and the provided lists of layers to decide which action to take.
 
-- TO ADD: If the user asks to see, load, or find one or more map layers, identify all matching layers from the 'Available Layers' list. This could be a request for a single layer or multiple layers (e.g., "todas las capas de regimiento", "carga hidrografía y caminos").
-  - If you find matches, formulate a friendly response confirming the action (e.g., "Claro, aquí tienes las capas de regimientos.") and populate the 'layersToAdd' field with an array of the exact 'name's of all matching layers.
+- TO ADD: If the user asks to see, load, or find one or more map layers, identify all matching layers from the 'Available Layers' list.
+  - Prioritize adding layers as WFS (vector data) if the user's request implies they want to work with the data itself (e.g., "carga los datos de las rutas", "añade las cuencas como WFS", "quiero ver los atributos de los partidos", "carga los vectores de..."). Using WFS allows for styling and viewing attributes. If the request is for WFS, populate the 'layersToAddAsWFS' field.
+  - If the request is general (e.g., "muestra las rutas", "carga hidrografía"), add the layer as WMS (image) by populating the 'layersToAdd' field. WMS is faster for just viewing.
+  - This could be a request for a single layer or multiple layers (e.g., "todas las capas de regimiento", "carga hidrografía y caminos").
+  - If you find matches, formulate a friendly response confirming the action (e.g., "Claro, aquí tienes las capas de regimientos.") and populate the appropriate field ('layersToAdd' for WMS, 'layersToAddAsWFS' for WFS) with an array of the exact 'name's of all matching layers. Do not use both fields for the same layer.
 
 - TO REMOVE: If the user asks to remove, delete, or hide one or more layers, find all matching layers from the 'Active Layers' list.
   - If you find matches, formulate a response confirming the removal and populate the 'layersToRemove' field with an array of the exact 'name's of all matching layers.
