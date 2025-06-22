@@ -50,6 +50,14 @@ export const useFeatureInspection = ({
 
   const selectInteractionRef = useRef<Select | null>(null);
   const dragBoxInteractionRef = useRef<DragBox | null>(null);
+  
+  // Use a ref to hold the latest onNewSelection callback
+  // This prevents the main effect from re-running unnecessarily when the callback's identity changes.
+  const onNewSelectionRef = useRef(onNewSelection);
+  useEffect(() => {
+    onNewSelectionRef.current = onNewSelection;
+  }, [onNewSelection]);
+
 
   const processAndDisplayFeatures = useCallback((features: Feature<Geometry>[], layerName: string) => {
     if (features.length === 0) {
@@ -138,7 +146,7 @@ export const useFeatureInspection = ({
             }
           });
           processAndDisplayFeatures(currentSelectedFeatures, layerName);
-          onNewSelection();
+          onNewSelectionRef.current();
         } else {
           setSelectedFeatureAttributes(null);
           setCurrentInspectedLayerName(null);
@@ -187,7 +195,7 @@ export const useFeatureInspection = ({
 
             if (finalSelection.length > 0) {
               processAndDisplayFeatures(finalSelection, layerNameForAttributes || 'Múltiples capas');
-              onNewSelection();
+              onNewSelectionRef.current();
             } else {
               setSelectedFeatureAttributes(null);
               setCurrentInspectedLayerName(null);
@@ -208,7 +216,7 @@ export const useFeatureInspection = ({
         if (dragBoxInteractionRef.current) map.removeInteraction(dragBoxInteractionRef.current);
       }
     };
-  }, [isInspectModeActive, selectionMode, isMapReady, mapRef, mapElementRef, processAndDisplayFeatures, onNewSelection]);
+  }, [isInspectModeActive, selectionMode, isMapReady, mapRef, mapElementRef, processAndDisplayFeatures]);
 
   return {
     isInspectModeActive,
