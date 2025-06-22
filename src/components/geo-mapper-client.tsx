@@ -329,13 +329,17 @@ export default function GeoMapperClient() {
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook]);
 
 
-   useEffect(() => {
-    if (featureInspectionHook.selectedFeatureAttributes && featureInspectionHook.selectedFeatureAttributes.length > 0) {
-      if (panels.attributes && panels.attributes.isMinimized) {
-        togglePanelMinimize('attributes'); 
-      }
-    } 
-  }, [featureInspectionHook.selectedFeatureAttributes, panels.attributes, togglePanelMinimize]);
+  // This effect used to auto-open the attributes panel. It has been removed
+  // to prevent it from conflicting with the user's action to close the panel.
+  // Now, the user must manually open the panel via the header button if it's minimized.
+  //
+  // useEffect(() => {
+  //   if (featureInspectionHook.selectedFeatureAttributes && featureInspectionHook.selectedFeatureAttributes.length > 0) {
+  //     if (panels.attributes && panels.attributes.isMinimized) {
+  //       togglePanelMinimize('attributes'); 
+  //     }
+  //   } 
+  // }, [featureInspectionHook.selectedFeatureAttributes, panels.attributes, togglePanelMinimize]);
 
 
   return (
