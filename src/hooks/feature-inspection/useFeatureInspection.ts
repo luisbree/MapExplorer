@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'ol';
-import type VectorLayer from 'ol/layer/Vector';
+import VectorLayer from 'ol/layer/Vector';
 import Feature from 'ol/Feature';
 import { Circle, Fill, Stroke, Style } from 'ol/style';
 import { useToast } from "@/hooks/use-toast";
