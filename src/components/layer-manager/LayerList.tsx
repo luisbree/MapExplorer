@@ -12,7 +12,9 @@ interface LayerListProps {
   onShowLayerTable: (layerId: string) => void;
   onRemoveLayer: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
+  onExtractBySelection: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
+  isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
   onReorderLayers?: (startIndex: number, endIndex: number) => void;
 }
@@ -24,7 +26,9 @@ const LayerList: React.FC<LayerListProps> = ({
   onShowLayerTable,
   onRemoveLayer,
   onExtractByPolygon,
+  onExtractBySelection,
   isDrawingSourceEmptyOrNotPolygon,
+  isSelectionEmpty,
   onSetLayerOpacity,
   onReorderLayers,
 }) => {
@@ -101,7 +105,9 @@ const LayerList: React.FC<LayerListProps> = ({
           onShowLayerTable={onShowLayerTable}
           onRemove={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
+          onExtractBySelection={onExtractBySelection}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
+          isSelectionEmpty={isSelectionEmpty}
           onSetLayerOpacity={onSetLayerOpacity}
           isDraggable={!layer.isDeas}
           onDragStart={(e) => handleDragStart(e, index)}

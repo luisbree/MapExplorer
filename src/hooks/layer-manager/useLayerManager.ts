@@ -19,10 +19,10 @@ import { asArray as asOlColorArray } from 'ol/color';
 interface UseLayerManagerProps {
   mapRef: React.RefObject<Map | null>;
   isMapReady: boolean;
-  drawingLayerRef: React.RefObject<VectorLayer<VectorSource>>;
   drawingSourceRef: React.RefObject<VectorSource>;
   onShowTableRequest: (features: Feature[], layerName: string) => void;
   updateGeoServerDiscoveredLayerState: (layerName: string, added: boolean, type: 'wms' | 'wfs') => void;
+  selectedFeaturesForExtraction: Feature<Geometry>[];
 }
 
 const USER_LAYER_START_Z_INDEX = 10;
@@ -47,7 +47,8 @@ export const useLayerManager = ({
   isMapReady,
   drawingSourceRef,
   onShowTableRequest,
-  updateGeoServerDiscoveredLayerState
+  updateGeoServerDiscoveredLayerState,
+  selectedFeaturesForExtraction,
 }: UseLayerManagerProps) => {
   const [layers, setLayers] = useState<MapLayer[]>([]);
   const { toast } = useToast();
@@ -301,7 +302,7 @@ export const useLayerManager = ({
     return !isPolygon;
   }, [drawingSourceRef.current?.getFeatures()]);
 
-  const handleExtractFeaturesByPolygon = useCallback((layerIdToExtract: string) => {
+  const handleExtractByPolygon = useCallback((layerIdToExtract: string) => {
     const targetLayer = layers.find(l => l.id === layerIdToExtract) as VectorMapLayer | undefined;
     const drawingFeatures = drawingSourceRef.current?.getFeatures() ?? [];
     const polygonFeature = drawingFeatures.find(f => f.getGeometry()?.getType() === 'Polygon');
@@ -348,6 +349,72 @@ export const useLayerManager = ({
     });
     toast({ description: `${intersectingFeatures.length} entidades extraídas a una nueva capa.` });
   }, [layers, drawingSourceRef, addLayer, toast]);
+  
+  const handleExtractBySelection = useCallback((layerIdToExtract: string) => {
+    const targetLayer = layers.find(l => l.id === layerIdToExtract) as VectorMapLayer | undefined;
+    
+    if (!targetLayer || !(targetLayer.olLayer instanceof VectorLayer)) {
+      toast({ description: "La capa de destino debe ser una capa vectorial." });
+      return;
+    }
+
+    if (selectedFeaturesForExtraction.length === 0) {
+        toast({ description: "No hay entidades seleccionadas para usar en la extracción." });
+        return;
+    }
+    
+    const targetSource = targetLayer.olLayer.getSource();
+    if (!targetSource) return;
+
+    const intersectingFeatures: Feature<Geometry>[] = [];
+    const selectorGeometries = selectedFeaturesForExtraction.map(f => f.getGeometry()).filter((g): g is Geometry => !!g);
+
+    if (selectorGeometries.length === 0) {
+        toast({ description: "Las entidades seleccionadas no tienen geometría válida." });
+        return;
+    }
+
+    const targetFeatures = targetSource.getFeatures();
+
+    for (const targetFeature of targetFeatures) {
+        const targetGeometry = targetFeature.getGeometry();
+        if (!targetGeometry) continue;
+
+        for (const selectorGeometry of selectorGeometries) {
+            if (selectorGeometry.intersectsExtent(targetGeometry.getExtent())) {
+                intersectingFeatures.push(targetFeature.clone());
+                break; 
+            }
+        }
+    }
+
+    if (intersectingFeatures.length === 0) {
+        toast({ description: "No se encontraron entidades de la capa de destino que intersecten con la selección." });
+        return;
+    }
+    
+    const newSourceName = `Extracción de ${targetLayer.name}`;
+    const newSource = new VectorSource({ features: intersectingFeatures });
+    const newLayer = new VectorLayer({
+        source: newSource,
+        properties: {
+            id: `extract-sel-${targetLayer.id}-${nanoid()}`,
+            name: newSourceName,
+            type: 'vector'
+        },
+        style: targetLayer.olLayer.getStyle()
+    });
+
+    addLayer({
+        id: newLayer.get('id'),
+        name: newSourceName,
+        olLayer: newLayer,
+        visible: true,
+        opacity: 1,
+        type: 'vector'
+    });
+    toast({ description: `${intersectingFeatures.length} entidades extraídas a una nueva capa.` });
+  }, [layers, selectedFeaturesForExtraction, addLayer, toast]);
   
   const findSentinel2FootprintsInCurrentView = useCallback(async () => {
     if (!mapRef.current) return;
@@ -417,7 +484,8 @@ export const useLayerManager = ({
     zoomToLayerExtent,
     handleShowLayerTable,
     isDrawingSourceEmptyOrNotPolygon,
-    handleExtractFeaturesByPolygon,
+    handleExtractByPolygon,
+    handleExtractBySelection,
     findSentinel2FootprintsInCurrentView,
     isFindingSentinelFootprints,
     clearSentinel2FootprintsLayer

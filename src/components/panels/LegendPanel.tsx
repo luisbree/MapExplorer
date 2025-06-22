@@ -22,7 +22,9 @@ interface LegendPanelProps {
   onZoomToLayerExtent: (layerId: string) => void;
   onShowLayerTable: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
+  onExtractBySelection: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
+  isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void; 
   onReorderLayers: (startIndex: number, endIndex: number) => void;
 
@@ -42,7 +44,7 @@ interface LegendPanelProps {
 const LegendPanel: React.FC<LegendPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
   layers, onToggleLayerVisibility, onRemoveLayer, onZoomToLayerExtent, onShowLayerTable,
-  onExtractByPolygon, isDrawingSourceEmptyOrNotPolygon, onSetLayerOpacity, onReorderLayers,
+  onExtractByPolygon, onExtractBySelection, isDrawingSourceEmptyOrNotPolygon, isSelectionEmpty, onSetLayerOpacity, onReorderLayers,
   onAddLayer, 
   isInteractionActive, onToggleInteraction, selectionMode, onSetSelectionMode, onClearSelection,
   style,
@@ -81,7 +83,9 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           onShowLayerTable={onShowLayerTable}
           onRemoveLayer={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
+          onExtractBySelection={onExtractBySelection}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
+          isSelectionEmpty={isSelectionEmpty}
           onSetLayerOpacity={onSetLayerOpacity}
           onReorderLayers={onReorderLayers}
         />

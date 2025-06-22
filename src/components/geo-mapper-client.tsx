@@ -169,7 +169,8 @@ export default function GeoMapperClient() {
     isMapReady,
     drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
-    updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState
+    updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState,
+    selectedFeaturesForExtraction: featureInspectionHook.selectedFeatures,
   });
   
   const {
@@ -457,8 +458,10 @@ export default function GeoMapperClient() {
             onRemoveLayer={layerManagerHook.removeLayer}
             onZoomToLayerExtent={layerManagerHook.zoomToLayerExtent}
             onShowLayerTable={layerManagerHook.handleShowLayerTable} 
-            onExtractByPolygon={layerManagerHook.handleExtractFeaturesByPolygon}
+            onExtractByPolygon={layerManagerHook.handleExtractByPolygon}
+            onExtractBySelection={layerManagerHook.handleExtractBySelection}
             isDrawingSourceEmptyOrNotPolygon={layerManagerHook.isDrawingSourceEmptyOrNotPolygon}
+            isSelectionEmpty={featureInspectionHook.selectedFeatures.length === 0}
             onSetLayerOpacity={layerManagerHook.setLayerOpacity}
             onReorderLayers={layerManagerHook.reorderLayers}
             onAddLayer={layerManagerHook.addLayer as (layer: MapLayer) => void}

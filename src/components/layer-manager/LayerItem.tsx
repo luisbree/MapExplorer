@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel, 
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider"; 
-import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent, GripVertical } from 'lucide-react';
+import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent, GripVertical, CopyPlus } from 'lucide-react';
 import type { MapLayer } from '@/lib/types';
 import VectorLayer from 'ol/layer/Vector'; 
 import { cn } from '@/lib/utils';
@@ -23,7 +23,9 @@ interface LayerItemProps {
   onShowLayerTable: (layerId: string) => void;
   onRemove: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
+  onExtractBySelection: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
+  isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
   
   // Drag and Drop props
@@ -45,7 +47,9 @@ const LayerItem: React.FC<LayerItemProps> = ({
   onShowLayerTable,
   onRemove,
   onExtractByPolygon,
+  onExtractBySelection,
   isDrawingSourceEmptyOrNotPolygon,
+  isSelectionEmpty,
   onSetLayerOpacity,
   isDraggable,
   onDragStart,
@@ -140,6 +144,20 @@ const LayerItem: React.FC<LayerItemProps> = ({
                 </span>
               </DropdownMenuItem>
             )}
+            
+            {isVectorLayer && (
+              <DropdownMenuItem
+                className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                onSelect={() => onExtractBySelection(layer.id)}
+                disabled={isSelectionEmpty}
+              >
+                <CopyPlus className="mr-2 h-3.5 w-3.5" />
+                <span title={isSelectionEmpty ? "Seleccione una o más entidades primero" : `Extraer de ${layer.name} por selección`}>
+                  Extraer por selección
+                </span>
+              </DropdownMenuItem>
+            )}
+            
             <DropdownMenuSeparator className="bg-gray-500/50" />
             <DropdownMenuLabel className="text-xs text-gray-300 px-2 py-1 flex items-center">
                 <Percent className="mr-2 h-3.5 w-3.5" /> Opacidad: {currentOpacityPercentage}%

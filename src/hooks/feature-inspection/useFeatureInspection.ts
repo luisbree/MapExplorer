@@ -43,6 +43,7 @@ export const useFeatureInspection = ({
   const { toast } = useToast();
   const [isInspectModeActive, setIsInspectModeActive] = useState(false);
   const [selectionMode, setSelectionMode] = useState<'click' | 'box'>('click');
+  const [selectedFeatures, setSelectedFeatures] = useState<Feature<Geometry>[]>([]);
   const [selectedFeatureAttributes, setSelectedFeatureAttributes] = useState<Record<string, any>[] | null>(null);
   const [currentInspectedLayerName, setCurrentInspectedLayerName] = useState<string | null>(null);
 
@@ -73,7 +74,7 @@ export const useFeatureInspection = ({
     if (selectInteractionRef.current) {
       selectInteractionRef.current.getFeatures().clear();
     }
-    // The 'select' event on the interaction will handle clearing attributes.
+    // The 'select' event on the interaction will handle clearing attributes and features.
   }, []);
 
   const toggleInspectMode = useCallback(() => {
@@ -119,9 +120,11 @@ export const useFeatureInspection = ({
 
       // Listen for selection changes to update the attributes panel
       select.on('select', (e: SelectEvent) => {
-        const selectedFeatures = e.selected;
-        if (selectedFeatures.length > 0) {
-          const firstFeature = selectedFeatures[0];
+        const currentSelectedFeatures = e.selected;
+        setSelectedFeatures(currentSelectedFeatures);
+
+        if (currentSelectedFeatures.length > 0) {
+          const firstFeature = currentSelectedFeatures[0];
           let layerName = 'Capa seleccionada';
           
           // Try to find the layer of the first selected feature
@@ -133,7 +136,7 @@ export const useFeatureInspection = ({
               }
             }
           });
-          processAndDisplayFeatures(selectedFeatures, layerName);
+          processAndDisplayFeatures(currentSelectedFeatures, layerName);
           onNewSelection(); // Signal that a new selection was made
         } else {
           setSelectedFeatureAttributes(null);
@@ -188,6 +191,7 @@ export const useFeatureInspection = ({
     toggleInspectMode,
     selectionMode,
     setSelectionMode,
+    selectedFeatures,
     selectedFeatureAttributes,
     currentInspectedLayerName,
     clearSelection,
