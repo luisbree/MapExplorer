@@ -478,8 +478,8 @@ export default function GeoMapperClient() {
             isCollapsed={panels.attributes.isCollapsed}
             onToggleCollapse={() => togglePanelCollapse('attributes')}
             onClosePanel={() => {
-              featureInspectionHook.clearSelection(); 
               togglePanelMinimize('attributes'); 
+              featureInspectionHook.clearSelection(); 
             }}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'attributes')}
             featuresAttributes={featureInspectionHook.selectedFeatureAttributes}
