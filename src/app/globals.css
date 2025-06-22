@@ -114,3 +114,10 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom style for OpenLayers DragBox */
+.ol-dragbox {
+  background-color: rgba(0, 150, 255, 0.1);
+  border: 2px solid rgb(0, 150, 255);
+  z-index: 10000; /* Ensure it's on top */
+}

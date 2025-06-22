@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Geometry } from 'ol/geom';
 import Select, { type SelectEvent } from 'ol/interaction/Select';
 import DragBox from 'ol/interaction/DragBox';
+import { singleClick } from 'ol/events/condition';
 
 interface UseFeatureInspectionProps {
   mapRef: React.RefObject<Map | null>;
@@ -113,6 +114,10 @@ export const useFeatureInspection = ({
         style: highlightStyle,
         multi: true,
         hitTolerance: 3,
+        // When in 'box' mode, we don't want clicks to trigger selection.
+        // We manage selection programmatically via the DragBox.
+        // When in 'click' mode, we use the default singleClick condition.
+        condition: selectionMode === 'click' ? singleClick : () => false,
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
       selectInteractionRef.current = select;
@@ -151,7 +156,9 @@ export const useFeatureInspection = ({
         map.addInteraction(dragBox);
 
         dragBox.on('boxstart', () => {
-          select.getFeatures().clear();
+          if (selectInteractionRef.current) {
+            selectInteractionRef.current.getFeatures().clear();
+          }
         });
 
         dragBox.on('boxend', (e) => {
@@ -168,7 +175,9 @@ export const useFeatureInspection = ({
               }
             }
           });
-          select.getFeatures().extend(selectedInBox);
+          if (selectInteractionRef.current) {
+            selectInteractionRef.current.getFeatures().extend(selectedInBox);
+          }
         });
       } else { // 'click' mode
         if (mapElementRef.current) {
