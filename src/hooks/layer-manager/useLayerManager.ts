@@ -23,6 +23,7 @@ interface UseLayerManagerProps {
   onShowTableRequest: (features: Feature[], layerName: string) => void;
   updateGeoServerDiscoveredLayerState: (layerName: string, added: boolean, type: 'wms' | 'wfs') => void;
   selectedFeaturesForExtraction: Feature<Geometry>[];
+  clearSelectionAfterExtraction: () => void;
 }
 
 const USER_LAYER_START_Z_INDEX = 10;
@@ -49,6 +50,7 @@ export const useLayerManager = ({
   onShowTableRequest,
   updateGeoServerDiscoveredLayerState,
   selectedFeaturesForExtraction,
+  clearSelectionAfterExtraction,
 }: UseLayerManagerProps) => {
   const [layers, setLayers] = useState<MapLayer[]>([]);
   const { toast } = useToast();
@@ -396,8 +398,9 @@ export const useLayerManager = ({
     });
 
     toast({ description: `${clonedFeatures.length} entidades extraídas a una nueva capa.` });
+    clearSelectionAfterExtraction();
 
-  }, [selectedFeaturesForExtraction, layers, addLayer, toast]);
+  }, [selectedFeaturesForExtraction, layers, addLayer, toast, clearSelectionAfterExtraction]);
   
   const findSentinel2FootprintsInCurrentView = useCallback(async () => {
     if (!mapRef.current) return;

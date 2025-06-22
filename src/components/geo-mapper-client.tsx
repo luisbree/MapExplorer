@@ -140,7 +140,7 @@ export default function GeoMapperClient() {
     mapElementRef, 
     isMapReady,
     onNewSelection: () => {
-      // When a new selection is made, ensure the attributes panel is visible.
+      // When a new selection is made, or attributes are shown, ensure the attributes panel is visible.
       if (panels.attributes.isMinimized) {
         togglePanelMinimize('attributes');
       }
@@ -171,6 +171,7 @@ export default function GeoMapperClient() {
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
     updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState,
     selectedFeaturesForExtraction: featureInspectionHook.selectedFeatures,
+    clearSelectionAfterExtraction: featureInspectionHook.clearSelection,
   });
   
   const {
