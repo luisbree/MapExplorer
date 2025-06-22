@@ -350,59 +350,40 @@ export const useLayerManager = ({
     toast({ description: `${intersectingFeatures.length} entidades extraídas a una nueva capa.` });
   }, [layers, drawingSourceRef, addLayer, toast]);
   
-  const handleExtractBySelection = useCallback((layerIdToExtract: string) => {
-    const targetLayer = layers.find(l => l.id === layerIdToExtract) as VectorMapLayer | undefined;
-    
-    if (!targetLayer || !(targetLayer.olLayer instanceof VectorLayer)) {
-      toast({ description: "La capa de destino debe ser una capa vectorial." });
-      return;
-    }
-
+  const handleExtractBySelection = useCallback(() => {
     if (selectedFeaturesForExtraction.length === 0) {
-        toast({ description: "No hay entidades seleccionadas para usar en la extracción." });
+        toast({ description: "No hay entidades seleccionadas para extraer." });
         return;
     }
+
+    const clonedFeatures = selectedFeaturesForExtraction.map(f => f.clone());
     
-    const targetSource = targetLayer.olLayer.getSource();
-    if (!targetSource) return;
-
-    const intersectingFeatures: Feature<Geometry>[] = [];
-    const selectorGeometries = selectedFeaturesForExtraction.map(f => f.getGeometry()).filter((g): g is Geometry => !!g);
-
-    if (selectorGeometries.length === 0) {
-        toast({ description: "Las entidades seleccionadas no tienen geometría válida." });
-        return;
-    }
-
-    const targetFeatures = targetSource.getFeatures();
-
-    for (const targetFeature of targetFeatures) {
-        const targetGeometry = targetFeature.getGeometry();
-        if (!targetGeometry) continue;
-
-        for (const selectorGeometry of selectorGeometries) {
-            if (selectorGeometry.intersectsExtent(targetGeometry.getExtent())) {
-                intersectingFeatures.push(targetFeature.clone());
-                break; 
-            }
+    // Try to find the style from the layer of the first selected feature.
+    // This is a "best effort" approach.
+    let style;
+    const firstFeature = selectedFeaturesForExtraction[0];
+    if (firstFeature) {
+      for (const layer of layers) {
+        if (layer.olLayer instanceof VectorLayer) {
+          const source = layer.olLayer.getSource();
+          if (source && source.hasFeature(firstFeature)) {
+            style = layer.olLayer.getStyle();
+            break;
+          }
         }
+      }
     }
 
-    if (intersectingFeatures.length === 0) {
-        toast({ description: "No se encontraron entidades de la capa de destino que intersecten con la selección." });
-        return;
-    }
-    
-    const newSourceName = `Extracción de ${targetLayer.name}`;
-    const newSource = new VectorSource({ features: intersectingFeatures });
+    const newSourceName = `Selección extraída (${clonedFeatures.length})`;
+    const newSource = new VectorSource({ features: clonedFeatures });
     const newLayer = new VectorLayer({
         source: newSource,
         properties: {
-            id: `extract-sel-${targetLayer.id}-${nanoid()}`,
+            id: `extract-sel-${nanoid()}`,
             name: newSourceName,
             type: 'vector'
         },
-        style: targetLayer.olLayer.getStyle()
+        style: style // Apply style from original layer if found, otherwise uses default
     });
 
     addLayer({
@@ -413,8 +394,10 @@ export const useLayerManager = ({
         opacity: 1,
         type: 'vector'
     });
-    toast({ description: `${intersectingFeatures.length} entidades extraídas a una nueva capa.` });
-  }, [layers, selectedFeaturesForExtraction, addLayer, toast]);
+
+    toast({ description: `${clonedFeatures.length} entidades extraídas a una nueva capa.` });
+
+  }, [selectedFeaturesForExtraction, layers, addLayer, toast]);
   
   const findSentinel2FootprintsInCurrentView = useCallback(async () => {
     if (!mapRef.current) return;

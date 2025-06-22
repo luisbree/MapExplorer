@@ -12,7 +12,7 @@ interface LayerListProps {
   onShowLayerTable: (layerId: string) => void;
   onRemoveLayer: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
-  onExtractBySelection: (layerId: string) => void;
+  onExtractBySelection: () => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;

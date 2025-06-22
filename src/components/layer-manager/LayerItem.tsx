@@ -23,7 +23,7 @@ interface LayerItemProps {
   onShowLayerTable: (layerId: string) => void;
   onRemove: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
-  onExtractBySelection: (layerId: string) => void;
+  onExtractBySelection: () => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
@@ -148,12 +148,12 @@ const LayerItem: React.FC<LayerItemProps> = ({
             {isVectorLayer && (
               <DropdownMenuItem
                 className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                onSelect={() => onExtractBySelection(layer.id)}
+                onSelect={() => onExtractBySelection()}
                 disabled={isSelectionEmpty}
               >
                 <CopyPlus className="mr-2 h-3.5 w-3.5" />
-                <span title={isSelectionEmpty ? "Seleccione una o más entidades primero" : `Extraer de ${layer.name} por selección`}>
-                  Extraer por selección
+                <span title={isSelectionEmpty ? "Seleccione una o más entidades primero" : `Crear una nueva capa a partir de la selección actual`}>
+                  Crear capa desde selección
                 </span>
               </DropdownMenuItem>
             )}
