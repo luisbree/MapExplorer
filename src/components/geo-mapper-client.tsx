@@ -119,13 +119,32 @@ export default function GeoMapperClient() {
   const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
 
+  const { panels, handlePanelMouseDown, togglePanelCollapse, togglePanelMinimize } = useFloatingPanels({
+    layersPanelRef,
+    toolsPanelRef,
+    legendPanelRef,
+    attributesPanelRef,
+    aiPanelRef,
+    mapAreaRef,
+    panelWidth: PANEL_WIDTH,
+    panelPadding: PANEL_PADDING,
+  });
+
   const [activeBaseLayerId, setActiveBaseLayerId] = useState<string>(BASE_LAYER_DEFINITIONS[0].id);
   const handleChangeBaseLayer = useCallback((newBaseLayerId: string) => {
     setActiveBaseLayerId(newBaseLayerId);
   }, []);
 
   const featureInspectionHook = useFeatureInspection({
-    mapRef, mapElementRef, isMapReady,
+    mapRef, 
+    mapElementRef, 
+    isMapReady,
+    onNewSelection: () => {
+      // When a new selection is made, ensure the attributes panel is visible.
+      if (panels.attributes.isMinimized) {
+        togglePanelMinimize('attributes');
+      }
+    }
   });
 
   const [isWfsLoading, setIsWfsLoading] = useState(false);
@@ -201,17 +220,6 @@ export default function GeoMapperClient() {
     mapRef, isMapReady, drawingSourceRef,
     isInspectModeActive: featureInspectionHook.isInspectModeActive,
     toggleInspectMode: featureInspectionHook.toggleInspectMode,
-  });
-
-  const { panels, handlePanelMouseDown, togglePanelCollapse, togglePanelMinimize } = useFloatingPanels({
-    layersPanelRef,
-    toolsPanelRef,
-    legendPanelRef,
-    attributesPanelRef,
-    aiPanelRef,
-    mapAreaRef,
-    panelWidth: PANEL_WIDTH,
-    panelPadding: PANEL_PADDING,
   });
 
   const { captureMap, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
@@ -327,19 +335,6 @@ export default function GeoMapperClient() {
     }
 
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook]);
-
-
-  // This effect used to auto-open the attributes panel. It has been removed
-  // to prevent it from conflicting with the user's action to close the panel.
-  // Now, the user must manually open the panel via the header button if it's minimized.
-  //
-  // useEffect(() => {
-  //   if (featureInspectionHook.selectedFeatureAttributes && featureInspectionHook.selectedFeatureAttributes.length > 0) {
-  //     if (panels.attributes && panels.attributes.isMinimized) {
-  //       togglePanelMinimize('attributes'); 
-  //     }
-  //   } 
-  // }, [featureInspectionHook.selectedFeatureAttributes, panels.attributes, togglePanelMinimize]);
 
 
   return (

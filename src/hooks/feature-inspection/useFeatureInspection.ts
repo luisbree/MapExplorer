@@ -15,6 +15,7 @@ interface UseFeatureInspectionProps {
   mapRef: React.RefObject<Map | null>;
   mapElementRef: React.RefObject<HTMLDivElement | null>;
   isMapReady: boolean;
+  onNewSelection: () => void;
 }
 
 const highlightStyle = new Style({
@@ -37,6 +38,7 @@ export const useFeatureInspection = ({
   mapRef,
   mapElementRef,
   isMapReady,
+  onNewSelection,
 }: UseFeatureInspectionProps) => {
   const { toast } = useToast();
   const [isInspectModeActive, setIsInspectModeActive] = useState(false);
@@ -132,6 +134,7 @@ export const useFeatureInspection = ({
             }
           });
           processAndDisplayFeatures(selectedFeatures, layerName);
+          onNewSelection(); // Signal that a new selection was made
         } else {
           setSelectedFeatureAttributes(null);
           setCurrentInspectedLayerName(null);
@@ -178,7 +181,7 @@ export const useFeatureInspection = ({
         if (dragBoxInteractionRef.current) map.removeInteraction(dragBoxInteractionRef.current);
       }
     };
-  }, [isInspectModeActive, selectionMode, isMapReady, mapRef, mapElementRef, processAndDisplayFeatures]);
+  }, [isInspectModeActive, selectionMode, isMapReady, mapRef, mapElementRef, processAndDisplayFeatures, onNewSelection]);
 
   return {
     isInspectModeActive,
