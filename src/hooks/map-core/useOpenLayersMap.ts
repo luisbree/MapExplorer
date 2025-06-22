@@ -37,7 +37,7 @@ export const useOpenLayersMap = () => {
       properties: {
         id: 'drawing-layer',
         name: 'Dibujos del Usuario',
-        isDrawingLayer: true,
+        isDrawingLayer: true, // Custom property to identify this layer
       }
     })
   );
@@ -62,4 +62,3 @@ export const useOpenLayersMap = () => {
     isMapReady,
   };
 };
-

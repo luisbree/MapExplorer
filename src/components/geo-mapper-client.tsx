@@ -116,7 +116,7 @@ export default function GeoMapperClient() {
   const attributesPanelRef = useRef<HTMLDivElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
 
-  const { mapRef, mapElementRef, drawingSourceRef, drawingLayerRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
+  const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
 
   const [activeBaseLayerId, setActiveBaseLayerId] = useState<string>(BASE_LAYER_DEFINITIONS[0].id);
@@ -125,7 +125,7 @@ export default function GeoMapperClient() {
   }, []);
 
   const featureInspectionHook = useFeatureInspection({
-    mapRef, mapElementRef, isMapReady, drawingSourceRef, drawingLayerRef,
+    mapRef, mapElementRef, isMapReady,
   });
 
   const [isWfsLoading, setIsWfsLoading] = useState(false);
@@ -148,7 +148,6 @@ export default function GeoMapperClient() {
   const layerManagerHook = useLayerManager({
     mapRef,
     isMapReady,
-    drawingLayerRef,
     drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
     updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState
@@ -197,6 +196,7 @@ export default function GeoMapperClient() {
     downloadFormat, setDownloadFormat, isDownloading, handleDownloadOSMLayers,
   } = useOSMData({ drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
 
+  // Orchestration between drawing and feature inspection tools
   const drawingInteractions = useDrawingInteractions({
     mapRef, isMapReady, drawingSourceRef,
     isInspectModeActive: featureInspectionHook.isInspectModeActive,
@@ -329,16 +329,7 @@ export default function GeoMapperClient() {
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook]);
 
 
-  useEffect(() => {
-    featureInspectionHook.updateLayers(layerManagerHook.layers);
-  }, [layerManagerHook.layers, featureInspectionHook]);
-
    useEffect(() => {
-    featureInspectionHook.activeDrawTool = drawingInteractions.activeDrawTool;
-    featureInspectionHook.stopDrawingTool = drawingInteractions.stopDrawingTool;
-  }, [drawingInteractions.activeDrawTool, drawingInteractions.stopDrawingTool, featureInspectionHook ]);
-
-  useEffect(() => {
     if (featureInspectionHook.selectedFeatureAttributes && featureInspectionHook.selectedFeatureAttributes.length > 0) {
       if (panels.attributes && panels.attributes.isMinimized) {
         togglePanelMinimize('attributes'); 
@@ -472,8 +463,11 @@ export default function GeoMapperClient() {
             onSetLayerOpacity={layerManagerHook.setLayerOpacity}
             onReorderLayers={layerManagerHook.reorderLayers}
             onAddLayer={layerManagerHook.addLayer as (layer: MapLayer) => void}
-            isInspectModeActive={featureInspectionHook.isInspectModeActive}
-            onToggleInspectMode={featureInspectionHook.toggleInspectMode}
+            isInteractionActive={featureInspectionHook.isInspectModeActive}
+            onToggleInteraction={featureInspectionHook.toggleInspectMode}
+            selectionMode={featureInspectionHook.selectionMode}
+            onSetSelectionMode={featureInspectionHook.setSelectionMode}
+            onClearSelection={featureInspectionHook.clearSelection}
             style={{ top: `${panels.legend.position.y}px`, left: `${panels.legend.position.x}px`, zIndex: panels.legend.zIndex }}
           />
         )}
@@ -484,7 +478,7 @@ export default function GeoMapperClient() {
             isCollapsed={panels.attributes.isCollapsed}
             onToggleCollapse={() => togglePanelCollapse('attributes')}
             onClosePanel={() => {
-              featureInspectionHook.clearInspectedAttributes(); 
+              featureInspectionHook.clearSelection(); 
               togglePanelMinimize('attributes'); 
             }}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'attributes')}

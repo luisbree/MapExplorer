@@ -5,10 +5,10 @@ import React from 'react';
 import DraggablePanel from './DraggablePanel';
 import LayerList from '@/components/layer-manager/LayerList';
 import FileUploadControl from '@/components/layer-manager/FileUploadControl';
-import InspectToolToggle from '@/components/feature-inspection/InspectToolToggle';
+import FeatureInteractionToolbar from '@/components/feature-inspection/FeatureInteractionToolbar';
 import { Separator } from '@/components/ui/separator';
 import type { MapLayer } from '@/lib/types';
-import { ListTree, Library } from 'lucide-react'; 
+import { ListTree } from 'lucide-react'; 
 
 interface LegendPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -29,8 +29,13 @@ interface LegendPanelProps {
 
 
   onAddLayer: (layer: MapLayer) => void;
-  isInspectModeActive: boolean;
-  onToggleInspectMode: () => void;
+
+  isInteractionActive: boolean;
+  onToggleInteraction: () => void;
+  selectionMode: 'click' | 'box';
+  onSetSelectionMode: (mode: 'click' | 'box') => void;
+  onClearSelection: () => void;
+
   style?: React.CSSProperties;
 }
 
@@ -39,7 +44,8 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
   layers, onToggleLayerVisibility, onRemoveLayer, onZoomToLayerExtent, onShowLayerTable,
   onExtractByPolygon, isDrawingSourceEmptyOrNotPolygon, onSetLayerOpacity, onReorderLayers,
-  onAddLayer, isInspectModeActive, onToggleInspectMode,
+  onAddLayer, 
+  isInteractionActive, onToggleInteraction, selectionMode, onSetSelectionMode, onClearSelection,
   style,
 }) => {
 
@@ -60,9 +66,12 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
       <div className="space-y-2"> 
         <div className="flex items-center gap-1 p-1 bg-white/5 rounded-md"> 
           <FileUploadControl onAddLayer={onAddLayer} uniqueIdPrefix="legendpanel-upload" />
-          <InspectToolToggle
-            isInspectModeActive={isInspectModeActive}
-            onToggleInspectMode={onToggleInspectMode}
+          <FeatureInteractionToolbar
+            isInteractionActive={isInteractionActive}
+            onToggleInteraction={onToggleInteraction}
+            selectionMode={selectionMode}
+            onSetSelectionMode={onSetSelectionMode}
+            onClearSelection={onClearSelection}
           />
         </div>
         <Separator className="bg-white/10" /> 
@@ -70,7 +79,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           layers={layers}
           onToggleVisibility={onToggleLayerVisibility}
           onZoomToExtent={onZoomToLayerExtent}
-          onShowTable={onShowLayerTable}
+          onShowTable={onShowTable}
           onRemoveLayer={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
