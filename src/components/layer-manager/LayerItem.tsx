@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -21,7 +20,7 @@ interface LayerItemProps {
   layer: MapLayer;
   onToggleVisibility: (layerId: string) => void;
   onZoomToExtent: (layerId: string) => void;
-  onShowTable: (layerId: string) => void;
+  onShowLayerTable: (layerId: string) => void;
   onRemove: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
@@ -43,7 +42,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
   layer,
   onToggleVisibility,
   onZoomToExtent,
-  onShowTable,
+  onShowLayerTable,
   onRemove,
   onExtractByPolygon,
   isDrawingSourceEmptyOrNotPolygon,
@@ -122,7 +121,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
             {isVectorLayer && (
               <DropdownMenuItem
                 className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer"
-                onSelect={() => onShowTable(layer.id)}
+                onSelect={() => onShowLayerTable(layer.id)}
               >
                 <Table2 className="mr-2 h-3.5 w-3.5" />
                 Ver tabla de atributos

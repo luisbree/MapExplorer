@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useRef, useState } from 'react';
@@ -10,7 +9,7 @@ interface LayerListProps {
   layers: MapLayer[];
   onToggleVisibility: (layerId: string) => void;
   onZoomToExtent: (layerId: string) => void; 
-  onShowTable: (layerId: string) => void;
+  onShowLayerTable: (layerId: string) => void;
   onRemoveLayer: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
@@ -22,7 +21,7 @@ const LayerList: React.FC<LayerListProps> = ({
   layers,
   onToggleVisibility,
   onZoomToExtent, 
-  onShowTable,
+  onShowLayerTable,
   onRemoveLayer,
   onExtractByPolygon,
   isDrawingSourceEmptyOrNotPolygon,
@@ -99,7 +98,7 @@ const LayerList: React.FC<LayerListProps> = ({
           layer={layer}
           onToggleVisibility={onToggleVisibility}
           onZoomToExtent={onZoomToExtent}
-          onShowTable={onShowTable}
+          onShowLayerTable={onShowLayerTable}
           onRemove={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -79,7 +78,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           layers={layers}
           onToggleVisibility={onToggleLayerVisibility}
           onZoomToExtent={onZoomToLayerExtent}
-          onShowTable={onShowTable}
+          onShowLayerTable={onShowLayerTable}
           onRemoveLayer={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
