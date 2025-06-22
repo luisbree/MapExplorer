@@ -114,9 +114,6 @@ export const useFeatureInspection = ({
         style: highlightStyle,
         multi: true,
         hitTolerance: 3,
-        // When in 'box' mode, we don't want clicks to trigger selection.
-        // We manage selection programmatically via the DragBox.
-        // When in 'click' mode, we use the default singleClick condition.
         condition: selectionMode === 'click' ? singleClick : () => false,
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
@@ -132,7 +129,6 @@ export const useFeatureInspection = ({
           const firstFeature = currentSelectedFeatures[0];
           let layerName = 'Capa seleccionada';
           
-          // Try to find the layer of the first selected feature
           map.getLayers().forEach(layer => {
             if (layer instanceof VectorLayer) {
               const source = layer.getSource();
@@ -142,7 +138,7 @@ export const useFeatureInspection = ({
             }
           });
           processAndDisplayFeatures(currentSelectedFeatures, layerName);
-          onNewSelection(); // Signal that a new selection was made
+          onNewSelection();
         } else {
           setSelectedFeatureAttributes(null);
           setCurrentInspectedLayerName(null);
@@ -164,19 +160,38 @@ export const useFeatureInspection = ({
         dragBox.on('boxend', (e) => {
           const extent = dragBox.getGeometry().getExtent();
           const selectedInBox: Feature<Geometry>[] = [];
+          let layerNameForAttributes: string | null = null;
           
           map.getLayers().forEach(layer => {
             if (layer instanceof VectorLayer && layer.getVisible() && !layer.get('isBaseLayer') && !layer.get('isDrawingLayer')) {
               const source = layer.getSource();
               if (source) {
                 source.forEachFeatureIntersectingExtent(extent, (feature) => {
-                  selectedInBox.push(feature as Feature<Geometry>);
+                   const olFeature = feature as Feature<Geometry>;
+                   selectedInBox.push(olFeature);
+                   if (!layerNameForAttributes) {
+                    layerNameForAttributes = layer.get('name') || 'Capa seleccionada';
+                   }
                 });
               }
             }
           });
+          
           if (selectInteractionRef.current) {
+            // Add features to the OL selection for highlighting
             selectInteractionRef.current.getFeatures().extend(selectedInBox);
+            
+            // Manually update the React state because extending the collection doesn't fire a 'select' event.
+            const finalSelection = selectInteractionRef.current.getFeatures().getArray();
+            setSelectedFeatures(finalSelection);
+
+            if (finalSelection.length > 0) {
+              processAndDisplayFeatures(finalSelection, layerNameForAttributes || 'Múltiples capas');
+              onNewSelection();
+            } else {
+              setSelectedFeatureAttributes(null);
+              setCurrentInspectedLayerName(null);
+            }
           }
         });
       } else { // 'click' mode
