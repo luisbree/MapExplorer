@@ -289,13 +289,20 @@ export const useLayerManager = ({
 
   const handleShowLayerTable = useCallback((layerId: string) => {
     const layer = layers.find(l => l.id === layerId);
-    if (layer && 'getSource' in layer.olLayer) {
-      const source = (layer.olLayer as VectorLayer<VectorSource>).getSource();
-      if (source) {
-        onShowTableRequest(source.getFeatures(), layer.name);
-      }
+    if (layer && layer.olLayer instanceof VectorLayer) {
+        const source = layer.olLayer.getSource();
+        if (source) {
+            const features = source.getFeatures();
+            if (features.length > 0) {
+                onShowTableRequest(features, layer.name);
+            } else {
+                toast({ description: `La capa "${layer.name}" no tiene entidades para mostrar en la tabla.` });
+            }
+        }
+    } else {
+        toast({ description: "Solo se puede mostrar la tabla de atributos para capas vectoriales." });
     }
-  }, [layers, onShowTableRequest]);
+  }, [layers, onShowTableRequest, toast]);
 
   const isDrawingSourceEmptyOrNotPolygon = useMemo(() => {
     const features = drawingSourceRef.current?.getFeatures() ?? [];
@@ -360,23 +367,26 @@ export const useLayerManager = ({
 
     const clonedFeatures = selectedFeaturesForExtraction.map(f => f.clone());
     
-    // Try to find the style from the layer of the first selected feature.
-    // This is a "best effort" approach.
     let style;
+    let originalLayerName = 'Selección'; // Default name if layer is not found
     const firstFeature = selectedFeaturesForExtraction[0];
+
+    // Find the original layer of the first feature to get its name and style
     if (firstFeature) {
       for (const layer of layers) {
         if (layer.olLayer instanceof VectorLayer) {
           const source = layer.olLayer.getSource();
+          // Check if the source contains the *original* feature, not a clone
           if (source && source.hasFeature(firstFeature)) {
             style = layer.olLayer.getStyle();
+            originalLayerName = layer.name;
             break;
           }
         }
       }
     }
 
-    const newSourceName = `Selección extraída (${clonedFeatures.length})`;
+    const newSourceName = `Extraidas_${originalLayerName}`;
     const newSource = new VectorSource({ features: clonedFeatures });
     const newLayer = new VectorLayer({
         source: newSource,
@@ -385,7 +395,7 @@ export const useLayerManager = ({
             name: newSourceName,
             type: 'vector'
         },
-        style: style // Apply style from original layer if found, otherwise uses default
+        style: style // Apply style from original layer if found
     });
 
     addLayer({
@@ -397,7 +407,9 @@ export const useLayerManager = ({
         type: 'vector'
     });
 
-    toast({ description: `${clonedFeatures.length} entidades extraídas a una nueva capa.` });
+    toast({ description: `${clonedFeatures.length} entidades extraídas a la capa "${newSourceName}".` });
+    
+    // Clear selection AFTER creating the new layer
     clearSelectionAfterExtraction();
 
   }, [selectedFeaturesForExtraction, layers, addLayer, toast, clearSelectionAfterExtraction]);
