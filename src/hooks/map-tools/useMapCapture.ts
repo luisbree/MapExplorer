@@ -84,20 +84,26 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
             const imageData = mapContext.getImageData(0, 0, mapCanvas.width, mapCanvas.height);
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i+1];
+                const b = data[i+2];
+                let grayValue = 0;
+                
                 switch (outputType) {
                     case 'jpeg-red':
-                        data[i+1] = 0; // Green
-                        data[i+2] = 0; // Blue
+                        grayValue = r;
                         break;
                     case 'jpeg-green':
-                        data[i] = 0;   // Red
-                        data[i+2] = 0; // Blue
+                        grayValue = g;
                         break;
                     case 'jpeg-blue':
-                        data[i] = 0;   // Red
-                        data[i+1] = 0; // Green
+                        grayValue = b;
                         break;
                 }
+                data[i] = grayValue;   // Red
+                data[i+1] = grayValue; // Green
+                data[i+2] = grayValue; // Blue
+                // Alpha (data[i+3]) remains unchanged
             }
             mapContext.putImageData(imageData, 0, 0);
         }

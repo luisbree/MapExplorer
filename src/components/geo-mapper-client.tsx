@@ -336,7 +336,11 @@ export default function GeoMapperClient() {
         }
     }
 
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook]);
+    if (action.captureMap) {
+      captureMap(action.captureMap);
+    }
+
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap]);
 
 
   return (
