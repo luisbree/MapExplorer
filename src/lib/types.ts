@@ -46,3 +46,18 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+export interface NominatimResult {
+  place_id: number;
+  licence: string;
+  osm_type: string;
+  osm_id: number;
+  boundingbox: string[]; // [southLat, northLat, westLon, eastLon]
+  lat: string;
+  lon: string;
+  display_name: string;
+  class: string;
+  type: string;
+  importance: number;
+  icon?: string;
+}

@@ -340,7 +340,16 @@ export default function GeoMapperClient() {
       captureMap(action.captureMap);
     }
 
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap]);
+    if (action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4) {
+      const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox.map(coord => parseFloat(coord));
+      if ([sLat, nLat, wLon, eLon].every(c => !isNaN(c))) {
+        zoomToBoundingBox([wLon, sLat, eLon, nLat]);
+      } else {
+        toast({description: `Drax devolvió una ubicación inválida.`});
+      }
+    }
+
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap, zoomToBoundingBox]);
 
 
   return (

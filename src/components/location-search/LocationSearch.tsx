@@ -11,21 +11,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import type { NominatimResult } from '@/lib/types';
 
-export interface NominatimResult {
-  place_id: number;
-  licence: string;
-  osm_type: string;
-  osm_id: number;
-  boundingbox: string[]; // [southLat, northLat, westLon, eastLon]
-  lat: string;
-  lon: string;
-  display_name: string;
-  class: string;
-  type: string;
-  importance: number;
-  icon?: string;
-}
 
 interface LocationSearchProps {
   onLocationSelect: (location: NominatimResult) => void;
@@ -61,7 +48,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, class
       // setIsSuggestionsVisible(data.length > 0 || query.trim().length >=3); // Keep visible to show "no results"
     } catch (error) {
       console.error("Error fetching from Nominatim:", error);
-      toast("Error al buscar ubicaciones. Intente nuevamente.");
+      toast({ description: "Error al buscar ubicaciones. Intente nuevamente." });
       setResults([]);
       // setIsSuggestionsVisible(query.trim().length >=3); // Keep visible to show error/empty
     } finally {
