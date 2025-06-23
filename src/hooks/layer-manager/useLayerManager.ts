@@ -14,6 +14,8 @@ import { nanoid } from 'nanoid';
 import { Style, Stroke, Fill, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import { asArray as asOlColorArray } from 'ol/color';
+import GeoJSON from 'ol/format/GeoJSON';
+import KML from 'ol/format/KML';
 
 
 interface UseLayerManagerProps {
@@ -413,6 +415,56 @@ export const useLayerManager = ({
     clearSelectionAfterExtraction();
 
   }, [selectedFeaturesForExtraction, layers, addLayer, toast, clearSelectionAfterExtraction]);
+
+  const handleExportSelection = useCallback((format: 'geojson' | 'kml') => {
+    if (selectedFeaturesForExtraction.length === 0) {
+      toast({ description: "No hay entidades seleccionadas para exportar." });
+      return;
+    }
+
+    try {
+      let fileContent = '';
+      let fileExtension = format;
+      let mimeType = 'application/json';
+      const featuresToExport = selectedFeaturesForExtraction.map(f => f.clone());
+
+      if (format === 'geojson') {
+        const geojsonFormat = new GeoJSON({
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+        });
+        fileContent = geojsonFormat.writeFeatures(featuresToExport, {
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326'
+        });
+      } else if (format === 'kml') {
+        const kmlFormat = new KML({
+          extractStyles: true,
+          showPointNames: true,
+        });
+        fileContent = kmlFormat.writeFeatures(featuresToExport, {
+          featureProjection: 'EPSG:3857',
+          dataProjection: 'EPSG:4326',
+        });
+        mimeType = 'application/vnd.google-earth.kml+xml';
+      }
+
+      const blob = new Blob([fileContent], { type: mimeType });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `seleccion_exportada_${new Date().toISOString().split('T')[0]}.${fileExtension}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(link.href);
+
+      toast({ description: `Selección exportada como ${format.toUpperCase()}.` });
+
+    } catch (error) {
+      console.error('Error exporting selection:', error);
+      toast({ description: 'Ocurrió un error al exportar la selección.', variant: 'destructive' });
+    }
+  }, [selectedFeaturesForExtraction, toast]);
   
   const findSentinel2FootprintsInCurrentView = useCallback(async () => {
     if (!mapRef.current) return;
@@ -484,6 +536,7 @@ export const useLayerManager = ({
     isDrawingSourceEmptyOrNotPolygon,
     handleExtractByPolygon,
     handleExtractBySelection,
+    handleExportSelection,
     findSentinel2FootprintsInCurrentView,
     isFindingSentinelFootprints,
     clearSentinel2FootprintsLayer

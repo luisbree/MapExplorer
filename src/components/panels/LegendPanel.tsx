@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -23,6 +24,7 @@ interface LegendPanelProps {
   onShowLayerTable: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
   onExtractBySelection: () => void;
+  onExportSelection: (format: 'geojson' | 'kml') => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void; 
@@ -44,7 +46,7 @@ interface LegendPanelProps {
 const LegendPanel: React.FC<LegendPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
   layers, onToggleLayerVisibility, onRemoveLayer, onZoomToLayerExtent, onShowLayerTable,
-  onExtractByPolygon, onExtractBySelection, isDrawingSourceEmptyOrNotPolygon, isSelectionEmpty, onSetLayerOpacity, onReorderLayers,
+  onExtractByPolygon, onExtractBySelection, onExportSelection, isDrawingSourceEmptyOrNotPolygon, isSelectionEmpty, onSetLayerOpacity, onReorderLayers,
   onAddLayer, 
   isInteractionActive, onToggleInteraction, selectionMode, onSetSelectionMode, onClearSelection,
   style,
@@ -84,6 +86,7 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           onRemoveLayer={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
           onExtractBySelection={onExtractBySelection}
+          onExportSelection={onExportSelection}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
           isSelectionEmpty={isSelectionEmpty}
           onSetLayerOpacity={onSetLayerOpacity}

@@ -1,3 +1,4 @@
+
 "use client";
 
 import React from 'react';
@@ -8,10 +9,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel, 
+  DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger, 
 } from "@/components/ui/dropdown-menu";
 import { Slider } from "@/components/ui/slider"; 
-import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent, GripVertical, CopyPlus } from 'lucide-react';
+import { Eye, EyeOff, Settings2, ZoomIn, Table2, Trash2, Scissors, Percent, GripVertical, CopyPlus, Download } from 'lucide-react';
 import type { MapLayer } from '@/lib/types';
 import VectorLayer from 'ol/layer/Vector'; 
 import { cn } from '@/lib/utils';
@@ -24,6 +28,7 @@ interface LayerItemProps {
   onRemove: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
   onExtractBySelection: () => void;
+  onExportSelection: (format: 'geojson' | 'kml') => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
@@ -48,6 +53,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
   onRemove,
   onExtractByPolygon,
   onExtractBySelection,
+  onExportSelection,
   isDrawingSourceEmptyOrNotPolygon,
   isSelectionEmpty,
   onSetLayerOpacity,
@@ -157,6 +163,34 @@ const LayerItem: React.FC<LayerItemProps> = ({
                 </span>
               </DropdownMenuItem>
             )}
+
+            {isVectorLayer && (
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger
+                    className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={isSelectionEmpty}
+                  >
+                    <Download className="mr-2 h-3.5 w-3.5" />
+                    <span title={isSelectionEmpty ? "Seleccione entidades primero" : "Exportar entidades seleccionadas"}>
+                      Exportar selección como...
+                    </span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="bg-gray-700 text-white border-gray-600">
+                    <DropdownMenuItem
+                      className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer"
+                      onSelect={() => onExportSelection('geojson')}
+                    >
+                      GeoJSON
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer"
+                      onSelect={() => onExportSelection('kml')}
+                    >
+                      KML
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              )}
             
             <DropdownMenuSeparator className="bg-gray-500/50" />
             <DropdownMenuLabel className="text-xs text-gray-300 px-2 py-1 flex items-center">

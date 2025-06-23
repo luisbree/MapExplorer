@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useRef, useState } from 'react';
@@ -13,6 +14,7 @@ interface LayerListProps {
   onRemoveLayer: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
   onExtractBySelection: () => void;
+  onExportSelection: (format: 'geojson' | 'kml') => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
@@ -27,6 +29,7 @@ const LayerList: React.FC<LayerListProps> = ({
   onRemoveLayer,
   onExtractByPolygon,
   onExtractBySelection,
+  onExportSelection,
   isDrawingSourceEmptyOrNotPolygon,
   isSelectionEmpty,
   onSetLayerOpacity,
@@ -106,6 +109,7 @@ const LayerList: React.FC<LayerListProps> = ({
           onRemove={onRemoveLayer}
           onExtractByPolygon={onExtractByPolygon}
           onExtractBySelection={onExtractBySelection}
+          onExportSelection={onExportSelection}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
           isSelectionEmpty={isSelectionEmpty}
           onSetLayerOpacity={onSetLayerOpacity}
