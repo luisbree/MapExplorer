@@ -4,11 +4,11 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'ol';
 import VectorLayer from 'ol/layer/Vector';
-import Feature from 'ol/Feature';
+import type Feature from 'ol/Feature';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import { useToast } from "@/hooks/use-toast";
-import { Geometry } from 'ol/geom';
-import Select, { SelectEvent } from 'ol/interaction/Select';
+import type { Geometry } from 'ol/geom';
+import Select, { type SelectEvent } from 'ol/interaction/Select';
 import DragBox from 'ol/interaction/DragBox';
 import { singleClick } from 'ol/events/condition';
 
@@ -122,7 +122,8 @@ export const useFeatureInspection = ({
         style: highlightStyle,
         multi: true, // Allow multiple features to be selected
         hitTolerance: 3,
-        condition: singleClick, // Click condition is always active
+        // The condition is now dynamic based on the mode
+        condition: selectionMode === 'click' ? singleClick : () => false, // Only allow click selection in 'click' mode
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
       selectInteractionRef.current = select;
@@ -130,7 +131,7 @@ export const useFeatureInspection = ({
 
       // 2. Setup the event listener for selection changes
       select.on('select', (e: SelectEvent) => {
-        const currentSelectedFeatures = select.getFeatures().getArray();
+        const currentSelectedFeatures = e.target.getFeatures().getArray();
         setSelectedFeatures(currentSelectedFeatures);
 
         if (currentSelectedFeatures.length > 0) {
@@ -175,13 +176,10 @@ export const useFeatureInspection = ({
             }
           });
           
-          // Replace the current selection with the features in the box
+          // Replace the current selection with the features in the box.
+          // This will automatically trigger the 'select' event on the 'select' interaction.
           select.getFeatures().clear();
           select.getFeatures().extend(selectedFeaturesInBox);
-          
-          // Manually dispatch the 'select' event so the handler above catches it
-          const selectEvent = new SelectEvent('select', selectedFeaturesInBox, []);
-          select.dispatchEvent(selectEvent);
         });
       } else { // 'click' mode
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'help';
