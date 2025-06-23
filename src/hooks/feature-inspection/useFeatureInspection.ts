@@ -8,7 +8,7 @@ import Feature from 'ol/Feature';
 import { Circle as CircleStyle, Fill, Stroke, Style } from 'ol/style';
 import { useToast } from "@/hooks/use-toast";
 import { Geometry } from 'ol/geom';
-import Select, { type SelectEvent } from 'ol/interaction/Select';
+import Select, { SelectEvent } from 'ol/interaction/Select';
 import DragBox from 'ol/interaction/DragBox';
 import { singleClick } from 'ol/events/condition';
 
