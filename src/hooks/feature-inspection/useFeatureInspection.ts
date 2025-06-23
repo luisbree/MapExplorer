@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -83,7 +84,11 @@ export const useFeatureInspection = ({
     if (selectInteractionRef.current) {
       selectInteractionRef.current.getFeatures().clear();
     }
-    // The 'select' event on the interaction will handle clearing attributes and features state.
+    // The 'select' event on the interaction will handle clearing attributes and features state,
+    // but we also clear the state directly to be safe.
+    setSelectedFeatures([]);
+    setSelectedFeatureAttributes(null);
+    setCurrentInspectedLayerName(null);
   }, []);
 
   const toggleInspectMode = useCallback(() => {
@@ -91,9 +96,7 @@ export const useFeatureInspection = ({
     setIsInspectModeActive(nextState);
 
     if (!nextState) {
-        if (selectInteractionRef.current) {
-            selectInteractionRef.current.getFeatures().clear();
-        }
+        clearSelection(); // Clear any existing selection when turning the tool off
         if (mapElementRef.current) {
             mapElementRef.current.style.cursor = 'default';
         }
@@ -101,7 +104,7 @@ export const useFeatureInspection = ({
     } else {
         toast({ description: 'Modo selección activado.' });
     }
-  }, [isInspectModeActive, mapElementRef, toast]);
+  }, [isInspectModeActive, mapElementRef, toast, clearSelection]);
   
   // Effect to manage interactions based on active state and mode
   useEffect(() => {
@@ -116,44 +119,47 @@ export const useFeatureInspection = ({
     if (mapElementRef.current) mapElementRef.current.style.cursor = 'default';
 
     if (isInspectModeActive) {
-      // 1. Create the main Select interaction. It will always be active in inspect mode.
-      const select = new Select({
-        style: highlightStyle,
-        multi: true,
-        // The condition for selection depends on the mode.
-        condition: selectionMode === 'click' ? singleClick : never, // Disable click in box mode
-        filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
-      });
-      selectInteractionRef.current = select;
-      map.addInteraction(select);
+      // Helper function to update React state from any selection source
+      const updateSelectionState = (newlySelectedFeatures: Feature<Geometry>[]) => {
+        setSelectedFeatures(newlySelectedFeatures); // Update React state for the feature array
 
-      // 2. This 'select' event handler is the SINGLE source of truth for updating React state.
-      select.on('select', (e: SelectEvent) => {
-        const currentSelectedFeatures = e.target.getFeatures().getArray();
-        
-        // Update React state for selected features
-        setSelectedFeatures(currentSelectedFeatures);
-
-        if (currentSelectedFeatures.length > 0) {
-          const firstFeature = currentSelectedFeatures[0];
-          let layerName = 'Capa seleccionada';
-          map.getLayers().forEach(layer => {
-            if (layer instanceof VectorLayer) {
-              const source = layer.getSource();
-              if (source && source.hasFeature(firstFeature)) {
-                layerName = layer.get('name') || layerName;
-              }
+        if (newlySelectedFeatures.length > 0) {
+          let layerName = 'Selección múltiple';
+          // Try to find a common layer name
+          const firstFeature = newlySelectedFeatures[0];
+          for (const layer of map.getLayers().getArray()) {
+             if (layer instanceof VectorLayer) {
+                const source = layer.getSource();
+                 if (source && source.hasFeature(firstFeature)) {
+                    layerName = layer.get('name') || 'Capa seleccionada';
+                    break;
+                }
             }
-          });
-          processAndDisplayFeatures(currentSelectedFeatures, layerName);
+          }
+          processAndDisplayFeatures(newlySelectedFeatures, layerName);
         } else {
           // This case handles deselection
           setSelectedFeatureAttributes(null);
           setCurrentInspectedLayerName(null);
         }
+      };
+
+
+      const select = new Select({
+        style: highlightStyle,
+        multi: true,
+        condition: selectionMode === 'click' ? singleClick : never,
+        filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
+      });
+      selectInteractionRef.current = select;
+      map.addInteraction(select);
+      
+      // Handler for 'click' selections
+      select.on('select', (e: SelectEvent) => {
+        const currentSelectedFeatures = e.target.getFeatures().getArray();
+        updateSelectionState(currentSelectedFeatures);
       });
 
-      // 3. Add DragBox interaction ONLY if in 'box' mode
       if (selectionMode === 'box') {
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'crosshair';
         
@@ -176,17 +182,19 @@ export const useFeatureInspection = ({
             }
           });
           
-          // Modify the Select interaction's collection. This will fire the 'select' event,
-          // which will then update all React state correctly.
+          // Update the visual highlight in OpenLayers
           select.getFeatures().clear();
           select.getFeatures().extend(selectedFeaturesInBox);
+
+          // And MOST IMPORTANTLY, directly update our React state
+          updateSelectionState(selectedFeaturesInBox);
         });
-      } else { // 'click' mode
+      } else { 
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'help';
       }
     }
 
-    // Cleanup function to remove interactions when component unmounts or dependencies change
+    // Cleanup function
     return () => {
       if (map) {
         if (selectInteractionRef.current) map.removeInteraction(selectInteractionRef.current);
