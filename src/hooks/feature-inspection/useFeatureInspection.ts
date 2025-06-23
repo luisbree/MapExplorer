@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -10,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Geometry } from 'ol/geom';
 import Select, { type SelectEvent } from 'ol/interaction/Select';
 import DragBox from 'ol/interaction/DragBox';
-import { singleClick } from 'ol/events/condition';
+import { singleClick, never } from 'ol/events/condition';
 
 interface UseFeatureInspectionProps {
   mapRef: React.RefObject<Map | null>;
@@ -117,20 +116,22 @@ export const useFeatureInspection = ({
     if (mapElementRef.current) mapElementRef.current.style.cursor = 'default';
 
     if (isInspectModeActive) {
-      // 1. Create the main Select interaction; it will be used for both modes.
+      // 1. Create the main Select interaction. It will always be active in inspect mode.
       const select = new Select({
         style: highlightStyle,
         multi: true,
-        hitTolerance: 3,
-        condition: singleClick, // We will handle box selection separately
+        // The condition for selection depends on the mode.
+        condition: selectionMode === 'click' ? singleClick : never, // Disable click in box mode
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
       selectInteractionRef.current = select;
       map.addInteraction(select);
 
-      // 2. Setup the event listener for selection changes. This is the SINGLE source of truth for updating state.
+      // 2. This 'select' event handler is the SINGLE source of truth for updating React state.
       select.on('select', (e: SelectEvent) => {
         const currentSelectedFeatures = e.target.getFeatures().getArray();
+        
+        // Update React state for selected features
         setSelectedFeatures(currentSelectedFeatures);
 
         if (currentSelectedFeatures.length > 0) {
@@ -155,7 +156,6 @@ export const useFeatureInspection = ({
       // 3. Add DragBox interaction ONLY if in 'box' mode
       if (selectionMode === 'box') {
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'crosshair';
-        select.setActive(false); // Deactivate click-select in box mode
         
         const dragBox = new DragBox({});
         dragBoxInteractionRef.current = dragBox;
@@ -164,7 +164,6 @@ export const useFeatureInspection = ({
         dragBox.on('boxend', (e) => {
           const extent = dragBox.getGeometry().getExtent();
           const selectedFeaturesInBox: Feature<Geometry>[] = [];
-          const layerNames = new Set<string>();
           
           map.getLayers().forEach(layer => {
             if (layer instanceof VectorLayer && layer.getVisible() && !layer.get('isBaseLayer') && !layer.get('isDrawingLayer')) {
@@ -172,28 +171,18 @@ export const useFeatureInspection = ({
               if (source) {
                 source.forEachFeatureIntersectingExtent(extent, (feature) => {
                   selectedFeaturesInBox.push(feature as Feature<Geometry>);
-                  layerNames.add(layer.get('name') || 'Capa sin nombre');
                 });
               }
             }
           });
           
-          // Explicitly update React state and the OL Select interaction's collection
-          setSelectedFeatures(selectedFeaturesInBox);
+          // Modify the Select interaction's collection. This will fire the 'select' event,
+          // which will then update all React state correctly.
           select.getFeatures().clear();
           select.getFeatures().extend(selectedFeaturesInBox);
-
-          // Explicitly update the attributes panel
-          if (selectedFeaturesInBox.length > 0) {
-            const finalLayerName = layerNames.size > 1 ? 'Múltiples capas' : [...layerNames][0] || 'Capa seleccionada';
-            processAndDisplayFeatures(selectedFeaturesInBox, finalLayerName);
-          } else {
-            processAndDisplayFeatures([], '');
-          }
         });
       } else { // 'click' mode
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'help';
-        select.setActive(true);
       }
     }
 
