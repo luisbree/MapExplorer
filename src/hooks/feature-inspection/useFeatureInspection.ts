@@ -109,7 +109,7 @@ export const useFeatureInspection = ({
     if (!isMapReady || !mapRef.current) return;
     const map = mapRef.current;
 
-    // Always clean up previous interactions
+    // Always clean up previous interactions before setting up new ones
     if (selectInteractionRef.current) map.removeInteraction(selectInteractionRef.current);
     if (dragBoxInteractionRef.current) map.removeInteraction(dragBoxInteractionRef.current);
     selectInteractionRef.current = null;
@@ -117,19 +117,20 @@ export const useFeatureInspection = ({
     if (mapElementRef.current) mapElementRef.current.style.cursor = 'default';
 
     if (isInspectModeActive) {
-      // 1. Create the main Select interaction
+      // 1. Create the main Select interaction; it will be used for both modes.
       const select = new Select({
         style: highlightStyle,
-        multi: true, // Allow multiple features to be selected
+        multi: true,
         hitTolerance: 3,
-        // The condition is now dynamic based on the mode
-        condition: selectionMode === 'click' ? singleClick : () => false, // Only allow click selection in 'click' mode
+        // The condition is set dynamically based on the mode.
+        // For 'box' mode, we disable click selection so only the box selects.
+        condition: selectionMode === 'click' ? singleClick : () => false,
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
       selectInteractionRef.current = select;
       map.addInteraction(select);
 
-      // 2. Setup the event listener for selection changes
+      // 2. Setup the event listener for selection changes. This is the SINGLE source of truth for updating state.
       select.on('select', (e: SelectEvent) => {
         const currentSelectedFeatures = e.target.getFeatures().getArray();
         setSelectedFeatures(currentSelectedFeatures);
@@ -153,7 +154,7 @@ export const useFeatureInspection = ({
         }
       });
 
-      // 3. Add DragBox interaction if in 'box' mode
+      // 3. Add DragBox interaction ONLY if in 'box' mode
       if (selectionMode === 'box') {
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'crosshair';
         
@@ -177,7 +178,7 @@ export const useFeatureInspection = ({
           });
           
           // Replace the current selection with the features in the box.
-          // This will automatically trigger the 'select' event on the 'select' interaction.
+          // This will automatically trigger the 'select' event on the 'select' interaction, which updates our state.
           select.getFeatures().clear();
           select.getFeatures().extend(selectedFeaturesInBox);
         });
@@ -186,7 +187,7 @@ export const useFeatureInspection = ({
       }
     }
 
-    // Cleanup
+    // Cleanup function to remove interactions when component unmounts or dependencies change
     return () => {
       if (map) {
         if (selectInteractionRef.current) map.removeInteraction(selectInteractionRef.current);
