@@ -122,9 +122,7 @@ export const useFeatureInspection = ({
         style: highlightStyle,
         multi: true,
         hitTolerance: 3,
-        // The condition is set dynamically based on the mode.
-        // For 'box' mode, we disable click selection so only the box selects.
-        condition: selectionMode === 'click' ? singleClick : () => false,
+        condition: singleClick, // We will handle box selection separately
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
       selectInteractionRef.current = select;
@@ -157,6 +155,7 @@ export const useFeatureInspection = ({
       // 3. Add DragBox interaction ONLY if in 'box' mode
       if (selectionMode === 'box') {
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'crosshair';
+        select.setActive(false); // Deactivate click-select in box mode
         
         const dragBox = new DragBox({});
         dragBoxInteractionRef.current = dragBox;
@@ -165,6 +164,7 @@ export const useFeatureInspection = ({
         dragBox.on('boxend', (e) => {
           const extent = dragBox.getGeometry().getExtent();
           const selectedFeaturesInBox: Feature<Geometry>[] = [];
+          const layerNames = new Set<string>();
           
           map.getLayers().forEach(layer => {
             if (layer instanceof VectorLayer && layer.getVisible() && !layer.get('isBaseLayer') && !layer.get('isDrawingLayer')) {
@@ -172,18 +172,28 @@ export const useFeatureInspection = ({
               if (source) {
                 source.forEachFeatureIntersectingExtent(extent, (feature) => {
                   selectedFeaturesInBox.push(feature as Feature<Geometry>);
+                  layerNames.add(layer.get('name') || 'Capa sin nombre');
                 });
               }
             }
           });
           
-          // Replace the current selection with the features in the box.
-          // This will automatically trigger the 'select' event on the 'select' interaction, which updates our state.
+          // Explicitly update React state and the OL Select interaction's collection
+          setSelectedFeatures(selectedFeaturesInBox);
           select.getFeatures().clear();
           select.getFeatures().extend(selectedFeaturesInBox);
+
+          // Explicitly update the attributes panel
+          if (selectedFeaturesInBox.length > 0) {
+            const finalLayerName = layerNames.size > 1 ? 'Múltiples capas' : [...layerNames][0] || 'Capa seleccionada';
+            processAndDisplayFeatures(selectedFeaturesInBox, finalLayerName);
+          } else {
+            processAndDisplayFeatures([], '');
+          }
         });
       } else { // 'click' mode
         if (mapElementRef.current) mapElementRef.current.style.cursor = 'help';
+        select.setActive(true);
       }
     }
 
