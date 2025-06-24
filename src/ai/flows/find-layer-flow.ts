@@ -135,7 +135,6 @@ Analyze the user's message and the provided lists of layers to decide which acti
 - TO CHANGE STYLE: If the user asks to change the style of a layer (e.g., "cambia el color de las cuencas a rojo", "pinta el relleno de las parcelas de amarillo", "pon el borde de las rutas más grueso y de color azul"), identify the target layer(s) from the 'Active Layers' list and the requested style changes.
   - You can change stroke color (\`strokeColor\`), fill color (\`fillColor\`), line style (\`lineStyle\`), and line width (\`lineWidth\`).
   - For polygons, "color de relleno" or "relleno" refers to \`fillColor\`. "Color de borde" or "borde" or "contorno" refers to \`strokeColor\`.
-  - For lines, any color request refers to \`strokeColor\`.
   - If the user just says "color" or "pinta de..." for a polygon, you must apply the color to BOTH \`strokeColor\` and \`fillColor\` to change the whole feature's appearance.
   - IMPORTANT: You can only change the style of layers with type 'wfs', 'vector', or 'osm'. If the user asks to style a 'wms' layer, you must politely inform them that it is not possible and do not populate the 'layersToStyle' field. For example: "Lo siento, no puedo cambiar el estilo de la capa 'Cuencas' porque es una capa de tipo imagen (WMS)."
   - For line style, use 'solid' for solid lines, 'dashed' (for 'punteada', 'discontinua', 'a trazos'), or 'dotted' (for 'de puntos').
@@ -191,6 +190,12 @@ const mapAssistantFlow = ai.defineFlow(
       return { response: "Lo siento, no he podido procesar tu solicitud." };
     }
     
+    // Sanitize the output to prevent schema validation errors.
+    // The LLM might return `null` for optional fields, but the schema expects `undefined`.
+    if ((output as any).zoomToBoundingBox === null) {
+      delete (output as any).zoomToBoundingBox;
+    }
+
     return output;
   }
 );
