@@ -91,11 +91,29 @@ const AIPanel: React.FC<AIPanelProps> = ({
       ) {
         onLayerAction(result);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("AI chat error:", error);
-      const errorMessage: ChatMessage = { role: 'assistant', content: "Lo siento, ocurrió un error. Por favor intenta de nuevo." };
-      setMessages(prev => [...prev, errorMessage]);
-      toast({ description: 'Ocurrió un error al comunicarse con la IA.' });
+      
+      const errorMessageText = error instanceof Error ? error.message.toLowerCase() : '';
+
+      if (errorMessageText.includes('503') || errorMessageText.includes('overloaded')) {
+        const overloadMessage: ChatMessage = { 
+          role: 'assistant', 
+          content: "Lo siento, el servicio de IA está sobrecargado en este momento. Por favor, inténtalo de nuevo en unos instantes." 
+        };
+        setMessages(prev => [...prev, overloadMessage]);
+        toast({ 
+            description: 'El modelo de IA está sobrecargado. Inténtelo más tarde.',
+            variant: 'destructive',
+        });
+      } else {
+        const genericErrorMessage: ChatMessage = { role: 'assistant', content: "Lo siento, ocurrió un error inesperado. Por favor intenta de nuevo." };
+        setMessages(prev => [...prev, genericErrorMessage]);
+        toast({ 
+            description: 'Ocurrió un error al comunicarse con la IA.',
+            variant: 'destructive'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
