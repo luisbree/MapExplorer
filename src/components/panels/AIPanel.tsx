@@ -85,7 +85,9 @@ const AIPanel: React.FC<AIPanelProps> = ({
         (result?.layersToRemove && result.layersToRemove.length > 0) || 
         (result?.layersToStyle && result.layersToStyle.length > 0) ||
         result?.zoomToLayer ||
-        result?.showTableForLayer
+        result?.showTableForLayer ||
+        result?.captureMap ||
+        result?.zoomToBoundingBox
       ) {
         onLayerAction(result);
       }
