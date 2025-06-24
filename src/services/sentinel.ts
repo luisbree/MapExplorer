@@ -21,9 +21,9 @@ export async function findSentinel2Footprints(extent: Extent, mapProjection: Pro
     const [minX, minY, maxX, maxY] = extent4326;
 
     // Construct the search query using correct OpenSearch parameters
-    // The query is made less restrictive by removing cloudCover and processingLevel to increase chances of finding results.
     const params = new URLSearchParams({
       maxRecords: '50',
+      productType: 'S2_MSI_L2A', // Specify product type for better results
       box: `${minX},${minY},${maxX},${maxY}`,
       sortParam: 'startDate', 
       sortOrder: 'descending'

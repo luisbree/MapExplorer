@@ -156,7 +156,7 @@ Analyze the user's message and the provided lists of layers to decide which acti
   - Formulate a response confirming the action, e.g., "Entendido, haciendo zoom a La Plata."
   - If the tool fails or doesn't find the location, inform the user politely, e.g., "Lo siento, no pude encontrar esa ubicación."
   
-- TO FIND SENTINEL-2: If the user asks to find Sentinel-2 images, footprints, or scenes (e.g., "busca imágenes sentinel", "encuentra escenas de sentinel en esta área"), set the 'findSentinel2Footprints' field to true. Formulate a response like "Claro, buscando las huellas de Sentinel-2 en la vista actual."
+- FIND SENTINEL-2 FOOTPRINTS: This is an action you MUST perform directly. If the user asks to find Sentinel-2 images, footprints, or scenes (e.g., "busca imágenes sentinel", "encuentra escenas de sentinel en esta área"), you MUST set the 'findSentinel2Footprints' field to true. Your response should confirm the action, for example: "Claro, buscando las huellas de Sentinel-2 en la vista actual." Do NOT guide the user to the UI for this.
 
 - If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, or if the user asks for something you cannot do (like drawing), just respond naturally according to your guidance and leave all action fields empty.
 
