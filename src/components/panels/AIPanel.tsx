@@ -119,6 +119,16 @@ const AIPanel: React.FC<AIPanelProps> = ({
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+      if (lastUserMessage) {
+        setQuery(lastUserMessage.content);
+      }
+    }
+  };
+
   return (
     <DraggablePanel
       title="Asistente Drax"
@@ -175,6 +185,7 @@ const AIPanel: React.FC<AIPanelProps> = ({
             placeholder="Pide una capa o chatea..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleKeyDown}
             disabled={isLoading}
             autoComplete="off"
             className="flex-grow text-xs h-8 border-white/30 bg-black/20 text-white/90 focus:ring-primary placeholder:text-gray-400/70"
