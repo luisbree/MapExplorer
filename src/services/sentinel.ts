@@ -30,7 +30,7 @@ export async function findSentinel2Footprints(
     // Construct the search query using correct OpenSearch parameters
     const params = new URLSearchParams({
       maxRecords: '50',
-      productType: 'S2_MSI_L2A', // Specify product type for better results
+      processingLevel: 'LEVEL2A', // Use processingLevel as it's more standard for Sentinel-2 L2A data.
       cloudCover: '[0,90]', // Allow up to 90% cloud cover for more results
       box: `${minX},${minY},${maxX},${maxY}`,
       sortParam: 'published',
