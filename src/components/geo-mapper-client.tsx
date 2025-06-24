@@ -341,7 +341,7 @@ export default function GeoMapperClient() {
     }
 
     if (action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4) {
-      const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox.map(coord => parseFloat(coord));
+      const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox;
       if ([sLat, nLat, wLon, eLon].every(c => !isNaN(c))) {
         zoomToBoundingBox([wLon, sLat, eLon, nLat]);
       } else {

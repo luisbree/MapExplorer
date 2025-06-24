@@ -21,7 +21,7 @@ const searchLocationTool = ai.defineTool(
       query: z.string().describe("The location name to search for, e.g., 'Paris, France' or 'Eiffel Tower'."),
     }),
     outputSchema: z.object({
-      boundingbox: z.array(z.string()).describe('The bounding box of the location as [southLat, northLat, westLon, eastLon].'),
+      boundingbox: z.array(z.number()).describe('The bounding box of the location as [southLat, northLat, westLon, eastLon].'),
       displayName: z.string().describe('The full display name of the found location.'),
     }),
   },
@@ -34,7 +34,7 @@ const searchLocationTool = ai.defineTool(
       const data: NominatimResult[] = await response.json();
       if (data.length > 0 && data[0].boundingbox) {
         return {
-          boundingbox: data[0].boundingbox,
+          boundingbox: data[0].boundingbox.map(parseFloat),
           displayName: data[0].display_name
         };
       }
@@ -83,7 +83,7 @@ const MapAssistantOutputSchema = z.object({
   captureMap: z.enum(['jpeg-full', 'jpeg-red', 'jpeg-green', 'jpeg-blue'])
     .describe("The type of map image to capture. 'jpeg-full' for full color, 'jpeg-red' for red band grayscale, 'jpeg-green' for green band grayscale, 'jpeg-blue' for blue band grayscale.")
     .optional(),
-  zoomToBoundingBox: z.array(z.string()).describe("A bounding box to zoom to, as an array of strings: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional().nullable(),
+  zoomToBoundingBox: z.array(z.number()).describe("A bounding box to zoom to, as an array of numbers: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional().nullable(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
 
