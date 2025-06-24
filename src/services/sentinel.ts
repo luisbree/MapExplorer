@@ -31,6 +31,7 @@ export async function findSentinel2Footprints(
     const params = new URLSearchParams({
       maxRecords: '50',
       productType: 'S2_MSI_L2A', // Specify product type for better results
+      cloudCover: '[0,90]', // Allow up to 90% cloud cover for more results
       box: `${minX},${minY},${maxX},${maxY}`,
       sortParam: 'published',
       sortOrder: 'descending'
