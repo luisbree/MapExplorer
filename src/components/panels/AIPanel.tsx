@@ -87,7 +87,8 @@ const AIPanel: React.FC<AIPanelProps> = ({
         result?.zoomToLayer ||
         result?.showTableForLayer ||
         result?.captureMap ||
-        result?.zoomToBoundingBox
+        result?.zoomToBoundingBox ||
+        result?.findSentinel2Footprints
       ) {
         onLayerAction(result);
       }
