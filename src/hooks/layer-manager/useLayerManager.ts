@@ -466,16 +466,16 @@ export const useLayerManager = ({
     }
   }, [selectedFeaturesForExtraction, toast]);
   
-  const findSentinel2FootprintsInCurrentView = useCallback(async () => {
+  const findSentinel2FootprintsInCurrentView = useCallback(async (dateRange?: { startDate?: string; endDate?: string }) => {
     if (!mapRef.current) return;
     setIsFindingSentinelFootprints(true);
     try {
         const view = mapRef.current.getView();
         const extent = view.calculateExtent(mapRef.current.getSize());
-        const features = await fetchSentinelFootprints(extent, view.getProjection());
+        const features = await fetchSentinelFootprints(extent, view.getProjection(), dateRange?.startDate, dateRange?.endDate);
         
         if (features.length === 0) {
-            toast({ description: "No se encontraron escenas de Sentinel-2 en la vista actual." });
+            toast({ description: "No se encontraron escenas de Sentinel-2 en la vista actual para el rango de fechas especificado." });
             return;
         }
 

@@ -350,7 +350,7 @@ export default function GeoMapperClient() {
     }
 
     if (action.findSentinel2Footprints) {
-      layerManagerHook.findSentinel2FootprintsInCurrentView();
+      layerManagerHook.findSentinel2FootprintsInCurrentView(action.findSentinel2Footprints);
     }
 
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap, zoomToBoundingBox]);

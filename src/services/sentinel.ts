@@ -13,9 +13,16 @@ const SENTINEL_API_URL = 'https://catalogue.dataspace.copernicus.eu/resto/api/co
  * Finds Sentinel-2 footprints within a given map extent.
  * @param extent The map extent in the map's projection.
  * @param mapProjection The projection of the map.
+ * @param startDate Optional start date for the search (YYYY-MM-DD).
+ * @param endDate Optional end date for the search (YYYY-MM-DD).
  * @returns A promise that resolves to an array of OpenLayers Features.
  */
-export async function findSentinel2Footprints(extent: Extent, mapProjection: ProjectionLike): Promise<Feature<Geometry>[]> {
+export async function findSentinel2Footprints(
+    extent: Extent, 
+    mapProjection: ProjectionLike, 
+    startDate?: string, 
+    endDate?: string
+): Promise<Feature<Geometry>[]> {
   try {
     const extent4326 = transformExtent(extent, mapProjection, 'EPSG:4326');
     const [minX, minY, maxX, maxY] = extent4326;
@@ -28,6 +35,13 @@ export async function findSentinel2Footprints(extent: Extent, mapProjection: Pro
       sortParam: 'startDate', 
       sortOrder: 'descending'
     });
+
+    if (startDate) {
+      params.append('startDate', `${startDate}T00:00:00.000Z`);
+    }
+    if (endDate) {
+      params.append('endDate', `${endDate}T23:59:59.999Z`);
+    }
 
     const response = await fetch(`${SENTINEL_API_URL}?${params.toString()}`);
     
