@@ -84,6 +84,7 @@ const MapAssistantOutputSchema = z.object({
     .describe("The type of map image to capture. 'jpeg-full' for full color, 'jpeg-red' for red band grayscale, 'jpeg-green' for green band grayscale, 'jpeg-blue' for blue band grayscale.")
     .optional().nullable(),
   zoomToBoundingBox: z.array(z.number()).describe("A bounding box to zoom to, as an array of numbers: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional().nullable(),
+  findSentinel2Footprints: z.boolean().describe("Set to true to search for Sentinel-2 satellite image footprints in the current map view.").optional().nullable(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
 
@@ -100,16 +101,15 @@ const assistantPrompt = ai.definePrompt({
 Your goal is to have a conversation with the user and help them with their tasks.
 Your response must always be in a conversational, human-like text.
 
-Tu conocimiento no se limita a las siete acciones principales. Eres consciente de todas las funcionalidades de la aplicación. Si el usuario te pide algo que no puedes hacer directamente, debes guiarlo para que use la interfaz de la aplicación. No intentes realizar estas acciones tú mismo.
+Tu conocimiento no se limita a las ocho acciones principales. Eres consciente de todas las funcionalidades de la aplicación. Si el usuario te pide algo que no puedes hacer directamente, debes guiarlo para que use la interfaz de la aplicación. No intentes realizar estas acciones tú mismo.
 
 Otras funcionalidades sobre las que debes guiar al usuario:
 - **Dibujar en el mapa**: Si el usuario te pide que dibujes, indícale que use las 'Herramientas de Dibujo' en el panel 'Herramientas'.
 - **Cambiar el mapa base**: Si te pide cambiar el mapa base (ej. a vista satelital), guíalo al selector de 'Capa Base' en el panel 'Datos'.
 - **Subir un archivo local**: Si el usuario pregunta cómo cargar un archivo (KML, GeoJSON, Shapefile), guíalo al botón 'Importar Capa' (el icono con el '+') en el panel 'Capas'.
 - **Obtener datos de OpenStreetMap (OSM)**: Si te preguntan por datos de OSM, explica que primero deben dibujar un polígono con las 'Herramientas de Dibujo' y luego usar la sección 'OpenStreetMap' en el panel 'Herramientas' para obtener los datos.
-- **Buscar imágenes Sentinel-2**: Si te preguntan por imágenes Sentinel, guíalos a la sección 'Sentinel-2' en el panel 'Datos' para buscar las huellas ('footprints') en la vista actual.
 
-You can perform seven types of actions based on the user's request:
+You can perform eight types of actions based on the user's request:
 1. ADD one or more layers to the map (as WMS images or WFS vectors).
 2. REMOVE one or more layers from the map.
 3. ZOOM to a single layer's extent.
@@ -117,6 +117,7 @@ You can perform seven types of actions based on the user's request:
 5. SHOW ATTRIBUTE TABLE for a single layer.
 6. CAPTURE MAP IMAGE.
 7. ZOOM TO LOCATION: Search for a location and zoom to it.
+8. FIND SENTINEL-2 FOOTPRINTS: Search for Sentinel-2 image footprints in the current map view.
 
 Analyze the user's message and the provided lists of layers to decide which action to take.
 
@@ -154,6 +155,8 @@ Analyze the user's message and the provided lists of layers to decide which acti
   - When the tool returns a bounding box, you must populate the 'zoomToBoundingBox' field with the exact bounding box array returned by the tool.
   - Formulate a response confirming the action, e.g., "Entendido, haciendo zoom a La Plata."
   - If the tool fails or doesn't find the location, inform the user politely, e.g., "Lo siento, no pude encontrar esa ubicación."
+  
+- TO FIND SENTINEL-2: If the user asks to find Sentinel-2 images, footprints, or scenes (e.g., "busca imágenes sentinel", "encuentra escenas de sentinel en esta área"), set the 'findSentinel2Footprints' field to true. Formulate a response like "Claro, buscando las huellas de Sentinel-2 en la vista actual."
 
 - If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, or if the user asks for something you cannot do (like drawing), just respond naturally according to your guidance and leave all action fields empty.
 
