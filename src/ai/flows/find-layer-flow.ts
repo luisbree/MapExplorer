@@ -68,22 +68,22 @@ export type MapAssistantInput = z.infer<typeof MapAssistantInputSchema>;
 
 const MapAssistantOutputSchema = z.object({
   response: z.string().describe("The assistant's conversational response to the user."),
-  layersToAdd: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map as WMS (image layers).").optional(),
-  layersToAddAsWFS: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map as WFS (vector data layers, which can be styled).").optional(),
-  layersToRemove: z.array(z.string()).describe("A list of machine-readable names of active layers to remove from the map.").optional(),
-  zoomToLayer: z.string().describe("The machine-readable name of an active layer to zoom to.").optional(),
+  layersToAdd: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map as WMS (image layers).").optional().nullable(),
+  layersToAddAsWFS: z.array(z.string()).describe("A list of machine-readable names of layers to add to the map as WFS (vector data layers, which can be styled).").optional().nullable(),
+  layersToRemove: z.array(z.string()).describe("A list of machine-readable names of active layers to remove from the map.").optional().nullable(),
+  zoomToLayer: z.string().describe("The machine-readable name of an active layer to zoom to.").optional().nullable(),
   layersToStyle: z.array(z.object({
     layerName: z.string().describe("The machine-readable name of the layer to style."),
     strokeColor: z.string().describe("The requested stroke/outline color in Spanish, e.g., 'rojo', 'verde'.").optional(),
     fillColor: z.string().describe("The requested fill color in Spanish, e.g., 'azul', 'amarillo'.").optional(),
     lineStyle: z.enum(['solid', 'dashed', 'dotted']).describe("The requested line style. Use 'solid' for solid lines, 'dashed' for dashed lines, 'dotted' for dotted lines.").optional(),
     lineWidth: z.number().describe("The requested line width in pixels. Affects the stroke/outline width.").optional(),
-  })).describe("A list of layers to change the style of.").optional(),
-  showTableForLayer: z.string().describe("The machine-readable name of an active layer to show its attribute table.").optional(),
+  })).describe("A list of layers to change the style of.").optional().nullable(),
+  showTableForLayer: z.string().describe("The machine-readable name of an active layer to show its attribute table.").optional().nullable(),
   captureMap: z.enum(['jpeg-full', 'jpeg-red', 'jpeg-green', 'jpeg-blue'])
     .describe("The type of map image to capture. 'jpeg-full' for full color, 'jpeg-red' for red band grayscale, 'jpeg-green' for green band grayscale, 'jpeg-blue' for blue band grayscale.")
-    .optional(),
-  zoomToBoundingBox: z.array(z.number()).describe("A bounding box to zoom to, as an array of numbers: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional(),
+    .optional().nullable(),
+  zoomToBoundingBox: z.array(z.number()).describe("A bounding box to zoom to, as an array of numbers: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional().nullable(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
 
