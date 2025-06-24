@@ -32,7 +32,7 @@ export async function findSentinel2Footprints(
       maxRecords: '50',
       productType: 'S2_MSI_L2A', // Specify product type for better results
       box: `${minX},${minY},${maxX},${maxY}`,
-      sortParam: 'publicationDate', 
+      sortParam: 'published',
       sortOrder: 'descending'
     });
 
