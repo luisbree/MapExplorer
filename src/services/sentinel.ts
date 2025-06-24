@@ -30,11 +30,11 @@ export async function findSentinel2Footprints(
     // Construct the search query using correct OpenSearch parameters
     const params = new URLSearchParams({
       maxRecords: '50',
-      processingLevel: 'LEVEL2A', // Use processingLevel as it's more standard for Sentinel-2 L2A data.
-      cloudCover: '[0,90]', // Allow up to 90% cloud cover for more results
+      processingLevel: 'LEVEL2A',
+      cloudCover: '[0,90]',
       box: `${minX},${minY},${maxX},${maxY}`,
-      sortParam: 'published',
-      sortOrder: 'descending'
+      // sortParam and sortOrder removed to simplify the query and increase reliability.
+      // The service default sorting (by date descending) is sufficient.
     });
 
     if (startDate) {
@@ -44,10 +44,12 @@ export async function findSentinel2Footprints(
       params.append('completionDate', `${completionDate}T23:59:59.999Z`);
     }
 
-    const response = await fetch(`${SENTINEL_API_URL}?${params.toString()}`);
+    const fullUrl = `${SENTINEL_API_URL}?${params.toString()}`;
+    const response = await fetch(fullUrl);
     
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("Sentinel API request URL failed:", fullUrl);
       throw new Error(`Sentinel API error: ${response.status} - ${errorText}`);
     }
 
