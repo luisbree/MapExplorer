@@ -83,7 +83,7 @@ const MapAssistantOutputSchema = z.object({
   captureMap: z.enum(['jpeg-full', 'jpeg-red', 'jpeg-green', 'jpeg-blue'])
     .describe("The type of map image to capture. 'jpeg-full' for full color, 'jpeg-red' for red band grayscale, 'jpeg-green' for green band grayscale, 'jpeg-blue' for blue band grayscale.")
     .optional(),
-  zoomToBoundingBox: z.array(z.string()).describe("A bounding box to zoom to, as an array of strings: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional(),
+  zoomToBoundingBox: z.array(z.string()).describe("A bounding box to zoom to, as an array of strings: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional().nullable(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
 
@@ -192,7 +192,7 @@ const mapAssistantFlow = ai.defineFlow(
     
     // Sanitize the output to prevent schema validation errors.
     // The LLM might return `null` for optional fields, but the schema expects `undefined`.
-    if ((output as any).zoomToBoundingBox === null) {
+    if (output.zoomToBoundingBox === null) {
       delete (output as any).zoomToBoundingBox;
     }
 
