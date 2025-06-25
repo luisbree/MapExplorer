@@ -53,6 +53,13 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
     setCustomUrl(''); // Clear custom URL when a predefined server is selected
   };
 
+  const truncateTitle = (title: string, maxLength: number = 20) => {
+    if (title.length > maxLength) {
+      return title.substring(0, maxLength) + "...";
+    }
+    return title;
+  };
+
   return (
     <DraggablePanel
       title="Biblioteca WFS"
@@ -112,20 +119,20 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
             {discoveredLayers.length > 0 ? (
               <ul className="space-y-1.5 w-full">
                 {discoveredLayers.map((layer) => (
-                  <li key={layer.name} className="flex items-center justify-between p-1.5 rounded-md border border-white/15 bg-black/10 hover:bg-white/15 transition-colors">
-                    <span className="text-xs font-medium text-white flex-1 truncate" title={layer.title}>
-                      {layer.title}
-                    </span>
+                  <li key={layer.name} className="flex items-center gap-2 p-1.5 rounded-md border border-white/15 bg-black/10 hover:bg-white/15 transition-colors">
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="text-xs h-6 px-2 bg-teal-600/30 hover:bg-teal-500/50 border-teal-500/50 text-white disabled:opacity-50"
+                      size="icon"
+                      className="h-6 w-6 flex-shrink-0 bg-teal-600/30 hover:bg-teal-500/50 border-teal-500/50 text-white disabled:opacity-50"
                       onClick={() => onAddLayer(layer.name, layer.title)}
                       disabled={isLoading || layer.added}
                       title={layer.added ? "Capa ya añadida" : `Añadir "${layer.title}" al mapa`}
                     >
-                      <Plus className="h-3 w-3 mr-1" /> Añadir
+                      <Plus className="h-3.5 w-3.5" />
                     </Button>
+                    <span className="text-xs font-medium text-white flex-1 truncate" title={layer.title}>
+                      {truncateTitle(layer.title)}
+                    </span>
                   </li>
                 ))}
               </ul>
