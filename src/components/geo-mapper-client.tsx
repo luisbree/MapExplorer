@@ -36,7 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage } from '@/lib/types';
 import { chatWithMapAssistant, type MapAssistantOutput } from '@/ai/flows/find-layer-flow';
-import { createTrelloCard } from '@/ai/flows/trello-actions';
+import { createTrelloCard, searchTrelloCard } from '@/ai/flows/trello-actions';
 
 
 const osmCategoryConfig: OSMCategoryConfig[] = [
@@ -392,27 +392,20 @@ export default function GeoMapperClient() {
   
   const handleSearchTrelloCard = useCallback(async (searchTerm: string) => {
     setIsTrelloLoading(true);
-    const query = `search for trello card "${searchTerm}"`;
-
     try {
-      const result = await chatWithMapAssistant({
-        query,
-        availableLayers: [],
-        activeLayers: [],
-      });
-      if (result.response) {
-        toast({ description: result.response });
-      }
-      if (result.urlToOpen) {
-        handleAiAction(result);
+      const result = await searchTrelloCard({ query: searchTerm });
+      toast({ description: result.message });
+      if (result.cardUrl) {
+        window.open(result.cardUrl, '_blank', 'noopener,noreferrer');
+        toast({ description: `Abriendo Trello en una nueva pestaña...` });
       }
     } catch (error: any) {
       console.error("Trello card search error:", error);
-      toast({ description: 'Error al buscar la tarjeta en Trello.', variant: 'destructive' });
+      toast({ description: error.message || 'Error al buscar la tarjeta en Trello.', variant: 'destructive' });
     } finally {
       setIsTrelloLoading(false);
     }
-  }, [handleAiAction, toast]);
+  }, [toast]);
 
 
   return (

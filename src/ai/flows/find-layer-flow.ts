@@ -11,6 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { NominatimResult } from '@/lib/types';
+import { searchTrelloCard as searchTrelloCardAction } from '@/ai/flows/trello-actions';
 
 // Tool definition for location search
 const searchLocationTool = ai.defineTool(
@@ -60,53 +61,7 @@ const searchTrelloCardTool = ai.defineTool(
         }),
     },
     async ({ query }) => {
-        const TRELLO_API_KEY = process.env.TRELLO_API_KEY;
-        const TRELLO_API_TOKEN = process.env.TRELLO_API_TOKEN;
-        const TRELLO_BOARD_ID = process.env.TRELLO_BOARD_ID;
-
-        if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_ID) {
-            throw new Error('Las credenciales de la API de Trello no están configuradas en las variables de entorno.');
-        }
-
-        const authParams = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
-        const searchParams = new URLSearchParams({
-            query,
-            idBoards: TRELLO_BOARD_ID,
-            modelTypes: 'cards',
-            card_fields: 'name,shortUrl',
-            cards_limit: '20', // Fetch up to 20 cards to find the best match
-            partial: 'true',
-        });
-        
-        const searchUrl = `https://api.trello.com/1/search?${searchParams.toString()}&${authParams}`;
-        
-        const searchResponse = await fetch(searchUrl);
-
-        if (!searchResponse.ok) {
-            const errorText = await searchResponse.text();
-            console.error(`Trello search error (${searchResponse.status}): ${errorText}`);
-            throw new Error(`Error al buscar en Trello. El servidor respondió: "${errorText || searchResponse.statusText}". Por favor, revisa que tus credenciales (API Key, Token) y el ID del tablero sean correctos.`);
-        }
-        
-        const searchData = await searchResponse.json();
-
-        if (!searchData.cards || searchData.cards.length === 0) {
-            throw new Error(`No se encontró ninguna tarjeta que coincida con "${query}".`);
-        }
-
-        // Trello's search relevance can be tricky. We'll manually find the best match.
-        // We prefer a card where the query is a substring of the title.
-        const bestMatch = searchData.cards.find((card: { name: string }) => 
-            card.name.toLowerCase().includes(query.toLowerCase())
-        );
-
-        // If we found a direct match in a title, use it. Otherwise, trust Trello's top result.
-        const cardToOpen = bestMatch || searchData.cards[0];
-        
-        return {
-            cardUrl: cardToOpen.shortUrl,
-            message: `He encontrado y abierto la tarjeta '${cardToOpen.name}'.`,
-        };
+        return await searchTrelloCardAction({ query });
     }
 );
 
