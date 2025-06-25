@@ -82,7 +82,9 @@ const searchTrelloCardTool = ai.defineTool(
         const searchResponse = await fetch(searchUrl);
 
         if (!searchResponse.ok) {
-            throw new Error('Error al buscar en Trello.');
+            const errorText = await searchResponse.text();
+            console.error(`Trello search error (${searchResponse.status}): ${errorText}`);
+            throw new Error(`Error al buscar en Trello. El servidor respondió: "${errorText || searchResponse.statusText}". Por favor, revisa que tus credenciales (API Key, Token) y el ID del tablero sean correctos.`);
         }
         
         const searchData = await searchResponse.json();
@@ -129,7 +131,9 @@ const createTrelloCardTool = ai.defineTool(
         // 1. Get lists on the board to find the ID of the target list
         const listsResponse = await fetch(`https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/lists?${authQuery}`);
         if (!listsResponse.ok) {
-            throw new Error('Error al obtener las listas de Trello.');
+            const errorText = await listsResponse.text();
+            console.error(`Trello get lists error (${listsResponse.status}): ${errorText}`);
+            throw new Error(`Error al obtener las listas de Trello. El servidor respondió: "${errorText || listsResponse.statusText}". Esto suele ocurrir por una API Key, Token o ID de tablero incorrectos.`);
         }
         const lists = await listsResponse.json();
         const targetList = lists.find((list: any) => list.name.toLowerCase() === listName.toLowerCase());
@@ -153,7 +157,9 @@ const createTrelloCardTool = ai.defineTool(
         });
 
         if (!createCardResponse.ok) {
-            throw new Error('Error al crear la tarjeta en Trello.');
+            const errorText = await createCardResponse.text();
+            console.error(`Trello create card error (${createCardResponse.status}): ${errorText}`);
+            throw new Error(`Error al crear la tarjeta en Trello. El servidor respondió: "${errorText || createCardResponse.statusText}".`);
         }
 
         const newCard = await createCardResponse.json();
