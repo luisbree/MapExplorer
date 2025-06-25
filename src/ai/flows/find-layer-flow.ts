@@ -67,7 +67,7 @@ const createTrelloCardTool = ai.defineTool(
         const TRELLO_BOARD_ID = process.env.TRELLO_BOARD_ID;
 
         if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_ID) {
-            throw new Error('Trello API credentials are not configured in the environment variables.');
+            throw new Error('Las credenciales de la API de Trello no están configuradas en las variables de entorno.');
         }
 
         const authQuery = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
@@ -75,14 +75,14 @@ const createTrelloCardTool = ai.defineTool(
         // 1. Get lists on the board to find the ID of the target list
         const listsResponse = await fetch(`https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/lists?${authQuery}`);
         if (!listsResponse.ok) {
-            throw new Error('Failed to fetch Trello lists.');
+            throw new Error('Error al obtener las listas de Trello.');
         }
         const lists = await listsResponse.json();
         const targetList = lists.find((list: any) => list.name.toLowerCase() === listName.toLowerCase());
 
         if (!targetList) {
             const availableLists = lists.map((l: any) => `'${l.name}'`).join(', ');
-            throw new Error(`The list "${listName}" was not found. Available lists are: ${availableLists}.`);
+            throw new Error(`La lista "${listName}" no fue encontrada. Las listas disponibles son: ${availableLists}.`);
         }
 
         // 2. Create the card
@@ -99,7 +99,7 @@ const createTrelloCardTool = ai.defineTool(
         });
 
         if (!createCardResponse.ok) {
-            throw new Error('Failed to create Trello card.');
+            throw new Error('Error al crear la tarjeta en Trello.');
         }
 
         const newCard = await createCardResponse.json();
