@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import DraggablePanel from './DraggablePanel'; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ListChecks, Link as LinkIcon, Download } from 'lucide-react'; // Added Download icon
+import { ChevronLeft, ChevronRight, ListChecks, Link as LinkIcon, ExternalLink } from 'lucide-react'; // Use ExternalLink
 
 interface AttributesPanelProps {
   featuresAttributes: Record<string, any>[] | null;
@@ -71,7 +71,7 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
   )
   .filter(key => key !== 'description' && key !== 'gmlgeometry' && key !== 'geometry')
   .sort((a, b) => {
-    const order = ['preview_url', 'download_url'];
+    const order = ['preview_url', 'browser_url']; // Check for browser_url instead of download_url
     const aIsSpecial = order.includes(a);
     const bIsSpecial = order.includes(b);
 
@@ -127,7 +127,7 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
                         key={key}
                         className="px-3 py-2 text-xs font-medium text-gray-300 whitespace-nowrap bg-gray-700/50"
                       >
-                        {key === 'preview_url' ? 'Vista Previa' : key === 'download_url' ? 'Descarga' : key}
+                        {key === 'preview_url' ? 'Vista Previa' : key === 'browser_url' ? 'Navegador' : key}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -150,16 +150,16 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
                               <LinkIcon className="h-3 w-3 mr-1" />
                               Abrir Vista
                             </a>
-                          ) : key === 'download_url' && attrs[key] && isValidUrl(String(attrs[key])) ? (
+                          ) : key === 'browser_url' && attrs[key] && isValidUrl(String(attrs[key])) ? (
                             <a
                               href={String(attrs[key])}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-green-400 hover:text-green-300 underline flex items-center"
-                              title={`Descargar escena`}
+                              title={`Ver escena en el navegador de Copernicus`}
                             >
-                              <Download className="h-3 w-3 mr-1" />
-                              Descargar
+                              <ExternalLink className="h-3 w-3 mr-1" />
+                              Ver en Navegador
                             </a>
                           ) : (
                             String(attrs[key] === null || attrs[key] === undefined ? '' : attrs[key])

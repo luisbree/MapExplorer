@@ -62,15 +62,16 @@ export async function findSentinel2Footprints(
       dataProjection: 'EPSG:4326',
     });
 
-    // Add a preview URL and download URL to the properties
+    // Add a preview URL and a browser URL to the properties
     const features = geojsonFormat.readFeatures(data);
     features.forEach((feature, index) => {
-        const originalProps = data.features[index].properties;
-        if(originalProps.thumbnail) {
-            feature.set('preview_url', originalProps.thumbnail);
+        const originalFeature = data.features[index];
+        if(originalFeature.properties.thumbnail) {
+            feature.set('preview_url', originalFeature.properties.thumbnail);
         }
-        if (originalProps.services?.download?.url) {
-            feature.set('download_url', originalProps.services.download.url);
+        // The UUID is the feature's top-level ID. Use it to build a link to the data browser.
+        if (originalFeature.id) {
+            feature.set('browser_url', `https://browser.dataspace.copernicus.eu/?uuid=${originalFeature.id}`);
         }
     });
 
