@@ -155,11 +155,32 @@ export const useGeoServerLayers = ({
 
     try {
       const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error en la solicitud WFS: ${response.statusText}. Detalles: ${errorData}`);
-      }
+      
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || (contentType && (contentType.includes('xml') || contentType.includes('html')))) {
+          const errorText = await response.text();
+          let errorMessage;
 
+          if (errorText.toLowerCase().includes('exception')) {
+              try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(errorText, "text/xml");
+                const exceptionNode = xmlDoc.querySelector('ServiceException, ExceptionText, ows\\:ExceptionText');
+                if (exceptionNode && exceptionNode.textContent) {
+                    errorMessage = `Error del servidor GeoServer: ${exceptionNode.textContent.trim()}`;
+                } else {
+                    errorMessage = `El servidor GeoServer devolvió un error XML no especificado.`;
+                }
+              } catch (e) {
+                errorMessage = "No se pudo interpretar el error XML del servidor."
+              }
+          } else {
+              errorMessage = `Error en la solicitud: El servidor devolvió una respuesta inesperada.`;
+          }
+          
+          throw new Error(errorMessage);
+      }
+      
       const geojsonData = await response.json();
       if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
         toast({ description: `La capa WFS "${layerTitle}" no contiene entidades.` });

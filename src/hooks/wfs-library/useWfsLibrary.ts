@@ -134,9 +134,30 @@ export const useWfsLibrary = ({
 
     try {
       const response = await fetch(proxyUrl);
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(`Error en la solicitud GetFeature: ${response.statusText}. Detalles: ${errorData}`);
+      
+      const contentType = response.headers.get("content-type");
+      if (!response.ok || (contentType && (contentType.includes('xml') || contentType.includes('html')))) {
+          const errorText = await response.text();
+          let errorMessage;
+
+          if (errorText.toLowerCase().includes('exception')) {
+              try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(errorText, "text/xml");
+                const exceptionNode = xmlDoc.querySelector('ServiceException, ExceptionText, ows\\:ExceptionText');
+                if (exceptionNode && exceptionNode.textContent) {
+                    errorMessage = `Error del servidor WFS: ${exceptionNode.textContent.trim()}`;
+                } else {
+                    errorMessage = `El servidor WFS devolvió un error XML no especificado.`;
+                }
+              } catch (e) {
+                errorMessage = "No se pudo interpretar el error XML del servidor."
+              }
+          } else {
+              errorMessage = `Error en la solicitud: El servidor devolvió una respuesta inesperada.`;
+          }
+          
+          throw new Error(errorMessage);
       }
 
       const geojsonData = await response.json();
