@@ -50,6 +50,10 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
   {
     name: 'CONAE - Focos de Calor VIIRS (24h)',
     url: 'https://geoservicios.conae.gov.ar/geoserver/GeoServiciosCONAE/wfs'
+  },
+  {
+    name: 'Ministerio de Ambiente y Desarrollo Sostenible',
+    url: 'http://geo.ambiente.gob.ar/geoserver/wfs'
   }
 ];
 
