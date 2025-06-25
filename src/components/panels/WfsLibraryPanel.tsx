@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -53,7 +54,7 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
     setCustomUrl(''); // Clear custom URL when a predefined server is selected
   };
 
-  const truncateTitle = (title: string, maxLength: number = 20) => {
+  const truncateTitle = (title: string, maxLength: number = 40) => {
     if (title.length > maxLength) {
       return title.substring(0, maxLength) + "...";
     }
