@@ -1,8 +1,7 @@
-
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -22,6 +21,7 @@ import ToolsPanel from '@/components/panels/ToolsPanel';
 import LegendPanel from '@/components/panels/LegendPanel';
 import AIPanel from '@/components/panels/AIPanel';
 import TrelloPanel from '@/components/panels/TrelloPanel';
+import WfsLibraryPanel from '@/components/panels/WfsLibraryPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
@@ -32,6 +32,7 @@ import { useOSMData } from '@/hooks/osm-integration/useOSMData';
 import { useGeoServerLayers } from '@/hooks/geoserver-connection/useGeoServerLayers';
 import { useFloatingPanels } from '@/hooks/panels/useFloatingPanels';
 import { useMapCapture } from '@/hooks/map-tools/useMapCapture';
+import { useWfsLibrary, PREDEFINED_WFS_SERVERS } from '@/hooks/wfs-library/useWfsLibrary';
 import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage } from '@/lib/types';
@@ -108,6 +109,7 @@ const panelToggleConfigs = [
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
   { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
+  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca WFS" },
 ];
 
 
@@ -119,6 +121,7 @@ export default function GeoMapperClient() {
   const attributesPanelRef = useRef<HTMLDivElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
   const trelloPanelRef = useRef<HTMLDivElement>(null);
+  const wfsLibraryPanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
@@ -130,6 +133,7 @@ export default function GeoMapperClient() {
     attributesPanelRef,
     aiPanelRef,
     trelloPanelRef,
+    wfsLibraryPanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -189,6 +193,12 @@ export default function GeoMapperClient() {
       addLayer: layerManagerHook.addLayer,
       onLayerStateUpdate: updateDiscoveredLayerState,
       setIsWfsLoading
+  });
+  
+  const wfsLibraryHook = useWfsLibrary({
+    mapRef,
+    isMapReady,
+    addLayer: layerManagerHook.addLayer,
   });
 
   // Effect for initial GeoServer layer loading
@@ -468,7 +478,7 @@ export default function GeoMapperClient() {
           activeBaseLayerId={activeBaseLayerId}
         />
 
-        <WfsLoadingIndicator isVisible={isWfsLoading} />
+        <WfsLoadingIndicator isVisible={isWfsLoading || wfsLibraryHook.isLoading} />
 
         {panels.layers && !panels.layers.isMinimized && (
           <LayersPanel
@@ -601,6 +611,22 @@ export default function GeoMapperClient() {
             onSearchCard={handleSearchTrelloCard}
             isLoading={isTrelloLoading}
             style={{ top: `${panels.trello.position.y}px`, left: `${panels.trello.position.x}px`, zIndex: panels.trello.zIndex }}
+          />
+        )}
+
+        {panels.wfsLibrary && !panels.wfsLibrary.isMinimized && (
+          <WfsLibraryPanel
+            panelRef={wfsLibraryPanelRef}
+            isCollapsed={panels.wfsLibrary.isCollapsed}
+            onToggleCollapse={() => togglePanelCollapse('wfsLibrary')}
+            onClosePanel={() => togglePanelMinimize('wfsLibrary')}
+            onMouseDownHeader={(e) => handlePanelMouseDown(e, 'wfsLibrary')}
+            style={{ top: `${panels.wfsLibrary.position.y}px`, left: `${panels.wfsLibrary.position.x}px`, zIndex: panels.wfsLibrary.zIndex }}
+            predefinedServers={PREDEFINED_WFS_SERVERS}
+            isLoading={wfsLibraryHook.isLoading}
+            discoveredLayers={wfsLibraryHook.discoveredLayers}
+            onFetchLayers={wfsLibraryHook.fetchWfsLayers}
+            onAddLayer={wfsLibraryHook.addWfsLayerToMap}
           />
         )}
       </div>

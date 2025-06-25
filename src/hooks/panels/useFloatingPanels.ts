@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello';
+type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello' | 'wfsLibrary';
 
 interface PanelState {
   isMinimized: boolean;
@@ -19,6 +18,7 @@ interface UseFloatingPanelsProps {
   attributesPanelRef: React.RefObject<HTMLDivElement>;
   aiPanelRef: React.RefObject<HTMLDivElement>;
   trelloPanelRef: React.RefObject<HTMLDivElement>;
+  wfsLibraryPanelRef: React.RefObject<HTMLDivElement>;
   mapAreaRef: React.RefObject<HTMLDivElement>;
   panelWidth: number;
   panelPadding: number;
@@ -33,6 +33,7 @@ export const useFloatingPanels = ({
   attributesPanelRef,
   aiPanelRef,
   trelloPanelRef,
+  wfsLibraryPanelRef,
   mapAreaRef,
   panelWidth,
   panelPadding
@@ -45,7 +46,8 @@ export const useFloatingPanels = ({
     attributes: attributesPanelRef,
     ai: aiPanelRef,
     trello: trelloPanelRef,
-  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef]);
+    wfsLibrary: wfsLibraryPanelRef,
+  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef, wfsLibraryPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
     layers: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
@@ -54,6 +56,7 @@ export const useFloatingPanels = ({
     attributes: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 300 }, zIndex: initialZIndex },
     ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex + 2 },
     trello: { isMinimized: true, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex },
+    wfsLibrary: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
   });
 
   const activeDragRef = useRef<{ panelId: PanelId | null, offsetX: number, offsetY: number }>({ panelId: null, offsetX: 0, offsetY: 0 });
