@@ -1,13 +1,20 @@
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Encode_Sans, Encode_Sans_Condensed } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 
-const inter = Inter({
-  variable: '--font-inter',
+const encodeSans = Encode_Sans({
   subsets: ['latin'],
+  variable: '--font-encode-sans',
 });
+
+const encodeSansCondensed = Encode_Sans_Condensed({
+  subsets: ['latin'],
+  weight: '500',
+  variable: '--font-encode-sans-condensed',
+});
+
 
 export const metadata: Metadata = {
   title: 'Map Explorer',
@@ -21,7 +28,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} antialiased`}>
+      <body
+        className={`${encodeSans.variable} ${encodeSansCondensed.variable} antialiased`}
+      >
         {children}
         <Toaster />
       </body>

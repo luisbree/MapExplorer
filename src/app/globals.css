@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: var(--font-inter), sans-serif; /* Ensure Inter is used as default body font */
+  font-family: var(--font-encode-sans), sans-serif; /* Use Encode Sans as the default body font */
 }
 
 @layer base {
