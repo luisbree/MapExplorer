@@ -346,17 +346,27 @@ export default function GeoMapperClient() {
       captureMap(action.captureMap);
     }
 
-    if (action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4) {
-      const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox;
+    const shouldZoom = action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4;
+    const shouldFindFootprints = !!action.findSentinel2Footprints;
+
+    const performFootprintSearch = () => {
+      if (action.findSentinel2Footprints) {
+        layerManagerHook.findSentinel2FootprintsInCurrentView(action.findSentinel2Footprints);
+      }
+    };
+    
+    if (shouldZoom) {
+      const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox!;
       if ([sLat, nLat, wLon, eLon].every(c => !isNaN(c))) {
         zoomToBoundingBox([wLon, sLat, eLon, nLat]);
+        if (shouldFindFootprints) {
+          setTimeout(performFootprintSearch, 1100);
+        }
       } else {
         toast({description: `Drax devolvió una ubicación inválida.`});
       }
-    }
-
-    if (action.findSentinel2Footprints) {
-      layerManagerHook.findSentinel2FootprintsInCurrentView(action.findSentinel2Footprints);
+    } else if (shouldFindFootprints) {
+      performFootprintSearch();
     }
     
     if (action.urlToOpen) {
