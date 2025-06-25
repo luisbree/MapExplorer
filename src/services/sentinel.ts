@@ -27,11 +27,11 @@ export async function findSentinel2Footprints(
     const extent4326 = transformExtent(extent, mapProjection, 'EPSG:4326');
     const [minX, minY, maxX, maxY] = extent4326;
 
-    // Construct the search query using correct OpenSearch parameters
+    // After further investigation, using both 'productType' and 'processingLevel' might be conflicting.
+    // Using just 'productType' is more specific and should be sufficient.
     const params = new URLSearchParams({
       maxRecords: '50',
-      processingLevel: 'LEVEL2A',
-      productType: 'S2MSI2A', // This parameter is crucial for getting L2A products.
+      productType: 'S2MSI2A', // This implies LEVEL2A and is the most robust parameter.
       cloudCover: '[0,90]',
       box: `${minX},${minY},${maxX},${maxY}`,
     });
