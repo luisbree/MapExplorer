@@ -186,8 +186,7 @@ export default function GeoMapperClient() {
   });
   
   const {
-    geoServerUrlInput, setGeoServerUrlInput, isLoadingGeoServerLayers,
-    handleFetchGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS
+    handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, handleFetchGeoServerLayers,
   } = useGeoServerLayers({
       mapRef,
       isMapReady,
@@ -492,18 +491,6 @@ export default function GeoMapperClient() {
             onZoomToBoundingBox={zoomToBoundingBox}
             captureMap={captureMap}
             isCapturingMap={isMapCapturing}
-            geoServerUrlInput={geoServerUrlInput}
-            onGeoServerUrlChange={setGeoServerUrlInput}
-            onFetchGeoServerLayers={async () => {
-              const discovered = await handleFetchGeoServerLayers();
-              if(discovered && discovered.length > 0) {
-                setDiscoveredGeoServerLayers(discovered);
-              }
-            }}
-            isLoadingGeoServerLayers={isLoadingGeoServerLayers}
-            geoServerDiscoveredLayers={discoveredGeoServerLayers}
-            onAddGeoServerLayerToMap={(layerName, layerTitle) => handleAddGeoServerLayerToMap(layerName, layerTitle, true, geoServerUrlInput)}
-            onAddGeoServerLayerAsWFS={(layerName, layerTitle) => handleAddGeoServerLayerAsWFS(layerName, layerTitle, geoServerUrlInput)}
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}

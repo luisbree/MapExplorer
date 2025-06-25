@@ -28,16 +28,14 @@ export const useGeoServerLayers = ({
   setIsWfsLoading
 }: UseGeoServerLayersProps) => {
   const { toast } = useToast();
-  const [geoServerUrlInput, setGeoServerUrlInput] = useState('');
-  const [isLoadingGeoServerLayers, setIsLoadingGeoServerLayers] = useState(false);
-
-  const handleFetchGeoServerLayers = useCallback(async (urlOverride?: string): Promise<GeoServerDiscoveredLayer[]> => {
-    const urlToUse = urlOverride || geoServerUrlInput;
+  
+  const handleFetchGeoServerLayers = useCallback(async (urlOverride: string): Promise<GeoServerDiscoveredLayer[]> => {
+    const urlToUse = urlOverride;
     if (!urlToUse.trim()) {
       toast({ description: 'Por favor, ingrese una URL de GeoServer válida.' });
       return [];
     }
-    setIsLoadingGeoServerLayers(true);
+    
     const getCapabilitiesUrl = `${urlToUse.trim()}/wms?service=WMS&version=1.3.0&request=GetCapabilities`;
     const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}`;
 
@@ -89,24 +87,17 @@ export const useGeoServerLayers = ({
           return { name, title, bbox, wmsAddedToMap: false, wfsAddedToMap: false };
       }).filter(l => l.name);
 
-      if (!urlOverride && discoveredLayers.length > 0) {
-        toast({ description: `${discoveredLayers.length} capas encontradas en GeoServer.` });
-      } else if (!urlOverride) {
-        toast({ description: 'No se encontraron capas publicadas en la URL de GeoServer proporcionada.' });
-      }
       return discoveredLayers;
 
     } catch (error: any) {
       console.error("Error fetching GeoServer layers:", error);
       toast({ description: `Error al conectar con GeoServer: ${error.message}` });
       return [];
-    } finally {
-      setIsLoadingGeoServerLayers(false);
     }
-  }, [geoServerUrlInput, toast]);
+  }, [toast]);
 
-  const handleAddGeoServerLayerToMap = useCallback((layerName: string, layerTitle: string, isVisible: boolean = true, urlOverride?: string, bbox?: [number, number, number, number]) => {
-    const urlToUse = urlOverride || geoServerUrlInput;
+  const handleAddGeoServerLayerToMap = useCallback((layerName: string, layerTitle: string, isVisible: boolean = true, urlOverride: string, bbox?: [number, number, number, number]) => {
+    const urlToUse = urlOverride;
     if (!isMapReady || !mapRef.current || !urlToUse) return;
 
     const wmsSource = new TileWMS({
@@ -143,10 +134,10 @@ export const useGeoServerLayers = ({
     if (isVisible) {
       toast({ description: `Capa WMS "${layerTitle}" añadida al mapa.` });
     }
-  }, [isMapReady, mapRef, geoServerUrlInput, addLayer, onLayerStateUpdate, toast]);
+  }, [isMapReady, mapRef, addLayer, onLayerStateUpdate, toast]);
   
-  const handleAddGeoServerLayerAsWFS = useCallback(async (layerName: string, layerTitle: string, urlOverride?: string) => {
-    const urlToUse = urlOverride || geoServerUrlInput;
+  const handleAddGeoServerLayerAsWFS = useCallback(async (layerName: string, layerTitle: string, urlOverride: string) => {
+    const urlToUse = urlOverride;
     if (!isMapReady || !urlToUse) return;
 
     setIsWfsLoading(true);
@@ -218,13 +209,10 @@ export const useGeoServerLayers = ({
     } finally {
       setIsWfsLoading(false);
     }
-  }, [isMapReady, geoServerUrlInput, addLayer, onLayerStateUpdate, setIsWfsLoading, toast]);
+  }, [isMapReady, addLayer, onLayerStateUpdate, setIsWfsLoading, toast]);
 
 
   return {
-    geoServerUrlInput,
-    setGeoServerUrlInput,
-    isLoadingGeoServerLayers,
     handleFetchGeoServerLayers,
     handleAddGeoServerLayerToMap,
     handleAddGeoServerLayerAsWFS,

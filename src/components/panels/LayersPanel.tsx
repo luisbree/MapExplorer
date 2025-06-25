@@ -6,12 +6,10 @@ import DraggablePanel from './DraggablePanel';
 import BaseLayerSelector from '@/components/layer-manager/BaseLayerSelector';
 import LocationSearch from '@/components/location-search/LocationSearch';
 import MapCaptureControl from '@/components/map-tools/MapCaptureControl';
-import GeoServerUrlInput from '@/components/geoserver-connection/GeoServerUrlInput';
-import GeoServerLayerList from '@/components/geoserver-connection/GeoServerLayerList';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import type { BaseLayerOptionForSelect, GeoServerDiscoveredLayer, NominatimResult } from '@/lib/types'; 
-import { Database, Search, ImageUp, Cloud, ImageOff, Loader2 } from 'lucide-react'; 
+import type { BaseLayerOptionForSelect, NominatimResult } from '@/lib/types'; 
+import { Database, Search, ImageUp, ImageOff, Loader2 } from 'lucide-react'; 
 
 interface LayersPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -28,16 +26,7 @@ interface LayersPanelProps {
 
   captureMap: (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => void;
   isCapturingMap: boolean;
-
-  geoServerUrlInput: string;
-  onGeoServerUrlChange: (url: string) => void;
-  onFetchGeoServerLayers: () => void; 
-  isLoadingGeoServerLayers: boolean;
   
-  geoServerDiscoveredLayers: GeoServerDiscoveredLayer[];
-  onAddGeoServerLayerToMap: (layerName: string, layerTitle: string) => void;
-  onAddGeoServerLayerAsWFS: (layerName: string, layerTitle: string) => Promise<void>;
-
   onFindSentinel2Footprints: (dateRange?: { startDate?: string, completionDate?: string }) => void;
   onClearSentinel2Footprints: () => void;
   isFindingSentinelFootprints: boolean; 
@@ -51,9 +40,6 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   availableBaseLayers, activeBaseLayerId, onChangeBaseLayer,
   onZoomToBoundingBox,
   captureMap, isCapturingMap,
-  geoServerUrlInput, onGeoServerUrlChange, onFetchGeoServerLayers, 
-  isLoadingGeoServerLayers,
-  geoServerDiscoveredLayers, onAddGeoServerLayerToMap, onAddGeoServerLayerAsWFS,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
   style, 
 }) => {
@@ -93,29 +79,6 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
                 onCapture={captureMap}
                 isCapturing={isCapturingMap}
             />
-        </div>
-        
-        <Separator className="bg-white/15" />
-
-        <div>
-            <h3 className="text-xs font-semibold text-white/90 mb-1.5 flex items-center">
-                <Cloud className="h-3.5 w-3.5 mr-1.5 text-primary/80" />
-                GeoServer
-            </h3>
-            <GeoServerUrlInput
-                geoServerUrlInput={geoServerUrlInput}
-                onGeoServerUrlChange={onGeoServerUrlChange}
-                onFetchGeoServerLayers={onFetchGeoServerLayers}
-                isLoadingGeoServerLayers={isLoadingGeoServerLayers}
-                uniqueIdPrefix="layerspanel-geoserver"
-            />
-            <div className="mt-2">
-                <GeoServerLayerList
-                    geoServerDiscoveredLayers={geoServerDiscoveredLayers}
-                    onAddGeoServerLayerToMap={onAddGeoServerLayerToMap}
-                    onAddGeoServerLayerAsWFS={onAddGeoServerLayerAsWFS}
-                />
-            </div>
         </div>
         
         <Separator className="bg-white/15" />
