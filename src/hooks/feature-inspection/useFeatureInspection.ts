@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { Geometry } from 'ol/geom';
 import Select, { type SelectEvent } from 'ol/interaction/Select';
 import DragBox from 'ol/interaction/DragBox';
-import { singleClick, never } from 'ol/events/condition';
+import { singleClick } from 'ol/events/condition';
 
 interface UseFeatureInspectionProps {
   mapRef: React.RefObject<Map | null>;
@@ -43,7 +43,7 @@ export const useFeatureInspection = ({
 }: UseFeatureInspectionProps) => {
   const { toast } = useToast();
   const [isInspectModeActive, setIsInspectModeActive] = useState(false);
-  const [selectionMode, setSelectionMode] = useState<'click' | 'box'>('click');
+  const [selectionMode, setSelectionModeInternal] = useState<'click' | 'box'>('click');
   const [selectedFeatures, setSelectedFeatures] = useState<Feature<Geometry>[]>([]);
   const [selectedFeatureAttributes, setSelectedFeatureAttributes] = useState<Record<string, any>[] | null>(null);
   const [currentInspectedLayerName, setCurrentInspectedLayerName] = useState<string | null>(null);
@@ -66,6 +66,7 @@ export const useFeatureInspection = ({
     
     const attributes = features.map(feature => {
       const props = feature.getProperties();
+      // Avoid circular references in state by removing the geometry object
       if (props.geometry) {
         delete props.geometry;
       }
@@ -74,9 +75,10 @@ export const useFeatureInspection = ({
 
     setSelectedFeatureAttributes(attributes);
     setCurrentInspectedLayerName(layerName);
-    toast({ description: `${features.length} entidad(es) de "${layerName}" seleccionada(s).` });
+    if (features.length > 0) {
+       toast({ description: `${features.length} entidad(es) de "${layerName}" inspeccionada(s).` });
+    }
     
-    // Ensure panel is opened whenever attributes are displayed.
     onNewSelectionRef.current();
   }, [toast, onNewSelectionRef]);
   
@@ -84,8 +86,6 @@ export const useFeatureInspection = ({
     if (selectInteractionRef.current) {
       selectInteractionRef.current.getFeatures().clear();
     }
-    // The 'select' event on the interaction will handle clearing attributes and features state,
-    // but we also clear the state directly to be safe.
     setSelectedFeatures([]);
     setSelectedFeatureAttributes(null);
     setCurrentInspectedLayerName(null);
@@ -96,22 +96,32 @@ export const useFeatureInspection = ({
     setIsInspectModeActive(nextState);
 
     if (!nextState) {
-        clearSelection(); // Clear any existing selection when turning the tool off
+        clearSelection();
         if (mapElementRef.current) {
             mapElementRef.current.style.cursor = 'default';
         }
-        toast({ description: 'Modo selección desactivado.' });
+        toast({ description: 'Modo interactivo desactivado.' });
     } else {
-        toast({ description: 'Modo selección activado.' });
+        setSelectionModeInternal('click'); // Default to inspect mode when activated
+        toast({ description: 'Modo Inspección activado. Haga clic o arrastre para ver atributos.' });
     }
   }, [isInspectModeActive, mapElementRef, toast, clearSelection]);
+
+  const setSelectionMode = useCallback((mode: 'click' | 'box') => {
+    setSelectionModeInternal(mode);
+    if (mode === 'click') {
+        toast({ description: 'Cambiado a modo Inspección. Haga clic o arrastre para ver atributos.' });
+    } else {
+        toast({ description: 'Cambiado a modo Selección. Haga clic o arrastre para seleccionar entidades.' });
+    }
+  }, [toast]);
   
   // Effect to manage interactions based on active state and mode
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
     const map = mapRef.current;
 
-    // Always clean up previous interactions before setting up new ones
+    // Clean up previous interactions to avoid duplicates
     if (selectInteractionRef.current) map.removeInteraction(selectInteractionRef.current);
     if (dragBoxInteractionRef.current) map.removeInteraction(dragBoxInteractionRef.current);
     selectInteractionRef.current = null;
@@ -119,79 +129,68 @@ export const useFeatureInspection = ({
     if (mapElementRef.current) mapElementRef.current.style.cursor = 'default';
 
     if (isInspectModeActive) {
-      // Helper function to update React state from any selection source
-      const updateSelectionState = (newlySelectedFeatures: Feature<Geometry>[]) => {
-        setSelectedFeatures(newlySelectedFeatures); // Update React state for the feature array
+      if (mapElementRef.current) {
+         mapElementRef.current.style.cursor = selectionMode === 'click' ? 'help' : 'crosshair';
+      }
 
-        if (newlySelectedFeatures.length > 0) {
-          let layerName = 'Selección múltiple';
-          // Try to find a common layer name
-          const firstFeature = newlySelectedFeatures[0];
-          for (const layer of map.getLayers().getArray()) {
-             if (layer instanceof VectorLayer) {
-                const source = layer.getSource();
-                 if (source && source.hasFeature(firstFeature)) {
-                    layerName = layer.get('name') || 'Capa seleccionada';
-                    break;
-                }
-            }
-          }
-          processAndDisplayFeatures(newlySelectedFeatures, layerName);
-        } else {
-          // This case handles deselection
-          setSelectedFeatureAttributes(null);
-          setCurrentInspectedLayerName(null);
-        }
-      };
-
-
+      // A single Select interaction is used for both modes.
+      // Its behavior changes based on the `selectionMode` state.
       const select = new Select({
         style: highlightStyle,
         multi: true,
-        condition: selectionMode === 'click' ? singleClick : never,
+        condition: singleClick,
         filter: (feature, layer) => !layer.get('isBaseLayer') && !layer.get('isDrawingLayer'),
       });
       selectInteractionRef.current = select;
       map.addInteraction(select);
       
-      // Handler for 'click' selections
       select.on('select', (e: SelectEvent) => {
-        const currentSelectedFeatures = e.target.getFeatures().getArray();
-        updateSelectionState(currentSelectedFeatures);
+        const newlySelectedFeatures = e.target.getFeatures().getArray();
+        
+        if (selectionMode === 'click') { // INSPECTION by click
+            processAndDisplayFeatures(newlySelectedFeatures, 'Inspección');
+        } else { // SELECTION by click
+            setSelectedFeatures(newlySelectedFeatures);
+            // Only show toast if something was actually selected or deselected
+            if (e.selected.length > 0 || e.deselected.length > 0) {
+               toast({ description: `${newlySelectedFeatures.length} entidad(es) seleccionada(s).` });
+            }
+        }
       });
 
-      if (selectionMode === 'box') {
-        if (mapElementRef.current) mapElementRef.current.style.cursor = 'crosshair';
-        
-        const dragBox = new DragBox({});
-        dragBoxInteractionRef.current = dragBox;
-        map.addInteraction(dragBox);
+      // A single DragBox interaction is used for both modes.
+      const dragBox = new DragBox({});
+      dragBoxInteractionRef.current = dragBox;
+      map.addInteraction(dragBox);
 
-        dragBox.on('boxend', (e) => {
+      dragBox.on('boxend', () => {
           const extent = dragBox.getGeometry().getExtent();
-          const selectedFeaturesInBox: Feature<Geometry>[] = [];
+          const featuresInBox: Feature<Geometry>[] = [];
           
           map.getLayers().forEach(layer => {
             if (layer instanceof VectorLayer && layer.getVisible() && !layer.get('isBaseLayer') && !layer.get('isDrawingLayer')) {
               const source = layer.getSource();
               if (source) {
                 source.forEachFeatureIntersectingExtent(extent, (feature) => {
-                  selectedFeaturesInBox.push(feature as Feature<Geometry>);
+                  featuresInBox.push(feature as Feature<Geometry>);
                 });
               }
             }
           });
-          
-          // Update the visual highlight in OpenLayers
-          select.getFeatures().clear();
-          select.getFeatures().extend(selectedFeaturesInBox);
-
-          // And MOST IMPORTANTLY, directly update our React state
-          updateSelectionState(selectedFeaturesInBox);
-        });
-      } else { 
-        if (mapElementRef.current) mapElementRef.current.style.cursor = 'help';
-      }
+        
+        // This logic decides whether to inspect or select based on the current mode
+        if (selectionMode === 'click') { // INSPECTION by box
+            select.getFeatures().clear();
+            select.getFeatures().extend(featuresInBox);
+            processAndDisplayFeatures(featuresInBox, 'Inspección de Área');
+        } else { // SELECTION by box
+            select.getFeatures().clear();
+            select.getFeatures().extend(featuresInBox);
+            const currentSelectedFeatures = select.getFeatures().getArray();
+            setSelectedFeatures(currentSelectedFeatures);
+            toast({ description: `${currentSelectedFeatures.length} entidad(es) seleccionada(s).` });
+        }
+      });
     }
 
     // Cleanup function
@@ -201,7 +200,7 @@ export const useFeatureInspection = ({
         if (dragBoxInteractionRef.current) map.removeInteraction(dragBoxInteractionRef.current);
       }
     };
-  }, [isInspectModeActive, selectionMode, isMapReady, mapRef, mapElementRef, processAndDisplayFeatures]);
+  }, [isInspectModeActive, selectionMode, isMapReady, mapRef, mapElementRef, processAndDisplayFeatures, toast]);
 
   return {
     isInspectModeActive,
@@ -212,6 +211,6 @@ export const useFeatureInspection = ({
     selectedFeatureAttributes,
     currentInspectedLayerName,
     clearSelection,
-    processAndDisplayFeatures,
+    processAndDisplayFeatures, // Still needed for "Show Layer Table" action
   };
 };

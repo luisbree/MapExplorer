@@ -55,7 +55,7 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
         zIndex={style?.zIndex as number | undefined}
       >
         <div className="p-3 text-sm text-gray-300 text-center">
-          Use las herramientas de selección para ver los atributos de una entidad.
+          Use la herramienta de inspección para ver los atributos de una entidad.
         </div>
       </DraggablePanel>
     );

@@ -35,7 +35,7 @@ const FeatureInteractionToolbar: React.FC<FeatureInteractionToolbarProps> = ({
   const toolActiveClass = "bg-accent hover:bg-accent/90 text-accent-foreground";
   const toolInactiveClass = "border border-white/30 text-white/90 bg-black/20 hover:bg-black/40";
   
-  const masterTooltipText = isInteractionActive ? 'Desactivar selección' : 'Activar selección de entidades';
+  const masterTooltipText = isInteractionActive ? 'Desactivar modo interactivo' : 'Activar modo interactivo';
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -68,13 +68,13 @@ const FeatureInteractionToolbar: React.FC<FeatureInteractionToolbarProps> = ({
                   className={`${iconButtonBaseClass} ${
                     selectionMode === 'click' ? toolActiveClass : toolInactiveClass
                   }`}
-                  aria-label="Seleccionar con clic"
+                  aria-label="Modo Inspección"
                 >
                   <MousePointerClick className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-gray-700 text-white border-gray-600">
-                <p className="text-xs">Seleccionar con clic</p>
+                <p className="text-xs">Inspeccionar para ver atributos</p>
               </TooltipContent>
             </Tooltip>
 
@@ -85,13 +85,13 @@ const FeatureInteractionToolbar: React.FC<FeatureInteractionToolbarProps> = ({
                   className={`${iconButtonBaseClass} ${
                     selectionMode === 'box' ? toolActiveClass : toolInactiveClass
                   }`}
-                  aria-label="Seleccionar con rectángulo"
+                  aria-label="Modo Selección"
                 >
                   <BoxSelect className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-gray-700 text-white border-gray-600">
-                <p className="text-xs">Seleccionar con rectángulo</p>
+                <p className="text-xs">Seleccionar para acciones</p>
               </TooltipContent>
             </Tooltip>
 
@@ -100,13 +100,13 @@ const FeatureInteractionToolbar: React.FC<FeatureInteractionToolbarProps> = ({
                 <Button 
                   onClick={onClearSelection}
                   className={`${iconButtonBaseClass} border border-white/30 text-white/90 bg-black/20 hover:bg-red-500/20 hover:text-red-300`}
-                  aria-label="Limpiar selección"
+                  aria-label="Limpiar selección e inspección"
                 >
                   <Eraser className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-gray-700 text-white border-gray-600">
-                <p className="text-xs">Limpiar selección</p>
+                <p className="text-xs">Limpiar selección actual</p>
               </TooltipContent>
             </Tooltip>
           </>
