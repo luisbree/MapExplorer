@@ -4,13 +4,13 @@
 import React from 'react';
 import DraggablePanel from './DraggablePanel';
 import BaseLayerSelector from '@/components/layer-manager/BaseLayerSelector';
-import LocationSearch, { type NominatimResult } from '@/components/location-search/LocationSearch';
+import LocationSearch from '@/components/location-search/LocationSearch';
 import MapCaptureControl from '@/components/map-tools/MapCaptureControl';
 import GeoServerUrlInput from '@/components/geoserver-connection/GeoServerUrlInput';
 import GeoServerLayerList from '@/components/geoserver-connection/GeoServerLayerList';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import type { BaseLayerOptionForSelect, GeoServerDiscoveredLayer } from '@/lib/types'; 
+import type { BaseLayerOptionForSelect, GeoServerDiscoveredLayer, NominatimResult } from '@/lib/types'; 
 import { Database, Search, ImageUp, Cloud, ImageOff, Loader2 } from 'lucide-react'; 
 
 interface LayersPanelProps {
@@ -38,7 +38,7 @@ interface LayersPanelProps {
   onAddGeoServerLayerToMap: (layerName: string, layerTitle: string) => void;
   onAddGeoServerLayerAsWFS: (layerName: string, layerTitle: string) => Promise<void>;
 
-  onFindSentinel2Footprints: () => void;
+  onFindSentinel2Footprints: (dateRange?: { startDate?: string, completionDate?: string }) => void;
   onClearSentinel2Footprints: () => void;
   isFindingSentinelFootprints: boolean; 
 
@@ -127,7 +127,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
           </h3>
           <div className="flex items-center gap-2">
             <Button 
-              onClick={onFindSentinel2Footprints} 
+              onClick={() => onFindSentinel2Footprints()} 
               className="h-8 w-8 p-0 flex items-center justify-center bg-black/20 hover:bg-black/40 border border-white/30 text-white/90"
               disabled={isFindingSentinelFootprints}
               title={isFindingSentinelFootprints ? "Buscando..." : "Buscar footprints de escenas Sentinel-2 en la vista actual del mapa"}

@@ -311,7 +311,7 @@ export const useLayerManager = ({
     if (features.length === 0) return true;
     const isPolygon = features.some(f => f.getGeometry()?.getType() === 'Polygon');
     return !isPolygon;
-  }, [drawingSourceRef.current?.getFeatures()]);
+  }, [drawingSourceRef]);
 
   const handleExtractByPolygon = useCallback((layerIdToExtract: string) => {
     const targetLayer = layers.find(l => l.id === layerIdToExtract) as VectorMapLayer | undefined;
@@ -471,7 +471,7 @@ export const useLayerManager = ({
     setIsFindingSentinelFootprints(true);
     try {
         const view = mapRef.current.getView();
-        const extent = view.calculateExtent(mapRef.current.getSize());
+        const extent = view.calculateExtent(mapRef.current.getSize()!);
         const features = await fetchSentinelFootprints(extent, view.getProjection(), dateRange?.startDate, dateRange?.completionDate);
         
         if (features.length === 0) {
@@ -479,7 +479,7 @@ export const useLayerManager = ({
             return;
         }
 
-        const existingLayer = layers.find(l => l.id === 'sentinel-footprints') as VectorMapLayer;
+        const existingLayer = layers.find(l => l.id === 'sentinel-footprints') as VectorMapLayer | undefined;
         if (existingLayer) {
             existingLayer.olLayer.getSource()?.clear();
             existingLayer.olLayer.getSource()?.addFeatures(features);
