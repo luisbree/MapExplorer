@@ -160,7 +160,7 @@ export async function searchTrelloCard(input: SearchCardInput): Promise<SearchCa
     const authParams = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
     const searchParams = new URLSearchParams({
         query,
-        idBoards: TRELLO_BOARD_IDS,
+        idBoards: TRELLO_BOARD_IDS.split(',').map(id => id.trim()).join(','),
         modelTypes: 'cards',
         card_fields: 'name,shortUrl',
         cards_limit: '20',

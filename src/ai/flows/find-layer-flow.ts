@@ -11,7 +11,8 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { NominatimResult } from '@/lib/types';
-import { searchTrelloCard as searchTrelloCardAction } from '@/ai/flows/trello-actions';
+import { searchTrelloCard as searchTrelloCardAction, createTrelloCard, getTrelloLists } from '@/ai/flows/trello-actions';
+
 
 // Tool definition for location search
 const searchLocationTool = ai.defineTool(
@@ -81,70 +82,21 @@ const createTrelloCardTool = ai.defineTool(
         }),
     },
     async ({ title, description, listName }) => {
-        const TRELLO_API_KEY = process.env.TRELLO_API_KEY;
-        const TRELLO_API_TOKEN = process.env.TRELLO_API_TOKEN;
-        const TRELLO_BOARD_IDS = process.env.TRELLO_BOARD_IDS;
+        // 1. Find the target list ID by searching across all configured boards using the action
+        const allLists = await getTrelloLists();
+        const targetList = allLists.find(list => list.name.toLowerCase() === listName.toLowerCase());
 
-        if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_IDS) {
-            throw new Error('Las credenciales de la API de Trello o los IDs de tablero (TRELLO_BOARD_IDS) no están configurados en las variables de entorno.');
-        }
-
-        const boardIds = TRELLO_BOARD_IDS.split(',').map(id => id.trim());
-        const authQuery = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
-        
-        let targetListId: string | null = null;
-        let allAvailableLists: string[] = [];
-
-        // 1. Find the target list ID by searching across all configured boards
-        for (const boardId of boardIds) {
-            const listsResponse = await fetch(`https://api.trello.com/1/boards/${boardId}/lists?${authQuery}`);
-             if (!listsResponse.ok) {
-                 const errorText = await listsResponse.text();
-                 console.warn(`Trello tool: Could not fetch lists for board ${boardId}. Server responded: "${errorText || listsResponse.statusText}".`);
-                 continue; // Skip to the next board if one fails
-            }
-            const lists = await listsResponse.json();
-            const targetList = lists.find((list: any) => list.name.toLowerCase() === listName.toLowerCase());
-            
-            // Collect all list names for a better error message
-            allAvailableLists.push(...lists.map((l: any) => `'${l.name}'`));
-
-            if (targetList) {
-                targetListId = targetList.id;
-                break; // Found the list, no need to check other boards
-            }
-        }
-        
-        if (!targetListId) {
-            const uniqueListNames = [...new Set(allAvailableLists)];
+        if (!targetList) {
+            const uniqueListNames = [...new Set(allLists.map(l => `'${l.name}'`))];
             throw new Error(`La lista "${listName}" no fue encontrada en ninguno de los tableros configurados. Las listas disponibles son: ${uniqueListNames.join(', ')}.`);
         }
 
-        // 2. Create the card
-        const cardData = {
-            name: title,
-            desc: description || '',
-            idList: targetListId,
-        };
-
-        const createCardResponse = await fetch(`https://api.trello.com/1/cards?${authQuery}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(cardData),
+        // 2. Create the card using the dedicated server action
+        return await createTrelloCard({
+            title,
+            description: description || '',
+            listId: targetList.id,
         });
-
-        if (!createCardResponse.ok) {
-            const errorText = await createCardResponse.text();
-            console.error(`Trello create card error (${createCardResponse.status}): ${errorText}`);
-            throw new Error(`Error al crear la tarjeta en Trello. El servidor respondió: "${errorText || createCardResponse.statusText}".`);
-        }
-
-        const newCard = await createCardResponse.json();
-
-        return {
-            cardUrl: newCard.shortUrl,
-            message: `¡Hecho! He creado la tarjeta '${title}' en Trello.`,
-        };
     }
 );
 
