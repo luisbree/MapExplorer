@@ -16,6 +16,7 @@ import { z } from 'zod';
 const TrelloListSchema = z.object({
     id: z.string(),
     name: z.string(),
+    boardId: z.string(),
     boardName: z.string(),
 });
 export type TrelloList = z.infer<typeof TrelloListSchema>;
@@ -67,6 +68,7 @@ export async function getTrelloLists(): Promise<TrelloList[]> {
             return listsData.map((list: any) => ({
                 id: list.id,
                 name: list.name,
+                boardId: boardId,
                 boardName: boardName,
             }));
         });
