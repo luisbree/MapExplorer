@@ -74,7 +74,7 @@ const searchTrelloCardTool = ai.defineTool(
             idBoards: TRELLO_BOARD_ID,
             modelTypes: 'cards',
             card_fields: 'name,shortUrl',
-            cards_limit: '1', // We only need the top result
+            cards_limit: '20', // Fetch up to 20 cards to find the best match
             partial: 'true',
         });
         
@@ -94,11 +94,18 @@ const searchTrelloCardTool = ai.defineTool(
             throw new Error(`No se encontró ninguna tarjeta que coincida con "${query}".`);
         }
 
-        const card = searchData.cards[0];
+        // Trello's search relevance can be tricky. We'll manually find the best match.
+        // We prefer a card where the query is a substring of the title.
+        const bestMatch = searchData.cards.find((card: { name: string }) => 
+            card.name.toLowerCase().includes(query.toLowerCase())
+        );
+
+        // If we found a direct match in a title, use it. Otherwise, trust Trello's top result.
+        const cardToOpen = bestMatch || searchData.cards[0];
         
         return {
-            cardUrl: card.shortUrl,
-            message: `He encontrado y abierto la tarjeta '${card.name}'.`,
+            cardUrl: cardToOpen.shortUrl,
+            message: `He encontrado y abierto la tarjeta '${cardToOpen.name}'.`,
         };
     }
 );
