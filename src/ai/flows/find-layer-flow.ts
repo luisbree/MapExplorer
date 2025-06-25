@@ -46,6 +46,60 @@ const searchLocationTool = ai.defineTool(
   }
 );
 
+// Tool definition for searching Trello cards
+const searchTrelloCardTool = ai.defineTool(
+    {
+        name: 'searchTrelloCard',
+        description: 'Searches for an existing card on the Trello board by its title or keywords and returns its URL to be opened.',
+        inputSchema: z.object({
+            query: z.string().describe('The title or keywords to search for in the card name or description.'),
+        }),
+        outputSchema: z.object({
+            cardUrl: z.string().url().describe('The URL of the found Trello card.'),
+            message: z.string().describe('A confirmation message to return to the user.'),
+        }),
+    },
+    async ({ query }) => {
+        const TRELLO_API_KEY = process.env.TRELLO_API_KEY;
+        const TRELLO_API_TOKEN = process.env.TRELLO_API_TOKEN;
+        const TRELLO_BOARD_ID = process.env.TRELLO_BOARD_ID;
+
+        if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_ID) {
+            throw new Error('Las credenciales de la API de Trello no están configuradas en las variables de entorno.');
+        }
+
+        const authParams = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
+        const searchParams = new URLSearchParams({
+            query,
+            idBoards: TRELLO_BOARD_ID,
+            modelTypes: 'cards',
+            card_fields: 'name,shortUrl',
+            cards_limit: '1', // We only need the top result
+        });
+        
+        const searchUrl = `https://api.trello.com/1/search?${searchParams.toString()}&${authParams}`;
+        
+        const searchResponse = await fetch(searchUrl);
+
+        if (!searchResponse.ok) {
+            throw new Error('Error al buscar en Trello.');
+        }
+        
+        const searchData = await searchResponse.json();
+
+        if (!searchData.cards || searchData.cards.length === 0) {
+            throw new Error(`No se encontró ninguna tarjeta que coincida con "${query}".`);
+        }
+
+        const card = searchData.cards[0];
+        
+        return {
+            cardUrl: card.shortUrl,
+            message: `¡Encontré la tarjeta '${card.name}'! La estoy abriendo.`,
+        };
+    }
+);
+
 // Tool definition for Trello card creation
 const createTrelloCardTool = ai.defineTool(
     {
@@ -164,12 +218,12 @@ const assistantPrompt = ai.definePrompt({
   name: 'mapAssistantPrompt',
   input: { schema: MapAssistantInputSchema },
   output: { schema: MapAssistantOutputSchema },
-  tools: [searchLocationTool, createTrelloCardTool],
+  tools: [searchLocationTool, createTrelloCardTool, searchTrelloCardTool],
   system: `You are Drax, a friendly and helpful GIS map assistant.
 Your goal is to have a conversation with the user and help them with their tasks.
 Your response must always be in a conversational, human-like text.
 
-Tu conocimiento no se limita a las nueve acciones principales. Eres consciente de todas las funcionalidades de la aplicación. Si el usuario te pide algo que no puedes hacer directamente, debes guiarlo para que use la interfaz de la aplicación. No intentes realizar estas acciones tú mismo.
+Tu conocimiento no se limita a las diez acciones principales. Eres consciente de todas las funcionalidades de la aplicación. Si el usuario te pide algo que no puedes hacer directamente, debes guiarlo para que use la interfaz de la aplicación. No intentes realizar estas acciones tú mismo.
 
 Otras funcionalidades sobre las que debes guiar al usuario:
 - **Dibujar en el mapa**: Si el usuario te pide que dibujes, indícale que use las 'Herramientas de Dibujo' en el panel 'Herramientas'.
@@ -177,7 +231,7 @@ Otras funcionalidades sobre las que debes guiar al usuario:
 - **Subir un archivo local**: Si el usuario pregunta cómo cargar un archivo (KML, GeoJSON, Shapefile), guíalo al botón 'Importar Capa' (el icono con el '+') en el panel 'Capas'.
 - **Obtener datos de OpenStreetMap (OSM)**: Si te preguntan por datos de OSM, explica que primero deben dibujar un polígono con las 'Herramientas de Dibujo' y luego usar la sección 'OpenStreetMap' en el panel 'Herramientas' para obtener los datos.
 
-You can perform nine types of actions based on the user's request:
+You can perform ten types of actions based on the user's request:
 1. ADD one or more layers to the map (as WMS images or WFS vectors).
 2. REMOVE one or more layers from the map.
 3. ZOOM to a single layer's extent.
@@ -187,6 +241,7 @@ You can perform nine types of actions based on the user's request:
 7. ZOOM TO LOCATION: Search for a location and go to a city.
 8. FIND SENTINEL-2 FOOTPRINTS: Search for Sentinel-2 image footprints in the current map view, optionally with a date range.
 9. CREATE TRELLO CARD: Create a new card in Trello to track a task or idea.
+10. FIND TRELLO CARD: Search for an existing card on Trello and open it.
 
 Analyze the user's message and the provided lists of layers to decide which action to take.
 
@@ -228,6 +283,8 @@ Analyze the user's message and the provided lists of layers to decide which acti
 - FIND SENTINEL-2 FOOTPRINTS: This is an action you MUST perform directly. If the user asks to find Sentinel-2 images, footprints, or scenes (e.g., "busca imágenes sentinel", "encuentra escenas de sentinel en esta área"), you MUST set the 'findSentinel2Footprints' field. This field is an object. If the user specifies a date range (e.g., 'en enero de 2023', 'durante el último mes', 'de 2020 a 2022', 'imágenes de la semana pasada', 'entre el 1 de enero de 2021 y el 31 de marzo de 2021'), you must extract the start and end dates and provide them in 'YYYY-MM-DD' format in the \`startDate\` and \`completionDate\` fields. Be precise with date ranges: if a user mentions a month (e.g., "enero de 2023"), the range should cover the entire month (startDate: '2023-01-01', completionDate: '2023-01-31'). If they mention a year, cover the whole year (e.g., for "2022", use startDate: '2022-01-01', completionDate: '2022-12-31'). If they give a single day, both startDate and completionDate should be that day. If no date is mentioned, send an empty object \`{}\` to search for the most recent images. Your response should confirm the action, for example: "Claro, buscando las huellas de Sentinel-2 en la vista actual para Enero de 2023." Do NOT guide the user to the UI for this.
 
 - CREATE TRELLO CARD: If the user asks to create a task, note, or ticket (e.g., "crea una tarjeta para investigar esto", "anota que hay que arreglar el servidor"), use the 'createTrelloCard' tool. You must ask for the card title and the name of the list (e.g., "Tareas", "Ideas", "Errores") if they are not provided in the initial query. When the tool returns a 'cardUrl', you MUST populate the 'urlToOpen' field with this URL and also include the URL in your conversational response.
+
+- FIND TRELLO CARD: If the user asks to find, search for, or open an existing card (e.g., "busca la tarjeta sobre el río", "abre la tarea de investigación"), use the 'searchTrelloCard' tool. When this tool returns a 'cardUrl', you MUST populate the 'urlToOpen' field with this URL and include a confirmation in your conversational response.
 
 - If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, or if the user asks for something you cannot do (like drawing), just respond naturally according to your guidance and leave all action fields empty.
 
