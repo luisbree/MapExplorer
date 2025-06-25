@@ -75,6 +75,7 @@ const searchTrelloCardTool = ai.defineTool(
             modelTypes: 'cards',
             card_fields: 'name,shortUrl',
             cards_limit: '1', // We only need the top result
+            partial: 'true',
         });
         
         const searchUrl = `https://api.trello.com/1/search?${searchParams.toString()}&${authParams}`;
