@@ -42,6 +42,14 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
   {
     name: 'IGN - Riesgo de Desastres',
     url: 'https://wms.ign.gob.ar/geoserver/ign_riesgo/ows'
+  },
+  {
+    name: 'CONAE - Focos de Calor MODIS (24h)',
+    url: 'https://geoservicios.conae.gov.ar/geoserver/GeoServiciosCONAE/wfs'
+  },
+  {
+    name: 'CONAE - Focos de Calor VIIRS (24h)',
+    url: 'https://geoservicios.conae.gov.ar/geoserver/GeoServiciosCONAE/wfs'
   }
 ];
 
