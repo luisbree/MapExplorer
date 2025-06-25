@@ -43,7 +43,17 @@ export async function getTrelloLists(): Promise<TrelloList[]> {
             if (!boardResponse.ok) {
                  const errorText = await boardResponse.text();
                  console.error(`Trello get board error for ${boardId} (${boardResponse.status}): ${errorText}`);
-                 throw new Error(`Error al obtener datos del tablero con ID ${boardId}. Revise si el ID es correcto y tiene permisos.`);
+                 let userMessage = `Error al obtener datos del tablero con ID ${boardId}.`;
+                 if (boardResponse.status === 401) {
+                    userMessage = 'La clave de API o el token de Trello no son válidos o han expirado. Por favor, revíselos en sus variables de entorno.';
+                 } else if (boardResponse.status === 404) {
+                    userMessage = `El tablero con ID "${boardId}" no fue encontrado. Por favor, asegúrese de que el ID es correcto.`;
+                 } else if (boardResponse.status === 403) {
+                     userMessage = `No tiene permisos para acceder al tablero con ID "${boardId}". Asegúrese de que el token de API fue generado con la cuenta de Trello correcta y que dicha cuenta tiene acceso al tablero.`;
+                 } else {
+                     userMessage += ' Revise si el ID es correcto y tiene los permisos necesarios.';
+                 }
+                 throw new Error(userMessage);
             }
             const boardData = await boardResponse.json();
             const boardName = boardData.name;
@@ -164,6 +174,9 @@ export async function searchTrelloCard(input: SearchCardInput): Promise<SearchCa
     if (!searchResponse.ok) {
         const errorText = await searchResponse.text();
         console.error(`Trello search error (${searchResponse.status}): ${errorText}`);
+        if (searchResponse.status === 401 || searchResponse.status === 400) { // 400 can mean invalid key
+            throw new Error('Error de autenticación con Trello. Revisa que tu API Key y Token sean correctos.');
+        }
         throw new Error(`Error al buscar en Trello. El servidor respondió: "${errorText || searchResponse.statusText}". Por favor, revisa que tus credenciales (API Key, Token) y el ID del tablero sean correctos.`);
     }
     
