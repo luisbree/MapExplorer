@@ -59,6 +59,10 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
     name: 'INDEC',
     url: 'https://geoservicios.indec.gob.ar/geoserver/ows',
   },
+  {
+    name: 'Dirección Provincial de Estadística',
+    url: 'https://mapas.estadistica.ec.gba.gov.ar/server/services/ServiciosWeb/ServiciosWeb/MapServer/WFSServer',
+  },
 ];
 
 export const useWfsLibrary = ({
