@@ -30,7 +30,10 @@ interface UseWfsLibraryProps {
 
 // Predefined list of WFS servers. User will provide these later.
 export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
-  // This list will be populated based on user's follow-up request.
+  {
+    name: 'INTA NODO Nacional',
+    url: 'https://geo-backend.inta.gob.ar/geoserver/wfs'
+  }
 ];
 
 export const useWfsLibrary = ({
