@@ -352,6 +352,11 @@ export default function GeoMapperClient() {
     if (action.findSentinel2Footprints) {
       layerManagerHook.findSentinel2FootprintsInCurrentView(action.findSentinel2Footprints);
     }
+    
+    if (action.urlToOpen) {
+      window.open(action.urlToOpen, '_blank', 'noopener,noreferrer');
+      toast({ description: `Abriendo Trello en una nueva pestaña...` });
+    }
 
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap, zoomToBoundingBox]);
 

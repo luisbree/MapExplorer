@@ -152,6 +152,7 @@ const MapAssistantOutputSchema = z.object({
     startDate: z.string().describe("The start date for the search in YYYY-MM-DD format.").optional(),
     completionDate: z.string().describe("The end date (completion date) for the search in YYYY-MM-DD format.").optional(),
   }).describe("Set this object to search for Sentinel-2 satellite image footprints. If no dates are provided, it searches for recent images.").optional().nullable(),
+  urlToOpen: z.string().url().describe("A URL that the application should open in a new tab for the user.").optional().nullable(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
 
@@ -226,7 +227,7 @@ Analyze the user's message and the provided lists of layers to decide which acti
   
 - FIND SENTINEL-2 FOOTPRINTS: This is an action you MUST perform directly. If the user asks to find Sentinel-2 images, footprints, or scenes (e.g., "busca imágenes sentinel", "encuentra escenas de sentinel en esta área"), you MUST set the 'findSentinel2Footprints' field. This field is an object. If the user specifies a date range (e.g., 'en enero de 2023', 'durante el último mes', 'de 2020 a 2022', 'imágenes de la semana pasada', 'entre el 1 de enero de 2021 y el 31 de marzo de 2021'), you must extract the start and end dates and provide them in 'YYYY-MM-DD' format in the \`startDate\` and \`completionDate\` fields. Be precise with date ranges: if a user mentions a month (e.g., "enero de 2023"), the range should cover the entire month (startDate: '2023-01-01', completionDate: '2023-01-31'). If they mention a year, cover the whole year (e.g., for "2022", use startDate: '2022-01-01', completionDate: '2022-12-31'). If they give a single day, both startDate and completionDate should be that day. If no date is mentioned, send an empty object \`{}\` to search for the most recent images. Your response should confirm the action, for example: "Claro, buscando las huellas de Sentinel-2 en la vista actual para Enero de 2023." Do NOT guide the user to the UI for this.
 
-- CREATE TRELLO CARD: If the user asks to create a task, note, or ticket (e.g., "crea una tarjeta para investigar esto", "anota que hay que arreglar el servidor"), use the 'createTrelloCard' tool. You must ask for the card title and the name of the list (e.g., "Tareas", "Ideas", "Errores") if they are not provided in the initial query. The tool will handle the creation and respond with a confirmation and a link.
+- CREATE TRELLO CARD: If the user asks to create a task, note, or ticket (e.g., "crea una tarjeta para investigar esto", "anota que hay que arreglar el servidor"), use the 'createTrelloCard' tool. You must ask for the card title and the name of the list (e.g., "Tareas", "Ideas", "Errores") if they are not provided in the initial query. When the tool returns a 'cardUrl', you MUST populate the 'urlToOpen' field with this URL and also include the URL in your conversational response.
 
 - If the user's query is just conversational (e.g., "hola", "gracias"), or if you cannot find a matching layer for any action, or if the user asks for something you cannot do (like drawing), just respond naturally according to your guidance and leave all action fields empty.
 
