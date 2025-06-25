@@ -54,7 +54,11 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
   {
     name: 'Ministerio de Ambiente y Desarrollo Sostenible',
     url: 'http://geo.ambiente.gob.ar/geoserver/wfs'
-  }
+  },
+  {
+    name: 'INDEC',
+    url: 'https://geoservicios.indec.gob.ar/geoserver/ows',
+  },
 ];
 
 export const useWfsLibrary = ({
