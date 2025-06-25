@@ -15,6 +15,8 @@ export async function GET(request: NextRequest) {
       headers: {
         // Set a user-agent, as some servers may reject requests without one.
         'User-Agent': 'MapExplorerApp/1.0 (Proxy)',
+        // Some servers are strict and also require an Accept header.
+        'Accept': 'application/xml, text/xml, */*',
       },
     });
 
