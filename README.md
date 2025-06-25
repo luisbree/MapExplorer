@@ -22,16 +22,17 @@ The application can integrate with Trello to create cards from the AI assistant.
 
 1.  **Get your API Key**: Visit [https://trello.com/app-key](https://trello.com/app-key) and copy your "Key".
 2.  **Generate a Token**: On the same page, click the "Token" link under your API key to generate a token. You will be prompted to authorize the application; click "Allow". Copy the resulting token.
-3.  **Find your Board ID**:
-    *   Open the Trello board you want to use.
+3.  **Find your Board IDs**:
+    *   Open a Trello board you want to use.
     *   The URL will look something like `https://trello.com/b/yourBoardId/your-board-name`.
     *   Copy the `yourBoardId` part from the URL.
+    *   If you want to use more than one board, add their IDs to the `TRELLO_BOARD_IDS` variable, separated by commas (e.g., `boardId1,boardId2`). The application will search for and create cards across all specified boards.
 4.  **Update `.env.local`**: Add the following variables to your `.env.local` file:
 
 ```
 TRELLO_API_KEY="YOUR_TRELLO_API_KEY"
 TRELLO_API_TOKEN="YOUR_TRELLO_API_TOKEN"
-TRELLO_BOARD_ID="YOUR_TRELLO_BOARD_ID"
+TRELLO_BOARD_IDS="YOUR_FIRST_BOARD_ID,YOUR_SECOND_BOARD_ID"
 ```
 
 ### Trello Troubleshooting

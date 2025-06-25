@@ -17,31 +17,55 @@ import { z } from 'zod';
 const TrelloListSchema = z.object({
     id: z.string(),
     name: z.string(),
+    boardName: z.string(),
 });
 export type TrelloList = z.infer<typeof TrelloListSchema>;
 
 export async function getTrelloLists(): Promise<TrelloList[]> {
     const TRELLO_API_KEY = process.env.TRELLO_API_KEY;
     const TRELLO_API_TOKEN = process.env.TRELLO_API_TOKEN;
-    const TRELLO_BOARD_ID = process.env.TRELLO_BOARD_ID;
+    const TRELLO_BOARD_IDS_STRING = process.env.TRELLO_BOARD_IDS;
 
-    if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_ID) {
-        throw new Error('Las credenciales de la API de Trello no están configuradas en las variables de entorno.');
+    if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_IDS_STRING) {
+        throw new Error('Las credenciales de la API de Trello o los IDs de tablero no están configurados. Asegúrese de que TRELLO_API_KEY, TRELLO_API_TOKEN y TRELLO_BOARD_IDS estén definidos en las variables de entorno.');
     }
 
+    const boardIds = TRELLO_BOARD_IDS_STRING.split(',').map(id => id.trim());
     const authQuery = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
-    const listsUrl = `https://api.trello.com/1/boards/${TRELLO_BOARD_ID}/lists?${authQuery}&fields=name,id`;
-    
+
     try {
-        const listsResponse = await fetch(listsUrl);
-        if (!listsResponse.ok) {
-            const errorText = await listsResponse.text();
-            console.error(`Trello get lists error (${listsResponse.status}): ${errorText}`);
-            throw new Error(`Error al obtener las listas de Trello. El servidor respondió: "${errorText || listsResponse.statusText}". Por favor, revisa tus credenciales y el ID del tablero.`);
-        }
+        const allListsPromises = boardIds.map(async (boardId) => {
+            const [boardResponse, listsResponse] = await Promise.all([
+                fetch(`https://api.trello.com/1/boards/${boardId}?${authQuery}&fields=name`),
+                fetch(`https://api.trello.com/1/boards/${boardId}/lists?${authQuery}&fields=name,id`)
+            ]);
+
+            if (!boardResponse.ok) {
+                 const errorText = await boardResponse.text();
+                 console.error(`Trello get board error for ${boardId} (${boardResponse.status}): ${errorText}`);
+                 throw new Error(`Error al obtener datos del tablero con ID ${boardId}. Revise si el ID es correcto y tiene permisos.`);
+            }
+            const boardData = await boardResponse.json();
+            const boardName = boardData.name;
+
+            if (!listsResponse.ok) {
+                const errorText = await listsResponse.text();
+                console.error(`Trello get lists error for board "${boardName}" (${listsResponse.status}): ${errorText}`);
+                throw new Error(`Error al obtener las listas del tablero "${boardName}".`);
+            }
+            
+            const listsData = await listsResponse.json();
+            return listsData.map((list: any) => ({
+                id: list.id,
+                name: list.name,
+                boardName: boardName,
+            }));
+        });
+
+        const nestedLists = await Promise.all(allListsPromises);
+        const allLists = nestedLists.flat();
         
-        const lists = await listsResponse.json();
-        return z.array(TrelloListSchema).parse(lists.map((list: any) => ({ id: list.id, name: list.name })));
+        return z.array(TrelloListSchema).parse(allLists);
     } catch (error) {
         console.error("Error in getTrelloLists flow:", error);
         if (error instanceof z.ZodError) {
@@ -117,16 +141,16 @@ export async function searchTrelloCard(input: SearchCardInput): Promise<SearchCa
     const { query } = input;
     const TRELLO_API_KEY = process.env.TRELLO_API_KEY;
     const TRELLO_API_TOKEN = process.env.TRELLO_API_TOKEN;
-    const TRELLO_BOARD_ID = process.env.TRELLO_BOARD_ID;
+    const TRELLO_BOARD_IDS = process.env.TRELLO_BOARD_IDS;
 
-    if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_ID) {
-        throw new Error('Las credenciales de la API de Trello no están configuradas en las variables de entorno.');
+    if (!TRELLO_API_KEY || !TRELLO_API_TOKEN || !TRELLO_BOARD_IDS) {
+        throw new Error('Las credenciales de la API de Trello o los IDs de tablero no están configurados en las variables de entorno.');
     }
 
     const authParams = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
     const searchParams = new URLSearchParams({
         query,
-        idBoards: TRELLO_BOARD_ID,
+        idBoards: TRELLO_BOARD_IDS,
         modelTypes: 'cards',
         card_fields: 'name,shortUrl',
         cards_limit: '20',

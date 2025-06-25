@@ -15,7 +15,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -100,6 +102,15 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
     setSearchTerm('');
   };
 
+  const groupedLists = lists.reduce((acc, list) => {
+    const board = list.boardName;
+    if (!acc[board]) {
+      acc[board] = [];
+    }
+    acc[board].push(list);
+    return acc;
+  }, {} as Record<string, TrelloList[]>);
+
   return (
     <DraggablePanel
       title="Integración con Trello"
@@ -156,10 +167,15 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
                     <SelectValue placeholder={isFetchingLists ? "Cargando listas..." : "Seleccionar una lista"} />
                   </SelectTrigger>
                   <SelectContent className="bg-gray-700 text-white border-gray-600">
-                    {lists.map((list) => (
-                      <SelectItem key={list.id} value={list.id} className="text-xs">
-                        {list.name}
-                      </SelectItem>
+                    {Object.entries(groupedLists).map(([boardName, boardLists]) => (
+                        <SelectGroup key={boardName}>
+                            <SelectLabel className="text-xs font-bold text-gray-300">{boardName}</SelectLabel>
+                            {boardLists.map((list) => (
+                                <SelectItem key={list.id} value={list.id} className="text-xs">
+                                    {list.name}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
                     ))}
                   </SelectContent>
                 </Select>
