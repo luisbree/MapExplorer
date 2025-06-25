@@ -34,6 +34,19 @@ TRELLO_API_TOKEN="YOUR_TRELLO_API_TOKEN"
 TRELLO_BOARD_ID="YOUR_TRELLO_BOARD_ID"
 ```
 
+### Trello Troubleshooting
+
+**"Card not found" or "Workspace not found" error in the browser**
+
+If the application successfully finds or creates a card but your browser shows a "Card not found" or "Workspace not found" error page, it's likely because your browser is logged into a different Trello account than the one associated with your API credentials.
+
+- **The Cause**: The application's backend uses the API Key and Token from your `.env.local` file to interact with Trello. However, when a Trello link is opened, your browser uses its own active Trello login session. If these two accounts are different, you won't have permission to view the card.
+
+- **The Solution**:
+    1. Open a new tab and go to `trello.com`.
+    2. Make sure you are logged in with the Trello account that has access to your target board. You may need to log out and log back in with the correct account (the Trello page might show a link like "¿No eres [Otro Usuario]? Cambiar cuentas").
+    3. Once you are logged into the correct account on trello.com, the links opened by the Map Explorer application should work correctly.
+
 ### Running the App
 
 Next, install the dependencies and run the development server:
