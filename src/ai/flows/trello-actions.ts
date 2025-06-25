@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Trello integration server actions.
@@ -10,7 +11,7 @@
  */
 import { z } from 'zod';
 
-export const TrelloListSchema = z.object({
+const TrelloListSchema = z.object({
     id: z.string(),
     name: z.string(),
 });
@@ -47,14 +48,14 @@ export async function getTrelloLists(): Promise<TrelloList[]> {
     }
 }
 
-export const CreateCardInputSchema = z.object({
+const CreateCardInputSchema = z.object({
   title: z.string(),
   description: z.string().optional(),
   listId: z.string(),
 });
 export type CreateCardInput = z.infer<typeof CreateCardInputSchema>;
 
-export const CreateCardOutputSchema = z.object({
+const CreateCardOutputSchema = z.object({
   cardUrl: z.string().url(),
   message: z.string(),
 });
