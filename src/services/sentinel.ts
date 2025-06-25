@@ -27,11 +27,9 @@ export async function findSentinel2Footprints(
     const extent4326 = transformExtent(extent, mapProjection, 'EPSG:4326');
     const [minX, minY, maxX, maxY] = extent4326;
 
-    // After further investigation, using both 'productType' and 'processingLevel' might be conflicting.
-    // Using just 'productType' is more specific and should be sufficient.
     const params = new URLSearchParams({
       maxRecords: '50',
-      productType: 'S2MSI2A', // This implies LEVEL2A and is the most robust parameter.
+      productType: 'S2MSI2A',
       cloudCover: '[0,90]',
       box: `${minX},${minY},${maxX},${maxY}`,
     });
@@ -64,12 +62,15 @@ export async function findSentinel2Footprints(
       dataProjection: 'EPSG:4326',
     });
 
-    // Add a preview URL to the properties
+    // Add a preview URL and download URL to the properties
     const features = geojsonFormat.readFeatures(data);
     features.forEach((feature, index) => {
         const originalProps = data.features[index].properties;
         if(originalProps.thumbnail) {
             feature.set('preview_url', originalProps.thumbnail);
+        }
+        if (originalProps.services?.download?.url) {
+            feature.set('download_url', originalProps.services.download.url);
         }
     });
 

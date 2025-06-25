@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import DraggablePanel from './DraggablePanel'; 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ListChecks, Link as LinkIcon } from 'lucide-react'; // Added LinkIcon
+import { ChevronLeft, ChevronRight, ListChecks, Link as LinkIcon, Download } from 'lucide-react'; // Added Download icon
 
 interface AttributesPanelProps {
   featuresAttributes: Record<string, any>[] | null;
@@ -68,10 +68,18 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
 
   const allKeys = Array.from(
     new Set(currentVisibleFeatures.flatMap(attrs => Object.keys(attrs)))
-  ).sort((a, b) => {
-    // Move 'preview_url' to the end if it exists
-    if (a === 'preview_url') return 1;
-    if (b === 'preview_url') return -1;
+  )
+  .filter(key => key !== 'description' && key !== 'gmlgeometry' && key !== 'geometry')
+  .sort((a, b) => {
+    const order = ['preview_url', 'download_url'];
+    const aIsSpecial = order.includes(a);
+    const bIsSpecial = order.includes(b);
+
+    if (aIsSpecial && bIsSpecial) {
+      return order.indexOf(a) - order.indexOf(b);
+    }
+    if (aIsSpecial) return 1;
+    if (bIsSpecial) return -1;
     return a.localeCompare(b);
   });
 
@@ -119,7 +127,7 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
                         key={key}
                         className="px-3 py-2 text-xs font-medium text-gray-300 whitespace-nowrap bg-gray-700/50"
                       >
-                        {key === 'preview_url' ? 'Vista Previa' : key}
+                        {key === 'preview_url' ? 'Vista Previa' : key === 'download_url' ? 'Descarga' : key}
                       </TableHead>
                     ))}
                   </TableRow>
@@ -137,10 +145,21 @@ const AttributesPanel: React.FC<AttributesPanelProps> = ({
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-400 hover:text-blue-300 underline flex items-center"
-                              title={`Abrir vista previa de ${layerName || 'escena'}`}
+                              title={`Abrir vista previa`}
                             >
                               <LinkIcon className="h-3 w-3 mr-1" />
-                              Abrir Enlace
+                              Abrir Vista
+                            </a>
+                          ) : key === 'download_url' && attrs[key] && isValidUrl(String(attrs[key])) ? (
+                            <a
+                              href={String(attrs[key])}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-green-400 hover:text-green-300 underline flex items-center"
+                              title={`Descargar escena`}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              Descargar
                             </a>
                           ) : (
                             String(attrs[key] === null || attrs[key] === undefined ? '' : attrs[key])
