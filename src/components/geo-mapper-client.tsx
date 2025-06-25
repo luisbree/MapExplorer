@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -21,6 +21,7 @@ import LayersPanel from '@/components/panels/LayersPanel';
 import ToolsPanel from '@/components/panels/ToolsPanel';
 import LegendPanel from '@/components/panels/LegendPanel';
 import AIPanel from '@/components/panels/AIPanel';
+import TrelloPanel from '@/components/panels/TrelloPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
@@ -34,7 +35,7 @@ import { useMapCapture } from '@/hooks/map-tools/useMapCapture';
 import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage } from '@/lib/types';
-import type { MapAssistantOutput } from '@/ai/flows/find-layer-flow';
+import { chatWithMapAssistant, type MapAssistantOutput } from '@/ai/flows/find-layer-flow';
 
 
 const osmCategoryConfig: OSMCategoryConfig[] = [
@@ -105,6 +106,7 @@ const panelToggleConfigs = [
   { id: 'legend', IconComponent: ListTree, name: "Capas" },
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
   { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
+  { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
 ];
 
 
@@ -115,6 +117,7 @@ export default function GeoMapperClient() {
   const legendPanelRef = useRef<HTMLDivElement>(null);
   const attributesPanelRef = useRef<HTMLDivElement>(null);
   const aiPanelRef = useRef<HTMLDivElement>(null);
+  const trelloPanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
@@ -125,6 +128,7 @@ export default function GeoMapperClient() {
     legendPanelRef,
     attributesPanelRef,
     aiPanelRef,
+    trelloPanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -152,6 +156,7 @@ export default function GeoMapperClient() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     { role: 'assistant', content: "Hola, soy Drax, tu asistente de mapas. Pídeme que cargue una capa, que la elimine o que haga zoom en ella." }
   ]);
+  const [isTrelloLoading, setIsTrelloLoading] = useState(false);
 
 
   const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
@@ -360,6 +365,55 @@ export default function GeoMapperClient() {
 
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap, zoomToBoundingBox]);
 
+  const handleCreateTrelloCard = useCallback(async (details: { title: string; description: string; listName: string }) => {
+    setIsTrelloLoading(true);
+    const { title, description, listName } = details;
+    const query = `create a trello card titled "${title}" with description "${description || ' '}" on list "${listName}"`;
+    
+    try {
+      const result = await chatWithMapAssistant({
+        query,
+        availableLayers: [], // Not needed for this action
+        activeLayers: [], // Not needed for this action
+      });
+      if (result.response) {
+        toast({ description: result.response });
+      }
+      if (result.urlToOpen) {
+        handleAiAction(result); // Reuse to open the URL
+      }
+    } catch (error: any) {
+      console.error("Trello card creation error:", error);
+      toast({ description: 'Error al crear la tarjeta en Trello.', variant: 'destructive' });
+    } finally {
+      setIsTrelloLoading(false);
+    }
+  }, [handleAiAction, toast]);
+  
+  const handleSearchTrelloCard = useCallback(async (searchTerm: string) => {
+    setIsTrelloLoading(true);
+    const query = `search for trello card "${searchTerm}"`;
+
+    try {
+      const result = await chatWithMapAssistant({
+        query,
+        availableLayers: [],
+        activeLayers: [],
+      });
+      if (result.response) {
+        toast({ description: result.response });
+      }
+      if (result.urlToOpen) {
+        handleAiAction(result);
+      }
+    } catch (error: any) {
+      console.error("Trello card search error:", error);
+      toast({ description: 'Error al buscar la tarjeta en Trello.', variant: 'destructive' });
+    } finally {
+      setIsTrelloLoading(false);
+    }
+  }, [handleAiAction, toast]);
+
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground">
@@ -530,6 +584,20 @@ export default function GeoMapperClient() {
             messages={chatMessages}
             setMessages={setChatMessages}
             style={{ top: `${panels.ai.position.y}px`, left: `${panels.ai.position.x}px`, zIndex: panels.ai.zIndex }}
+          />
+        )}
+
+        {panels.trello && !panels.trello.isMinimized && (
+          <TrelloPanel
+            panelRef={trelloPanelRef}
+            isCollapsed={panels.trello.isCollapsed}
+            onToggleCollapse={() => togglePanelCollapse('trello')}
+            onClosePanel={() => togglePanelMinimize('trello')}
+            onMouseDownHeader={(e) => handlePanelMouseDown(e, 'trello')}
+            onCreateCard={handleCreateTrelloCard}
+            onSearchCard={handleSearchTrelloCard}
+            isLoading={isTrelloLoading}
+            style={{ top: `${panels.trello.position.y}px`, left: `${panels.trello.position.x}px`, zIndex: panels.trello.zIndex }}
           />
         )}
       </div>

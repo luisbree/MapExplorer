@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai';
+type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello';
 
 interface PanelState {
   isMinimized: boolean;
@@ -18,6 +18,7 @@ interface UseFloatingPanelsProps {
   legendPanelRef: React.RefObject<HTMLDivElement>;
   attributesPanelRef: React.RefObject<HTMLDivElement>;
   aiPanelRef: React.RefObject<HTMLDivElement>;
+  trelloPanelRef: React.RefObject<HTMLDivElement>;
   mapAreaRef: React.RefObject<HTMLDivElement>;
   panelWidth: number;
   panelPadding: number;
@@ -31,6 +32,7 @@ export const useFloatingPanels = ({
   legendPanelRef,
   attributesPanelRef,
   aiPanelRef,
+  trelloPanelRef,
   mapAreaRef,
   panelWidth,
   panelPadding
@@ -42,7 +44,8 @@ export const useFloatingPanels = ({
     legend: legendPanelRef,
     attributes: attributesPanelRef,
     ai: aiPanelRef,
-  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef]);
+    trello: trelloPanelRef,
+  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
     layers: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
@@ -50,6 +53,7 @@ export const useFloatingPanels = ({
     legend: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex + 1 }, // Initially open
     attributes: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 300 }, zIndex: initialZIndex },
     ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex + 2 },
+    trello: { isMinimized: true, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex },
   });
 
   const activeDragRef = useRef<{ panelId: PanelId | null, offsetX: number, offsetY: number }>({ panelId: null, offsetX: 0, offsetY: 0 });
@@ -57,17 +61,20 @@ export const useFloatingPanels = ({
   const positionInitialized = useRef(false);
   
   useEffect(() => {
-    // This effect runs once to set the initial position of the AI panel to the right side.
+    // This effect runs once to set the initial position of the panels on the right side.
     if (mapAreaRef.current && !positionInitialized.current) {
         const mapWidth = mapAreaRef.current.clientWidth;
         const rightX = mapWidth - panelWidth - panelPadding;
 
-        // Only adjust the AI panel's position as requested.
         setPanels(prev => ({
             ...prev,
             ai: {
                 ...prev.ai,
                 position: { x: rightX, y: prev.ai.position.y }
+            },
+            trello: {
+                ...prev.trello,
+                position: { x: rightX, y: 450 + (panelPadding * 2) } // Position below the AI panel
             }
         }));
         positionInitialized.current = true;
