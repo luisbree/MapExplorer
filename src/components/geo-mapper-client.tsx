@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage } from '@/lib/types';
 import { chatWithMapAssistant, type MapAssistantOutput } from '@/ai/flows/find-layer-flow';
+import { createTrelloCard } from '@/ai/flows/trello-actions';
 
 
 const osmCategoryConfig: OSMCategoryConfig[] = [
@@ -365,30 +366,29 @@ export default function GeoMapperClient() {
 
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap, zoomToBoundingBox]);
 
-  const handleCreateTrelloCard = useCallback(async (details: { title: string; description: string; listName: string }) => {
+  const handleCreateTrelloCard = useCallback(async (details: { title: string; description: string; listId: string }) => {
     setIsTrelloLoading(true);
-    const { title, description, listName } = details;
-    const query = `create a trello card titled "${title}" with description "${description || ' '}" on list "${listName}"`;
-    
     try {
-      const result = await chatWithMapAssistant({
-        query,
-        availableLayers: [], // Not needed for this action
-        activeLayers: [], // Not needed for this action
+      const result = await createTrelloCard({
+        title: details.title,
+        description: details.description,
+        listId: details.listId,
       });
-      if (result.response) {
-        toast({ description: result.response });
+      
+      toast({ description: result.message });
+      
+      if (result.cardUrl) {
+        window.open(result.cardUrl, '_blank', 'noopener,noreferrer');
+        toast({ description: `Abriendo Trello en una nueva pestaña...` });
       }
-      if (result.urlToOpen) {
-        handleAiAction(result); // Reuse to open the URL
-      }
+
     } catch (error: any) {
       console.error("Trello card creation error:", error);
-      toast({ description: 'Error al crear la tarjeta en Trello.', variant: 'destructive' });
+      toast({ description: error.message || 'Error al crear la tarjeta en Trello.', variant: 'destructive' });
     } finally {
       setIsTrelloLoading(false);
     }
-  }, [handleAiAction, toast]);
+  }, [toast]);
   
   const handleSearchTrelloCard = useCallback(async (searchTerm: string) => {
     setIsTrelloLoading(true);

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DraggablePanel from './DraggablePanel';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,8 +12,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, ClipboardCheck, Send, Search } from 'lucide-react';
 import { Label } from '../ui/label';
+import { getTrelloLists, type TrelloList } from '@/ai/flows/trello-actions';
+import { useToast } from "@/hooks/use-toast";
 
 interface TrelloPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -21,7 +30,7 @@ interface TrelloPanelProps {
   onToggleCollapse: () => void;
   onClosePanel: () => void;
   onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
-  onCreateCard: (details: { title: string; description: string; listName: string }) => Promise<void>;
+  onCreateCard: (details: { title: string; description: string; listId: string }) => Promise<void>;
   onSearchCard: (searchTerm: string) => Promise<void>;
   isLoading: boolean;
   style?: React.CSSProperties;
@@ -40,18 +49,48 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [listName, setListName] = useState('');
+  const [listId, setListId] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeAccordionItem, setActiveAccordionItem] = useState<string>('create-card');
 
+  const [lists, setLists] = useState<TrelloList[]>([]);
+  const [isFetchingLists, setIsFetchingLists] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (activeAccordionItem === 'create-card' && lists.length === 0 && !isFetchingLists) {
+      const fetchLists = async () => {
+        setIsFetchingLists(true);
+        setFetchError(null);
+        try {
+          const fetchedLists = await getTrelloLists();
+          setLists(fetchedLists);
+          if (fetchedLists.length > 0) {
+            setListId(fetchedLists[0].id); // Default to the first list
+          }
+        } catch (error: any) {
+          const errorMessage = error instanceof Error ? error.message : "Error desconocido al cargar las listas.";
+          setFetchError(errorMessage);
+          toast({
+            title: "Error al cargar listas de Trello",
+            description: errorMessage,
+            variant: "destructive",
+          });
+        } finally {
+          setIsFetchingLists(false);
+        }
+      };
+      fetchLists();
+    }
+  }, [activeAccordionItem, lists.length, isFetchingLists, toast]);
+
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !listName.trim() || isLoading) return;
-    await onCreateCard({ title, description, listName });
-    // Optionally clear fields after submission
+    if (!title.trim() || !listId || isLoading) return;
+    await onCreateCard({ title, description, listId });
     setTitle('');
     setDescription('');
-    setListName('');
   };
   
   const handleSearchSubmit = async (e: React.FormEvent) => {
@@ -74,7 +113,7 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
       showCloseButton={true}
       style={style}
       zIndex={style?.zIndex as number | undefined}
-      initialSize={{ width: 350, height: 400 }}
+      initialSize={{ width: 350, height: 420 }}
     >
       <Accordion type="single" collapsible value={activeAccordionItem} onValueChange={setActiveAccordionItem} className="w-full">
         <AccordionItem value="create-card" className="border-b-0 bg-white/5 rounded-md">
@@ -107,17 +146,26 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
                 />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="trello-list" className="text-xs text-white/90">Nombre de la Lista</Label>
-                <Input
-                  id="trello-list"
-                  value={listName}
-                  onChange={(e) => setListName(e.target.value)}
-                  placeholder="Ej: Tareas, Ideas, Errores"
-                  disabled={isLoading}
-                  className="text-xs h-8 border-white/30 bg-black/20 text-white/90 focus:ring-primary"
-                />
+                <Label htmlFor="trello-list" className="text-xs text-white/90">Lista</Label>
+                <Select
+                  value={listId}
+                  onValueChange={setListId}
+                  disabled={isLoading || isFetchingLists || lists.length === 0}
+                >
+                  <SelectTrigger id="trello-list" className="text-xs h-8 border-white/30 bg-black/20 text-white/90 focus:ring-primary">
+                    <SelectValue placeholder={isFetchingLists ? "Cargando listas..." : "Seleccionar una lista"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 text-white border-gray-600">
+                    {lists.map((list) => (
+                      <SelectItem key={list.id} value={list.id} className="text-xs">
+                        {list.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {fetchError && <p className="text-xs text-red-400 mt-1">{fetchError}</p>}
               </div>
-              <Button type="submit" disabled={isLoading || !title.trim() || !listName.trim()} className="w-full">
+              <Button type="submit" disabled={isLoading || !title.trim() || !listId} className="w-full">
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                 Crear Tarjeta
               </Button>
