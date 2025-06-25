@@ -324,10 +324,6 @@ const mapAssistantFlow = ai.defineFlow(
     outputSchema: MapAssistantOutputSchema,
   },
   async (input) => {
-    if (input.availableLayers.length === 0 && input.activeLayers.length === 0) {
-      return { response: "No hay capas disponibles para buscar o gestionar en este momento." };
-    }
-    
     // Call the prompt with tools. Genkit will handle the tool execution loop.
     const { output } = await assistantPrompt(input);
     
