@@ -39,7 +39,7 @@ const LocationSearch: React.FC<LocationSearchProps> = ({ onLocationSelect, class
     // Ensure suggestions popover is open when a search is initiated
     setIsSuggestionsVisible(true); 
     try {
-      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=10&addressdetails=1`);
+      const response = await fetch(`/api/nominatim-proxy?q=${encodeURIComponent(query)}`);
       if (!response.ok) {
         throw new Error('Error al buscar la ubicación.');
       }
