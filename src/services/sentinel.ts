@@ -31,10 +31,9 @@ export async function findSentinel2Footprints(
     const params = new URLSearchParams({
       maxRecords: '50',
       processingLevel: 'LEVEL2A',
+      productType: 'S2MSI2A', // This parameter is crucial for getting L2A products.
       cloudCover: '[0,90]',
       box: `${minX},${minY},${maxX},${maxY}`,
-      // sortParam and sortOrder removed to simplify the query and increase reliability.
-      // The service default sorting (by date descending) is sufficient.
     });
 
     if (startDate) {
