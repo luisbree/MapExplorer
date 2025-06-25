@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -33,6 +34,14 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
   {
     name: 'INTA NODO Nacional',
     url: 'https://geo-backend.inta.gob.ar/geoserver/wfs'
+  },
+  {
+    name: 'IGN - Capas Vectoriales',
+    url: 'https://wms.ign.gob.ar/geoserver/ows'
+  },
+  {
+    name: 'IGN - Riesgo de Desastres',
+    url: 'https://wms.ign.gob.ar/geoserver/ign_riesgo/ows'
   }
 ];
 
@@ -54,7 +63,8 @@ export const useWfsLibrary = ({
     setDiscoveredLayers([]); // Clear previous results
     setActiveServerUrl(url);
 
-    const getCapabilitiesUrl = `${url.trim()}/wfs?service=WFS&version=2.0.0&request=GetCapabilities`;
+    const baseUrl = url.trim().split('?')[0].replace(/\/$/, ''); // Get URL without existing params and trailing slash
+    const getCapabilitiesUrl = `${baseUrl}?service=WFS&version=2.0.0&request=GetCapabilities`;
     const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}`;
 
     try {
@@ -98,7 +108,8 @@ export const useWfsLibrary = ({
     if (!isMapReady || !activeServerUrl) return;
 
     setIsLoading(true);
-    const getFeatureUrl = `${activeServerUrl}/wfs?service=WFS&version=1.1.0&request=GetFeature&typename=${layerName}&outputFormat=application/json&srsname=EPSG:3857`;
+    const baseUrl = activeServerUrl.split('?')[0].replace(/\/$/, '');
+    const getFeatureUrl = `${baseUrl}?service=WFS&version=1.1.0&request=GetFeature&typename=${layerName}&outputFormat=application/json&srsname=EPSG:3857`;
     const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getFeatureUrl)}`;
 
     try {
