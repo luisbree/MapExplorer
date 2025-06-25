@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -103,13 +104,13 @@ const PANEL_WIDTH = 350;
 const PANEL_PADDING = 8;
 
 const panelToggleConfigs = [
+  { id: 'legend', IconComponent: ListTree, name: "Capas" },
+  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca WFS" },
   { id: 'layers', IconComponent: Database, name: "Datos" },
   { id: 'tools', IconComponent: Wrench, name: "Herramientas" },
-  { id: 'legend', IconComponent: ListTree, name: "Capas" },
+  { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
   { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
-  { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
-  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca WFS" },
 ];
 
 
@@ -442,9 +443,7 @@ export default function GeoMapperClient() {
               if (!panelState) return null;
 
               const isPanelOpen = !panelState.isMinimized;
-              const tooltipText = isPanelOpen
-                ? `Minimizar Panel de ${panelConfig.name}`
-                : `Restaurar Panel de ${panelConfig.name}`;
+              const tooltipText = panelConfig.name;
               
               return (
                 <Tooltip key={panelConfig.id}>
