@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect } from 'react';
@@ -61,7 +60,7 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    if (activeAccordionItem === 'create-card' && lists.length === 0 && !isFetchingLists) {
+    if (activeAccordionItem === 'create-card' && lists.length === 0 && !isFetchingLists && !fetchError) {
       const fetchLists = async () => {
         setIsFetchingLists(true);
         setFetchError(null);
@@ -85,7 +84,7 @@ const TrelloPanel: React.FC<TrelloPanelProps> = ({
       };
       fetchLists();
     }
-  }, [activeAccordionItem, lists.length, isFetchingLists, toast]);
+  }, [activeAccordionItem, lists.length, isFetchingLists, fetchError, toast]);
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

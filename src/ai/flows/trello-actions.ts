@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Trello integration server actions.
@@ -30,7 +29,7 @@ export async function getTrelloLists(): Promise<TrelloList[]> {
         throw new Error('Las credenciales de la API de Trello o los IDs de tablero no están configurados. Asegúrese de que TRELLO_API_KEY, TRELLO_API_TOKEN y TRELLO_BOARD_IDS estén definidos en las variables de entorno.');
     }
 
-    const boardIds = TRELLO_BOARD_IDS_STRING.split(',').map(id => id.trim());
+    const boardIds = TRELLO_BOARD_IDS_STRING.split(',').map(id => id.trim().replace(/['"]/g, ''));
     const authQuery = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
 
     try {
@@ -160,7 +159,7 @@ export async function searchTrelloCard(input: SearchCardInput): Promise<SearchCa
     const authParams = `key=${TRELLO_API_KEY}&token=${TRELLO_API_TOKEN}`;
     const searchParams = new URLSearchParams({
         query,
-        idBoards: TRELLO_BOARD_IDS.split(',').map(id => id.trim()).join(','),
+        idBoards: TRELLO_BOARD_IDS.split(',').map(id => id.trim().replace(/['"]/g, '')).join(','),
         modelTypes: 'cards',
         card_fields: 'name,shortUrl',
         cards_limit: '20',
