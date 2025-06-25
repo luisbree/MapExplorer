@@ -67,6 +67,10 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
     name: 'Dirección Provincial de Estadística',
     url: 'https://mapas.estadistica.ec.gba.gov.ar/server/services/ServiciosWeb/ServiciosWeb/MapServer/WFSServer',
   },
+  {
+    name: 'Mapa Escolar D.G.C.y E.',
+    url: 'http://mapaescolar.abc.gob.ar/geodie/wfs',
+  },
 ];
 
 export const useWfsLibrary = ({
