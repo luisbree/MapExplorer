@@ -56,6 +56,10 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
     url: 'http://geo.ambiente.gob.ar/geoserver/wfs'
   },
   {
+    name: 'Ministerio de Salud',
+    url: 'http://mapasdis.ms.gba.gov.ar:8080/geoserver/wfs'
+  },
+  {
     name: 'INDEC',
     url: 'https://geoservicios.indec.gob.ar/geoserver/ows',
   },
