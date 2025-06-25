@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
     const response = await fetch(geoServerUrl, {
       method: 'GET',
       headers: {
-        // Copy any necessary headers from the original request or set new ones
-        // 'User-Agent': 'Firebase App Prototyper Proxy',
+        // Set a user-agent, as some servers may reject requests without one.
+        'User-Agent': 'MapExplorerApp/1.0 (Proxy)',
       },
     });
 
