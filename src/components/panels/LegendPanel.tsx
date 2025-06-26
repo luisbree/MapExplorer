@@ -1,7 +1,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import DraggablePanel from './DraggablePanel';
 import LayerList from '@/components/layer-manager/LayerList';
 import FileUploadControl from '@/components/layer-manager/FileUploadControl';
@@ -51,6 +51,29 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
   isInteractionActive, onToggleInteraction, selectionMode, onSetSelectionMode, onClearSelection,
   style,
 }) => {
+  const [selectedLayerIds, setSelectedLayerIds] = useState<string[]>([]);
+  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
+
+  const handleLayerClick = (clickedIndex: number, event: React.MouseEvent<HTMLLIElement>) => {
+    const clickedLayerId = layers[clickedIndex].id;
+
+    if (event.ctrlKey || event.metaKey) { // Ctrl/Cmd click
+      setSelectedLayerIds(prev =>
+        prev.includes(clickedLayerId)
+          ? prev.filter(id => id !== clickedLayerId) // Deselect if already selected
+          : [...prev, clickedLayerId] // Select if not selected
+      );
+    } else if (event.shiftKey && lastClickedIndex !== null) { // Shift click
+      const start = Math.min(lastClickedIndex, clickedIndex);
+      const end = Math.max(lastClickedIndex, clickedIndex);
+      const rangeIds = layers.slice(start, end + 1).map(l => l.id);
+      setSelectedLayerIds(rangeIds);
+    } else { // Normal click
+      setSelectedLayerIds([clickedLayerId]);
+    }
+    setLastClickedIndex(clickedIndex);
+  };
+
 
   return (
     <DraggablePanel
@@ -91,6 +114,8 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           isSelectionEmpty={isSelectionEmpty}
           onSetLayerOpacity={onSetLayerOpacity}
           onReorderLayers={onReorderLayers}
+          selectedLayerIds={selectedLayerIds}
+          onLayerClick={handleLayerClick}
         />
       </div>
     </DraggablePanel>

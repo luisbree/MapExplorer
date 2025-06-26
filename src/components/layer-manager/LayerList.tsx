@@ -19,6 +19,10 @@ interface LayerListProps {
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
   onReorderLayers?: (startIndex: number, endIndex: number) => void;
+
+  // Selection props
+  selectedLayerIds: string[];
+  onLayerClick: (index: number, event: React.MouseEvent<HTMLLIElement>) => void;
 }
 
 const LayerList: React.FC<LayerListProps> = ({
@@ -34,6 +38,8 @@ const LayerList: React.FC<LayerListProps> = ({
   isSelectionEmpty,
   onSetLayerOpacity,
   onReorderLayers,
+  selectedLayerIds,
+  onLayerClick,
 }) => {
   const dragItemIndex = useRef<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -122,6 +128,8 @@ const LayerList: React.FC<LayerListProps> = ({
           onDragOver={(e) => e.preventDefault()}
           isDragging={dragItemIndex.current === index}
           isDragOver={dragOverIndex === index}
+          isSelected={selectedLayerIds.includes(layer.id)}
+          onClick={(e) => onLayerClick(index, e)}
         />
       ))}
     </ul>

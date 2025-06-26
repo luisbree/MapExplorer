@@ -43,6 +43,10 @@ interface LayerItemProps {
   onDrop?: (e: React.DragEvent<HTMLLIElement>) => void;
   isDragging?: boolean;
   isDragOver?: boolean;
+
+  // Selection props
+  isSelected?: boolean;
+  onClick?: (event: React.MouseEvent<HTMLLIElement>) => void;
 }
 
 const LayerItem: React.FC<LayerItemProps> = ({
@@ -65,7 +69,9 @@ const LayerItem: React.FC<LayerItemProps> = ({
   onDragLeave,
   onDrop,
   isDragging,
-  isDragOver
+  isDragOver,
+  isSelected,
+  onClick,
 }) => {
   const isVectorLayer = layer.olLayer instanceof VectorLayer;
   const currentOpacityPercentage = Math.round(layer.opacity * 100);
@@ -73,9 +79,11 @@ const LayerItem: React.FC<LayerItemProps> = ({
   return (
     <li 
       className={cn(
-        "flex items-center px-1.5 py-1 hover:bg-gray-700/30 transition-all overflow-hidden relative",
+        "flex items-center px-1.5 py-1 transition-all overflow-hidden relative",
+        "hover:bg-gray-700/30",
+        isSelected ? "bg-primary/20 ring-1 ring-primary/70 rounded-md" : "",
         isDraggable && "cursor-grab",
-        isDragging && "opacity-50 bg-primary/20",
+        isDragging && "opacity-50 bg-primary/30",
         isDragOver && "border-t-2 border-accent"
       )}
       draggable={isDraggable}
@@ -85,12 +93,13 @@ const LayerItem: React.FC<LayerItemProps> = ({
       onDragEnter={onDragEnter}
       onDragLeave={onDragLeave}
       onDrop={onDrop}
+      onClick={onClick}
     >
       {isDraggable && <GripVertical className="h-4 w-4 text-gray-500 mr-1 flex-shrink-0" />}
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => onToggleVisibility(layer.id)}
+        onClick={(e) => { e.stopPropagation(); onToggleVisibility(layer.id); }}
         className="h-6 w-6 text-white hover:bg-gray-600/80 p-0 mr-2 flex-shrink-0"
         aria-label={`Alternar visibilidad para ${layer.name}`}
         title={layer.visible ? "Ocultar capa" : "Mostrar capa"}
@@ -99,7 +108,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
       </Button>
       <span
         className={cn(
-          "flex-1 cursor-default text-xs font-medium truncate min-w-0",
+          "flex-1 cursor-default text-xs font-medium truncate min-w-0 select-none",
           layer.visible ? "text-white" : "text-gray-400"
         )}
         title={layer.name}
@@ -115,6 +124,7 @@ const LayerItem: React.FC<LayerItemProps> = ({
               className="h-6 w-6 text-white hover:bg-gray-600/80 p-0"
               aria-label={`Acciones para ${layer.name}`}
               title="Más acciones"
+              onClick={(e) => e.stopPropagation()}
             >
               <Settings2 className="h-3.5 w-3.5" />
             </Button>
