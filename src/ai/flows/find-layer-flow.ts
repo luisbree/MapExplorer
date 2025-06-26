@@ -141,6 +141,10 @@ const MapAssistantOutputSchema = z.object({
     startDate: z.string().describe("The start date for the search in YYYY-MM-DD format.").optional(),
     completionDate: z.string().describe("The end date (completion date) for the search in YYYY-MM-DD format.").optional(),
   }).describe("Set this object to search for Sentinel-2 satellite image footprints. If no dates are provided, it searches for recent images.").optional().nullable(),
+  findLandsatFootprints: z.object({
+    startDate: z.string().describe("The start date for the search in YYYY-MM-DD format.").optional(),
+    completionDate: z.string().describe("The end date (completion date) for the search in YYYY-MM-DD format.").optional(),
+  }).describe("Set this object to search for Landsat satellite image footprints. If no dates are provided, it searches for recent images.").optional().nullable(),
   urlToOpen: z.string().url().describe("A URL that the application should open in a new tab for the user.").optional().nullable(),
 });
 export type MapAssistantOutput = z.infer<typeof MapAssistantOutputSchema>;
@@ -158,7 +162,7 @@ const assistantPrompt = ai.definePrompt({
 Your goal is to have a conversation with the user and help them with their tasks.
 Your response must always be in a conversational, human-like text.
 
-Tu conocimiento no se limita a las diez acciones principales. Eres consciente de todas las funcionalidades de la aplicación. Si el usuario te pide algo que no puedes hacer directamente, debes guiarlo para que use la interfaz de la aplicación. No intentes realizar estas acciones tú mismo.
+Tu conocimiento no se limita a las acciones principales que puedes ejecutar. Eres consciente de todas las funcionalidades de la aplicación. Si el usuario te pide algo que no puedes hacer directamente, debes guiarlo para que use la interfaz de la aplicación. No intentes realizar estas acciones tú mismo.
 
 Otras funcionalidades sobre las que debes guiar al usuario:
 - **Dibujar en el mapa**: Si el usuario te pide que dibujes, indícale que use las 'Herramientas de Dibujo' en el panel 'Herramientas'.
@@ -166,7 +170,7 @@ Otras funcionalidades sobre las que debes guiar al usuario:
 - **Subir un archivo local**: Si el usuario pregunta cómo cargar un archivo (KML, GeoJSON, Shapefile), guíalo al botón 'Importar Capa' (el icono con el '+') en el panel 'Capas'.
 - **Obtener datos de OpenStreetMap (OSM)**: Si te preguntan por datos de OSM, explica que primero deben dibujar un polígono con las 'Herramientas de Dibujo' y luego usar la sección 'OpenStreetMap' en el panel 'Herramientas' para obtener los datos.
 
-You can perform ten types of actions based on the user's request:
+You can perform several types of actions based on the user's request:
 1. ADD one or more layers to the map (as WMS images or WFS vectors).
 2. REMOVE one or more layers from the map.
 3. ZOOM to a single layer's extent.
@@ -174,9 +178,10 @@ You can perform ten types of actions based on the user's request:
 5. SHOW ATTRIBUTE TABLE for a single layer.
 6. CAPTURE MAP IMAGE.
 7. ZOOM TO LOCATION: Search for a location and go to a city.
-8. FIND SENTINEL-2 FOOTPRINTS: Search for Sentinel-2 image footprints in the current map view, optionally with a date range.
-9. CREATE TRELLO CARD: Create a new card in Trello to track a task or idea.
-10. FIND TRELLO CARD: Search for an existing card on Trello and open it.
+8. FIND SENTINEL-2 FOOTPRINTS: Search for Sentinel-2 image footprints in the current map view.
+9. FIND LANDSAT FOOTPRINTS: Search for Landsat image footprints in the current map view.
+10. CREATE TRELLO CARD: Create a new card in Trello to track a task or idea.
+11. FIND TRELLO CARD: Search for an existing card on Trello and open it.
 
 Analyze the user's message and the provided lists of layers to decide which action to take.
 
@@ -217,6 +222,8 @@ Analyze the user's message and the provided lists of layers to decide which acti
   
 - FIND SENTINEL-2 FOOTPRINTS: If the user asks to find Sentinel-2 images for the CURRENT area (e.g., "busca imágenes sentinel aquí"), you MUST set the 'findSentinel2Footprints' field. If they specify a date range (e.g., 'en enero de 2023'), extract the dates and provide them in 'YYYY-MM-DD' format. If no date is mentioned, send an empty object \`{}\`. Your response should confirm the action, for example: "Claro, buscando las huellas de Sentinel-2 en la vista actual." For searching in a specific named location, see the EXCEPTION rule below.
 
+- FIND LANDSAT FOOTPRINTS: If the user asks to find Landsat images for the CURRENT area (e.g., "busca imágenes landsat aquí"), you MUST set the 'findLandsatFootprints' field. If they specify a date range (e.g., 'en enero de 2023'), extract the dates and provide them in 'YYYY-MM-DD' format. If no date is mentioned, send an empty object \`{}\`. Your response should confirm the action, for example: "Claro, buscando las huellas de Landsat en la vista actual." For searching in a specific named location, see the EXCEPTION rule below.
+
 - CREATE TRELLO CARD: If the user asks to create a task, note, or ticket (e.g., "crea una tarjeta para investigar esto", "anota que hay que arreglar el servidor"), use the 'createTrelloCard' tool. You must ask for the card title and the name of the list (e.g., "Tareas", "Ideas", "Errores") if they are not provided. When the tool executes, you MUST use the 'message' field from the tool's output as your conversational \`response\`, and you MUST populate the 'urlToOpen' field with the 'cardUrl' from the tool's output. Do not make up your own confirmation message; wait for the tool to finish.
 
 - FIND TRELLO CARD: If the user asks to find, search for, or open an existing card (e.g., "busca la tarjeta sobre el río", "abre la tarea de investigación"), use the 'searchTrelloCard' tool. When the tool executes, you MUST use the 'message' field from the tool's output as your conversational \`response\`, and you MUST populate the 'urlToOpen' field with the 'cardUrl' from the tool's output. Do not make up your own confirmation message; wait for the tool to finish.
@@ -225,7 +232,7 @@ Analyze the user's message and the provided lists of layers to decide which acti
 
 IMPORTANT: You can perform multiple actions of the SAME type at once (e.g., add multiple layers). Do not mix action types in a single response, with ONE exception.
 
-EXCEPTION: You MAY combine 'zoomToBoundingBox' and 'findSentinel2Footprints'. If a user asks to find Sentinel images for a specific named location (e.g., "busca imágenes Sentinel en París"), you should use the 'searchLocation' tool to get the location's bounding box. Then, you must populate BOTH 'zoomToBoundingBox' with the result AND set the 'findSentinel2Footprints' field (e.g., to {}). The application is designed to handle this by zooming first, then searching automatically. Your response should confirm both actions, e.g., "Entendido. Acercando a París y buscando imágenes Sentinel-2."
+EXCEPTION: You MAY combine 'zoomToBoundingBox' and a satellite search ('findSentinel2Footprints' or 'findLandsatFootprints'). If a user asks to find satellite images for a specific named location (e.g., "busca imágenes Sentinel en París" or "busca fotos de Landsat en Buenos Aires"), you should use the 'searchLocation' tool to get the location's bounding box. Then, you must populate BOTH 'zoomToBoundingBox' with the result AND set the appropriate satellite search field (e.g., to {}). The application is designed to handle this by zooming first, then searching automatically. Your response should confirm both actions, e.g., "Entendido. Acercando a París y buscando imágenes Sentinel-2."
 
 If the request is ambiguous, prioritize adding over removing, removing over zooming, zooming over styling, styling over showing the table, and showing the table over capturing the map.
 
@@ -268,3 +275,5 @@ const mapAssistantFlow = ai.defineFlow(
     return output;
   }
 );
+
+    

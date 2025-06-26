@@ -212,7 +212,7 @@ export default function GeoMapperClient() {
           discovered.forEach(layer => {
             const isVisible = layer.name === 'cuencas_light';
             if (isVisible) {
-              handleAddGeoServerLayerToMap(layer.name, layer.title, isVisible, initialUrl, layer.bbox);
+              handleAddGeoServerLayerToMap(layer.name, layer.title, true, initialUrl, layer.bbox);
             }
           });
           toast({ description: `${discovered.length} capas de GeoServer cargadas en segundo plano.` });
@@ -357,11 +357,15 @@ export default function GeoMapperClient() {
     }
 
     const shouldZoom = action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4;
-    const shouldFindFootprints = !!action.findSentinel2Footprints;
+    const shouldFindSentinelFootprints = !!action.findSentinel2Footprints;
+    const shouldFindLandsatFootprints = !!action.findLandsatFootprints;
 
     const performFootprintSearch = () => {
       if (action.findSentinel2Footprints) {
         layerManagerHook.findSentinel2FootprintsInCurrentView(action.findSentinel2Footprints);
+      }
+      if (action.findLandsatFootprints) {
+        layerManagerHook.findLandsatFootprintsInCurrentView(action.findLandsatFootprints);
       }
     };
     
@@ -369,13 +373,13 @@ export default function GeoMapperClient() {
       const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox!;
       if ([sLat, nLat, wLon, eLon].every(c => !isNaN(c))) {
         zoomToBoundingBox([wLon, sLat, eLon, nLat]);
-        if (shouldFindFootprints) {
+        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints) {
           setTimeout(performFootprintSearch, 1100);
         }
       } else {
         toast({description: `Drax devolvió una ubicación inválida.`});
       }
-    } else if (shouldFindFootprints) {
+    } else if (shouldFindSentinelFootprints || shouldFindLandsatFootprints) {
       performFootprintSearch();
     }
     
@@ -491,6 +495,9 @@ export default function GeoMapperClient() {
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}
+            onFindLandsatFootprints={layerManagerHook.findLandsatFootprintsInCurrentView}
+            onClearLandsatFootprints={layerManagerHook.clearLandsatFootprintsLayer}
+            isFindingLandsatFootprints={layerManagerHook.isFindingLandsatFootprints}
             style={{ top: `${panels.layers.position.y}px`, left: `${panels.layers.position.x}px`, zIndex: panels.layers.zIndex }}
           />
         )}
@@ -617,3 +624,5 @@ export default function GeoMapperClient() {
     </div>
   );
 }
+
+    

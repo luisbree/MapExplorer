@@ -31,6 +31,10 @@ interface LayersPanelProps {
   onClearSentinel2Footprints: () => void;
   isFindingSentinelFootprints: boolean; 
 
+  onFindLandsatFootprints: (dateRange?: { startDate?: string, completionDate?: string }) => void;
+  onClearLandsatFootprints: () => void;
+  isFindingLandsatFootprints: boolean;
+
   style?: React.CSSProperties; 
 }
 
@@ -41,6 +45,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   onZoomToBoundingBox,
   captureMap, isCapturingMap,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
+  onFindLandsatFootprints, onClearLandsatFootprints, isFindingLandsatFootprints,
   style, 
 }) => {
   
@@ -108,9 +113,39 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
           </div>
            <p className="text-xs text-gray-400/70 mt-1">Busca footprints de Sentinel-2 L2A. Puede requerir paciencia.</p>
         </div>
+
+        <Separator className="bg-white/15" />
+
+        <div>
+          <h3 className="text-xs font-semibold text-white/90 mb-1.5 flex items-center">
+            <ImageUp className="h-3.5 w-3.5 mr-1.5 text-yellow-400/80" /> 
+            Landsat
+          </h3>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={() => onFindLandsatFootprints()} 
+              className="h-8 w-8 p-0 flex items-center justify-center bg-black/20 hover:bg-black/40 border border-white/30 text-white/90"
+              disabled={isFindingLandsatFootprints}
+              title={isFindingLandsatFootprints ? "Buscando..." : "Buscar footprints de escenas Landsat en la vista actual del mapa"}
+            >
+              {isFindingLandsatFootprints ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+            </Button>
+            <Button 
+              onClick={onClearLandsatFootprints} 
+              variant="destructive"
+              className="h-8 w-8 p-0 flex items-center justify-center bg-red-700/30 hover:bg-red-600/50 border border-red-500/50 text-white/90"
+              title="Limpiar los footprints de Landsat del mapa"
+            >
+              <ImageOff className="h-4 w-4" /> 
+            </Button>
+          </div>
+           <p className="text-xs text-gray-400/70 mt-1">Busca footprints de Landsat C2 L2. Puede requerir paciencia.</p>
+        </div>
       </div>
     </DraggablePanel>
   );
 };
 
 export default LayersPanel;
+
+    

@@ -13,7 +13,7 @@ export interface MapLayer {
   olLayer: Layer<Source, any>;
   visible: boolean;
   opacity: number;
-  type: 'wms' | 'wfs' | 'vector' | 'osm' | 'drawing' | 'sentinel';
+  type: 'wms' | 'wfs' | 'vector' | 'osm' | 'drawing' | 'sentinel' | 'landsat';
   isDeas?: boolean;
 }
 
@@ -61,3 +61,5 @@ export interface NominatimResult {
   importance: number;
   icon?: string;
 }
+
+    

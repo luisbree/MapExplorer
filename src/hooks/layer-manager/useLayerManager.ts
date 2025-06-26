@@ -8,7 +8,8 @@ import VectorLayer from 'ol/layer/Vector';
 import type Feature from 'ol/Feature';
 import type { Geometry } from 'ol/geom';
 import { useToast } from "@/hooks/use-toast";
-import { findSentinel2Footprints as fetchSentinelFootprints } from '@/services/sentinel';
+import { findSentinel2Footprints } from '@/services/sentinel';
+import { findLandsatFootprints } from '@/services/landsat';
 import type { MapLayer, VectorMapLayer } from '@/lib/types';
 import { nanoid } from 'nanoid';
 import { Style, Stroke, Fill, Circle as CircleStyle } from 'ol/style';
@@ -57,6 +58,7 @@ export const useLayerManager = ({
   const [layers, setLayers] = useState<MapLayer[]>([]);
   const { toast } = useToast();
   const [isFindingSentinelFootprints, setIsFindingSentinelFootprints] = useState(false);
+  const [isFindingLandsatFootprints, setIsFindingLandsatFootprints] = useState(false);
 
   useEffect(() => {
     // This effect ensures z-ordering is correct whenever the layers array changes.
@@ -497,7 +499,7 @@ export const useLayerManager = ({
     try {
         const view = mapRef.current.getView();
         const extent = view.calculateExtent(mapRef.current.getSize()!);
-        const features = await fetchSentinelFootprints(extent, view.getProjection(), dateRange?.startDate, dateRange?.completionDate);
+        const features = await findSentinel2Footprints(extent, view.getProjection(), dateRange?.startDate, dateRange?.completionDate);
         
         if (features.length === 0) {
             toast({ description: "No se encontraron escenas de Sentinel-2 en la vista actual para el rango de fechas especificado." });
@@ -547,6 +549,62 @@ export const useLayerManager = ({
     }
   }, [layers, removeLayer, toast]);
 
+  const findLandsatFootprintsInCurrentView = useCallback(async (dateRange?: { startDate?: string; completionDate?: string }) => {
+    if (!mapRef.current) return;
+    setIsFindingLandsatFootprints(true);
+    try {
+        const view = mapRef.current.getView();
+        const extent = view.calculateExtent(mapRef.current.getSize()!);
+        const features = await findLandsatFootprints(extent, view.getProjection(), dateRange?.startDate, dateRange?.completionDate);
+        
+        if (features.length === 0) {
+            toast({ description: "No se encontraron escenas de Landsat en la vista actual para el rango de fechas especificado." });
+            return;
+        }
+
+        const existingLayer = layers.find(l => l.id === 'landsat-footprints') as VectorMapLayer | undefined;
+        if (existingLayer) {
+            existingLayer.olLayer.getSource()?.clear();
+            existingLayer.olLayer.getSource()?.addFeatures(features);
+            toast({ description: `Capa de Landsat actualizada con ${features.length} footprints.` });
+        } else {
+            const landsatSource = new VectorSource({ features });
+            const landsatLayer = new VectorLayer({
+                source: landsatSource,
+                style: new Style({
+                    stroke: new Stroke({ color: 'rgba(255, 255, 0, 1.0)', width: 2 }),
+                    fill: new Fill({ color: 'rgba(255, 255, 0, 0.1)' }),
+                }),
+                properties: { id: 'landsat-footprints', name: 'Footprints Landsat', type: 'landsat' }
+            });
+
+            addLayer({
+                id: 'landsat-footprints',
+                name: 'Footprints Landsat',
+                olLayer: landsatLayer,
+                visible: true,
+                opacity: 1,
+                type: 'landsat'
+            });
+            toast({ description: `${features.length} footprints de Landsat añadidos al mapa.` });
+        }
+    } catch (error: any) {
+        console.error("Error finding Landsat footprints:", error);
+        toast({ description: `Error al buscar escenas de Landsat: ${error.message}` });
+    } finally {
+        setIsFindingLandsatFootprints(false);
+    }
+  }, [mapRef, layers, addLayer, toast]);
+
+  const clearLandsatFootprintsLayer = useCallback(() => {
+    const landsatLayer = layers.find(l => l.id === 'landsat-footprints');
+    if (landsatLayer) {
+        removeLayer(landsatLayer.id);
+    } else {
+        toast({ description: "No hay capa de footprints de Landsat para limpiar." });
+    }
+  }, [layers, removeLayer, toast]);
+
 
   return {
     layers,
@@ -565,6 +623,11 @@ export const useLayerManager = ({
     handleExportSelection,
     findSentinel2FootprintsInCurrentView,
     isFindingSentinelFootprints,
-    clearSentinel2FootprintsLayer
+    clearSentinel2FootprintsLayer,
+    findLandsatFootprintsInCurrentView,
+    isFindingLandsatFootprints,
+    clearLandsatFootprintsLayer,
   };
 };
+
+    
