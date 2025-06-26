@@ -7,7 +7,15 @@ import { Geometry } from 'ol/geom';
 import { transformExtent, type ProjectionLike } from 'ol/proj';
 import type { Extent } from 'ol/extent';
 
-const LANDSAT_API_URL = 'https://catalogue.dataspace.copernicus.eu/resto/api/collections/Landsat/search.json';
+// Changed to the general search endpoint to query multiple collections
+const LANDSAT_API_URL = 'https://catalogue.dataspace.copernicus.eu/resto/api/search.json';
+// List of all public Landsat Level-2 collections
+const LANDSAT_COLLECTIONS = [
+    'Landsat-4-5-TM-C2-L2',
+    'Landsat-7-ETM+-C2-L2',
+    'Landsat-8-9-C2-L2',
+].join(',');
+
 
 /**
  * Finds Landsat Collection 2 Level-2 footprints within a given map extent.
@@ -29,6 +37,7 @@ export async function findLandsatFootprints(
 
     const params = new URLSearchParams({
       maxRecords: '50',
+      collections: LANDSAT_COLLECTIONS, // Specify the collections to search in
       productType: 'L2SP', // Landsat Collection 2 Level-2 Science Products
       cloudCover: '[0,90]',
       box: `${minX},${minY},${maxX},${maxY}`,
