@@ -489,6 +489,9 @@ export default function GeoMapperClient() {
             onToggleCollapse={() => togglePanelCollapse('layers')}
             onClosePanel={() => togglePanelMinimize('layers')}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'layers')}
+            availableBaseLayers={availableBaseLayersForSelect}
+            activeBaseLayerId={activeBaseLayerId}
+            onChangeBaseLayer={handleChangeBaseLayer}
             onZoomToBoundingBox={zoomToBoundingBox}
             captureMap={captureMap}
             isCapturingMap={isMapCapturing}
