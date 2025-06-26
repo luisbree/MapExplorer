@@ -109,7 +109,6 @@ export const useLayerManager = ({
     setLayers(prevLayers => {
         const layersToMove = prevLayers.filter(l => draggedIds.includes(l.id));
         
-        // Safeguard against moving non-draggable layers
         if (layersToMove.some(l => l.isDeas)) {
             return prevLayers;
         }
@@ -118,7 +117,6 @@ export const useLayerManager = ({
         
         let targetIndex = remainingLayers.findIndex(l => l.id === targetId);
 
-        // If targetId is null (dropped at the end) or not found, place at the end of user layers
         if (targetId === null || targetIndex === -1) {
             const firstDeasIndex = remainingLayers.findIndex(l => l.isDeas);
             targetIndex = firstDeasIndex === -1 ? remainingLayers.length : firstDeasIndex;
@@ -126,7 +124,12 @@ export const useLayerManager = ({
         
         remainingLayers.splice(targetIndex, 0, ...layersToMove);
         
-        toast({ description: `${layersToMove.length} capa(s) reordenada(s).` });
+        if (layersToMove.length > 0) {
+            setTimeout(() => {
+                toast({ description: `${layersToMove.length} capa(s) reordenada(s).` });
+            }, 0);
+        }
+
         return remainingLayers;
     });
   }, [toast]);
