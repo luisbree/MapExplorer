@@ -105,21 +105,30 @@ export const useLayerManager = ({
     }
   }, [mapRef, layers, toast, updateGeoServerDiscoveredLayerState]);
 
-  const reorderLayers = useCallback((startIndex: number, endIndex: number) => {
-      setLayers(prevLayers => {
-          // Prevent reordering DEAS layers or dropping onto them.
-          // This assumes that all user layers appear before all DEAS layers in the array.
-          if (prevLayers[startIndex].isDeas || prevLayers[endIndex].isDeas) {
-              return prevLayers;
-          }
+  const reorderLayers = useCallback((draggedIds: string[], targetId: string | null) => {
+    setLayers(prevLayers => {
+        const layersToMove = prevLayers.filter(l => draggedIds.includes(l.id));
+        
+        // Safeguard against moving non-draggable layers
+        if (layersToMove.some(l => l.isDeas)) {
+            return prevLayers;
+        }
 
-          const result = Array.from(prevLayers);
-          const [removed] = result.splice(startIndex, 1);
-          result.splice(endIndex, 0, removed);
-          
-          return result;
-      });
-      toast({ description: 'Orden de capas actualizado.' });
+        const remainingLayers = prevLayers.filter(l => !draggedIds.includes(l.id));
+        
+        let targetIndex = remainingLayers.findIndex(l => l.id === targetId);
+
+        // If targetId is null (dropped at the end) or not found, place at the end of user layers
+        if (targetId === null || targetIndex === -1) {
+            const firstDeasIndex = remainingLayers.findIndex(l => l.isDeas);
+            targetIndex = firstDeasIndex === -1 ? remainingLayers.length : firstDeasIndex;
+        }
+        
+        remainingLayers.splice(targetIndex, 0, ...layersToMove);
+        
+        toast({ description: `${layersToMove.length} capa(s) reordenada(s).` });
+        return remainingLayers;
+    });
   }, [toast]);
   
   const toggleLayerVisibility = useCallback((layerId: string) => {

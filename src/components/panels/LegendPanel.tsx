@@ -28,7 +28,7 @@ interface LegendPanelProps {
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void; 
-  onReorderLayers: (startIndex: number, endIndex: number) => void;
+  onReorderLayers: (draggedIds: string[], targetId: string | null) => void;
 
 
   onAddLayer: (layer: MapLayer) => void;

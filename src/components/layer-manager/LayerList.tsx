@@ -18,7 +18,7 @@ interface LayerListProps {
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
   onSetLayerOpacity: (layerId: string, opacity: number) => void;
-  onReorderLayers?: (startIndex: number, endIndex: number) => void;
+  onReorderLayers?: (draggedIds: string[], targetId: string | null) => void;
 
   // Selection props
   selectedLayerIds: string[];
@@ -45,7 +45,6 @@ const LayerList: React.FC<LayerListProps> = ({
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const handleDragStart = (e: React.DragEvent<HTMLLIElement>, index: number) => {
-      // Prevent dragging DEAS layers
       if (layers[index].isDeas) {
           e.preventDefault();
           return;
@@ -56,7 +55,6 @@ const LayerList: React.FC<LayerListProps> = ({
 
   const handleDragEnter = (e: React.DragEvent<HTMLLIElement>, index: number) => {
       e.preventDefault();
-       // Prevent showing drop indicator over DEAS layers
       if (layers[index].isDeas) {
           setDragOverIndex(null);
           return;
@@ -70,21 +68,33 @@ const LayerList: React.FC<LayerListProps> = ({
   };
   
   const handleDrop = (e: React.DragEvent<HTMLLIElement>, dropIndex: number) => {
-      e.preventDefault();
-      if (dragItemIndex.current === null) return;
-      
-      // Prevent dropping on DEAS layers
-      if (layers[dropIndex].isDeas) {
-          dragItemIndex.current = null;
-          setDragOverIndex(null);
-          return;
-      }
-      
-      if (dragItemIndex.current !== dropIndex && onReorderLayers) {
-          onReorderLayers(dragItemIndex.current, dropIndex);
-      }
-      dragItemIndex.current = null;
-      setDragOverIndex(null);
+    e.preventDefault();
+    if (dragItemIndex.current === null || !onReorderLayers) return;
+
+    const draggedItem = layers[dragItemIndex.current];
+    const dropTargetItem = layers[dropIndex];
+    
+    // Prevent dropping on DEAS layers
+    if (dropTargetItem.isDeas) {
+        dragItemIndex.current = null;
+        setDragOverIndex(null);
+        return;
+    }
+    
+    const isMultiDrag = selectedLayerIds.includes(draggedItem.id);
+    const draggedIds = isMultiDrag ? selectedLayerIds : [draggedItem.id];
+
+    // Prevent dropping a selection onto one of its own members
+    if (draggedIds.includes(dropTargetItem.id)) {
+        dragItemIndex.current = null;
+        setDragOverIndex(null);
+        return;
+    }
+    
+    onReorderLayers(draggedIds, dropTargetItem.id);
+  
+    dragItemIndex.current = null;
+    setDragOverIndex(null);
   };
   
   const handleDragEnd = (e: React.DragEvent<HTMLLIElement>) => {
