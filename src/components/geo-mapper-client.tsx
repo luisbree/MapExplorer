@@ -105,7 +105,7 @@ const PANEL_PADDING = 8;
 
 const panelToggleConfigs = [
   { id: 'legend', IconComponent: ListTree, name: "Capas" },
-  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca WFS" },
+  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca" },
   { id: 'layers', IconComponent: Database, name: "Datos" },
   { id: 'tools', IconComponent: Wrench, name: "Herramientas" },
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
@@ -485,9 +485,6 @@ export default function GeoMapperClient() {
             onToggleCollapse={() => togglePanelCollapse('layers')}
             onClosePanel={() => togglePanelMinimize('layers')}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'layers')}
-            availableBaseLayers={availableBaseLayersForSelect}
-            activeBaseLayerId={activeBaseLayerId}
-            onChangeBaseLayer={handleChangeBaseLayer}
             onZoomToBoundingBox={zoomToBoundingBox}
             captureMap={captureMap}
             isCapturingMap={isMapCapturing}
@@ -532,6 +529,7 @@ export default function GeoMapperClient() {
             layers={layerManagerHook.layers}
             onToggleLayerVisibility={layerManagerHook.toggleLayerVisibility}
             onRemoveLayer={layerManagerHook.removeLayer}
+            onRemoveLayers={layerManagerHook.removeLayers}
             onZoomToLayerExtent={layerManagerHook.zoomToLayerExtent}
             onShowLayerTable={layerManagerHook.handleShowLayerTable} 
             onExtractByPolygon={layerManagerHook.handleExtractByPolygon}

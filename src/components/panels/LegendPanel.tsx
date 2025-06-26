@@ -8,7 +8,15 @@ import FileUploadControl from '@/components/layer-manager/FileUploadControl';
 import FeatureInteractionToolbar from '@/components/feature-inspection/FeatureInteractionToolbar';
 import { Separator } from '@/components/ui/separator';
 import type { MapLayer } from '@/lib/types';
-import { ListTree } from 'lucide-react'; 
+import { ListTree, Trash2 } from 'lucide-react'; 
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 interface LegendPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -20,6 +28,7 @@ interface LegendPanelProps {
   layers: MapLayer[];
   onToggleLayerVisibility: (layerId: string) => void;
   onRemoveLayer: (layerId: string) => void;
+  onRemoveLayers: (layerIds: string[]) => void;
   onZoomToLayerExtent: (layerId: string) => void;
   onShowLayerTable: (layerId: string) => void;
   onExtractByPolygon: (layerId: string) => void;
@@ -45,7 +54,7 @@ interface LegendPanelProps {
 
 const LegendPanel: React.FC<LegendPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
-  layers, onToggleLayerVisibility, onRemoveLayer, onZoomToLayerExtent, onShowLayerTable,
+  layers, onToggleLayerVisibility, onRemoveLayer, onRemoveLayers, onZoomToLayerExtent, onShowLayerTable,
   onExtractByPolygon, onExtractBySelection, onExportSelection, isDrawingSourceEmptyOrNotPolygon, isSelectionEmpty, onSetLayerOpacity, onReorderLayers,
   onAddLayer, 
   isInteractionActive, onToggleInteraction, selectionMode, onSetSelectionMode, onClearSelection,
@@ -73,6 +82,14 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
     }
     setLastClickedIndex(clickedIndex);
   };
+  
+  const handleDeleteSelected = () => {
+    if (selectedLayerIds.length > 0) {
+      onRemoveLayers(selectedLayerIds);
+      setSelectedLayerIds([]);
+      setLastClickedIndex(null);
+    }
+  };
 
 
   return (
@@ -92,6 +109,27 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
       <div className="space-y-2"> 
         <div className="flex items-center gap-1 p-1 bg-white/5 rounded-md"> 
           <FileUploadControl onAddLayer={onAddLayer} uniqueIdPrefix="legendpanel-upload" />
+          <TooltipProvider delayDuration={300}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div> {/* Wrapper for disabled button */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 bg-red-700/30 hover:bg-red-600/50 border border-red-500/50 text-white/90 disabled:opacity-50 disabled:bg-black/20 disabled:text-white/90 disabled:border-white/30"
+                      onClick={handleDeleteSelected}
+                      disabled={selectedLayerIds.length === 0}
+                      aria-label="Eliminar capas seleccionadas"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="bg-gray-700 text-white border-gray-600">
+                  <p className="text-xs">Eliminar seleccionadas</p>
+                </TooltipContent>
+              </Tooltip>
+          </TooltipProvider>
           <FeatureInteractionToolbar
             isInteractionActive={isInteractionActive}
             onToggleInteraction={onToggleInteraction}

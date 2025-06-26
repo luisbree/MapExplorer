@@ -91,19 +91,32 @@ export const useLayerManager = ({
 
   }, [mapRef]);
 
-  const removeLayer = useCallback((layerId: string) => {
-    if (!mapRef.current) return;
-    const layerToRemove = layers.find(l => l.id === layerId);
-    if (layerToRemove) {
-      mapRef.current.removeLayer(layerToRemove.olLayer);
-      const gsLayerName = layerToRemove.olLayer.get('gsLayerName');
+  const removeLayers = useCallback((layerIds: string[]) => {
+    if (!mapRef.current || layerIds.length === 0) return;
+
+    const layersToRemove = layers.filter(l => layerIds.includes(l.id));
+    if (layersToRemove.length === 0) return;
+
+    layersToRemove.forEach(layer => {
+      mapRef.current!.removeLayer(layer.olLayer);
+      const gsLayerName = layer.olLayer.get('gsLayerName');
       if (gsLayerName) {
-        updateGeoServerDiscoveredLayerState(gsLayerName, false, layerToRemove.type as 'wms'|'wfs');
+        updateGeoServerDiscoveredLayerState(gsLayerName, false, layer.type as 'wms' | 'wfs');
       }
-      setLayers(prev => prev.filter(l => l.id !== layerId));
-      toast({ description: `Capa "${layerToRemove.name}" eliminada.` });
+    });
+
+    setLayers(prev => prev.filter(l => !layerIds.includes(l.id)));
+
+    if (layersToRemove.length === 1) {
+      toast({ description: `Capa "${layersToRemove[0].name}" eliminada.` });
+    } else {
+      toast({ description: `${layersToRemove.length} capa(s) eliminada(s).` });
     }
   }, [mapRef, layers, toast, updateGeoServerDiscoveredLayerState]);
+
+  const removeLayer = useCallback((layerId: string) => {
+    removeLayers([layerId]);
+  }, [removeLayers]);
 
   const reorderLayers = useCallback((draggedIds: string[], targetId: string | null) => {
     setLayers(prevLayers => {
@@ -539,6 +552,7 @@ export const useLayerManager = ({
     layers,
     addLayer,
     removeLayer,
+    removeLayers,
     reorderLayers,
     toggleLayerVisibility,
     setLayerOpacity,
