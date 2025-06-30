@@ -53,8 +53,8 @@ export const useFloatingPanels = ({
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>(() => {
     const initialX = panelPadding;
     const initialY = panelPadding;
-    const cascadeOffsetX = 30;
-    const cascadeOffsetY = 30;
+    const cascadeOffsetX = 42;
+    const cascadeOffsetY = 42;
     
     return {
       // Order reflects the toggle buttons in the UI
