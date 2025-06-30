@@ -60,6 +60,10 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
     url: 'http://mapasdis.ms.gba.gov.ar:8080/geoserver/wfs'
   },
   {
+    name: 'Ministerio de Infraestructura - Humedales',
+    url: 'http://www.minfra.gba.gob.ar/humedales/geoserver/wfs',
+  },
+  {
     name: 'INDEC',
     url: 'https://geoservicios.indec.gob.ar/geoserver/ows',
   },
@@ -79,15 +83,22 @@ export const useWfsLibrary = ({
   const [activeServerUrl, setActiveServerUrl] = useState<string>('');
 
   const fetchWfsLayers = useCallback(async (url: string) => {
-    if (!url.trim()) {
+    let urlToUse = url.trim();
+    if (!urlToUse) {
       toast({ description: 'Por favor, ingrese una URL de servidor WFS válida.' });
       return;
     }
+
+    // Automatically add http:// if no protocol is present
+    if (!/^https?:\/\//i.test(urlToUse)) {
+      urlToUse = `http://${urlToUse}`;
+    }
+
     setIsLoading(true);
     setDiscoveredLayers([]); // Clear previous results
-    setActiveServerUrl(url);
+    setActiveServerUrl(urlToUse);
 
-    const baseUrl = url.trim().split('?')[0].replace(/\/$/, ''); // Get URL without existing params and trailing slash
+    const baseUrl = urlToUse.split('?')[0].replace(/\/$/, ''); // Get URL without existing params and trailing slash
     const getCapabilitiesUrl = `${baseUrl}?service=WFS&version=2.0.0&request=GetCapabilities`;
     const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}`;
 
