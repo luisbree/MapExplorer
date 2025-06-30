@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
@@ -49,22 +50,31 @@ export const useFloatingPanels = ({
     wfsLibrary: wfsLibraryPanelRef,
   }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef, wfsLibraryPanelRef]);
   
-  const [panels, setPanels] = useState<Record<PanelId, PanelState>>({
-    layers: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
-    tools: { isMinimized: true, isCollapsed: false, position: { x: panelWidth + (panelPadding*2), y: panelPadding }, zIndex: initialZIndex },
-    legend: { isMinimized: false, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex + 1 }, // Initially open
-    attributes: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: 300 }, zIndex: initialZIndex },
-    ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex + 2 },
-    trello: { isMinimized: true, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex },
-    wfsLibrary: { isMinimized: true, isCollapsed: false, position: { x: panelPadding, y: panelPadding }, zIndex: initialZIndex },
+  const [panels, setPanels] = useState<Record<PanelId, PanelState>>(() => {
+    const initialX = panelPadding;
+    const initialY = panelPadding;
+    const cascadeOffsetX = 30;
+    const cascadeOffsetY = 30;
+    
+    return {
+      // Order reflects the toggle buttons in the UI
+      legend: { isMinimized: false, isCollapsed: false, position: { x: initialX, y: initialY }, zIndex: initialZIndex + 1 },
+      wfsLibrary: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX, y: initialY + cascadeOffsetY }, zIndex: initialZIndex },
+      layers: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 2, y: initialY + cascadeOffsetY * 2 }, zIndex: initialZIndex },
+      tools: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 3, y: initialY + cascadeOffsetY * 3 }, zIndex: initialZIndex },
+      trello: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 4, y: initialY + cascadeOffsetY * 4 }, zIndex: initialZIndex },
+      attributes: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 5, y: initialY + cascadeOffsetY * 5 }, zIndex: initialZIndex },
+      ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex + 2 }, // Positioned dynamically
+    };
   });
+
 
   const activeDragRef = useRef<{ panelId: PanelId | null, offsetX: number, offsetY: number }>({ panelId: null, offsetX: 0, offsetY: 0 });
   const zIndexCounterRef = useRef(initialZIndex + 2); // Start above AI panel
   const positionInitialized = useRef(false);
   
   useEffect(() => {
-    // This effect runs once to set the initial position of the panels on the right side.
+    // This effect runs once to set the initial position of the AI panel on the right side.
     if (mapAreaRef.current && !positionInitialized.current) {
         const mapWidth = mapAreaRef.current.clientWidth;
         const rightX = mapWidth - panelWidth - panelPadding;
@@ -74,10 +84,6 @@ export const useFloatingPanels = ({
             ai: {
                 ...prev.ai,
                 position: { x: rightX, y: prev.ai.position.y }
-            },
-            trello: {
-                ...prev.trello,
-                position: { x: rightX, y: 450 + (panelPadding * 2) } // Position below the AI panel
             }
         }));
         positionInitialized.current = true;
