@@ -93,14 +93,20 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
 
   const handleExtractByPolygonAndClearSelection = (layerId: string) => {
     onExtractByPolygon(layerId);
-    setSelectedLayerIds([]);
-    setLastClickedIndex(null);
+    // Defer state update to avoid conflicts during render
+    setTimeout(() => {
+        setSelectedLayerIds([]);
+        setLastClickedIndex(null);
+    }, 0);
   };
   
   const handleExtractBySelectionAndClearSelection = () => {
     onExtractBySelection();
-    setSelectedLayerIds([]);
-    setLastClickedIndex(null);
+    // Defer state update to avoid conflicts during render
+    setTimeout(() => {
+        setSelectedLayerIds([]);
+        setLastClickedIndex(null);
+    }, 0);
   };
 
 
