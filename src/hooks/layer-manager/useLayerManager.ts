@@ -340,7 +340,7 @@ export const useLayerManager = ({
     return !isPolygon;
   }, [drawingSourceRef]);
 
-  const handleExtractByPolygon = useCallback((layerIdToExtract: string) => {
+  const handleExtractByPolygon = useCallback((layerIdToExtract: string, onSuccess?: () => void) => {
     const targetLayer = layers.find(l => l.id === layerIdToExtract) as VectorMapLayer | undefined;
     const drawingFeatures = drawingSourceRef.current?.getFeatures() ?? [];
     const polygonFeature = drawingFeatures.find(f => f.getGeometry()?.getType() === 'Polygon');
@@ -386,9 +386,10 @@ export const useLayerManager = ({
         type: 'vector'
     });
     toast({ description: `${intersectingFeatures.length} entidades extraídas a una nueva capa.` });
+    onSuccess?.();
   }, [layers, drawingSourceRef, addLayer, toast]);
   
-  const handleExtractBySelection = useCallback(() => {
+  const handleExtractBySelection = useCallback((onSuccess?: () => void) => {
     if (selectedFeaturesForExtraction.length === 0) {
         toast({ description: "No hay entidades seleccionadas para extraer." });
         return;
@@ -440,7 +441,7 @@ export const useLayerManager = ({
     
     // Clear selection AFTER creating the new layer
     clearSelectionAfterExtraction();
-
+    onSuccess?.();
   }, [selectedFeaturesForExtraction, layers, addLayer, toast, clearSelectionAfterExtraction]);
 
   const handleExportSelection = useCallback((format: 'geojson' | 'kml') => {

@@ -31,8 +31,8 @@ interface LegendPanelProps {
   onRemoveLayers: (layerIds: string[]) => void;
   onZoomToLayerExtent: (layerId: string) => void;
   onShowLayerTable: (layerId: string) => void;
-  onExtractByPolygon: (layerId: string) => void;
-  onExtractBySelection: () => void;
+  onExtractByPolygon: (layerId: string, onSuccess?: () => void) => void;
+  onExtractBySelection: (onSuccess?: () => void) => void;
   onExportSelection: (format: 'geojson' | 'kml') => void;
   isDrawingSourceEmptyOrNotPolygon: boolean;
   isSelectionEmpty: boolean;
@@ -91,22 +91,9 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
     }
   };
 
-  const handleExtractByPolygonAndClearSelection = (layerId: string) => {
-    onExtractByPolygon(layerId);
-    // Defer state update to avoid conflicts during render
-    setTimeout(() => {
-        setSelectedLayerIds([]);
-        setLastClickedIndex(null);
-    }, 0);
-  };
-  
-  const handleExtractBySelectionAndClearSelection = () => {
-    onExtractBySelection();
-    // Defer state update to avoid conflicts during render
-    setTimeout(() => {
-        setSelectedLayerIds([]);
-        setLastClickedIndex(null);
-    }, 0);
+  const clearLayerSelection = () => {
+    setSelectedLayerIds([]);
+    setLastClickedIndex(null);
   };
 
 
@@ -163,8 +150,8 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           onZoomToExtent={onZoomToLayerExtent}
           onShowLayerTable={onShowLayerTable}
           onRemoveLayer={onRemoveLayer}
-          onExtractByPolygon={handleExtractByPolygonAndClearSelection}
-          onExtractBySelection={handleExtractBySelectionAndClearSelection}
+          onExtractByPolygon={(layerId) => onExtractByPolygon(layerId, clearLayerSelection)}
+          onExtractBySelection={() => onExtractBySelection(clearLayerSelection)}
           onExportSelection={onExportSelection}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
           isSelectionEmpty={isSelectionEmpty}
