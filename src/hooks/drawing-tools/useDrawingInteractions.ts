@@ -49,11 +49,6 @@ export const useDrawingInteractions = ({
     if (isInspectModeActive) {
       toggleInspectMode(); 
     }
-    
-    // Clear previous drawings before starting a new one for certain types
-    if (toolType === 'Polygon') {
-      drawingSourceRef.current.clear();
-    }
 
     const newDrawInteraction = new Draw({
       source: drawingSourceRef.current,
