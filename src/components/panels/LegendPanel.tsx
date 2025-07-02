@@ -91,6 +91,18 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
     }
   };
 
+  const handleExtractByPolygonAndClearSelection = (layerId: string) => {
+    onExtractByPolygon(layerId);
+    setSelectedLayerIds([]);
+    setLastClickedIndex(null);
+  };
+  
+  const handleExtractBySelectionAndClearSelection = () => {
+    onExtractBySelection();
+    setSelectedLayerIds([]);
+    setLastClickedIndex(null);
+  };
+
 
   return (
     <DraggablePanel
@@ -145,8 +157,8 @@ const LegendPanel: React.FC<LegendPanelProps> = ({
           onZoomToExtent={onZoomToLayerExtent}
           onShowLayerTable={onShowLayerTable}
           onRemoveLayer={onRemoveLayer}
-          onExtractByPolygon={onExtractByPolygon}
-          onExtractBySelection={onExtractBySelection}
+          onExtractByPolygon={handleExtractByPolygonAndClearSelection}
+          onExtractBySelection={handleExtractBySelectionAndClearSelection}
           onExportSelection={onExportSelection}
           isDrawingSourceEmptyOrNotPolygon={isDrawingSourceEmptyOrNotPolygon}
           isSelectionEmpty={isSelectionEmpty}
