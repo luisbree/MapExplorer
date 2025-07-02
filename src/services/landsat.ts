@@ -7,8 +7,8 @@ import { Geometry } from 'ol/geom';
 import { transformExtent, type ProjectionLike } from 'ol/proj';
 import type { Extent } from 'ol/extent';
 
-// Point to the specific, modern Landsat 8/9 Level-2 collection endpoint
-const LANDSAT_API_URL = 'https://catalogue.dataspace.copernicus.eu/resto/api/collections/Landsat-8-9-C2-L2/search.json';
+// Point to the general search endpoint for all collections
+const LANDSAT_API_URL = 'https://catalogue.dataspace.copernicus.eu/resto/api/search.json';
 
 
 /**
@@ -29,9 +29,10 @@ export async function findLandsatFootprints(
     const extent4326 = transformExtent(extent, mapProjection, 'EPSG:4326');
     const [minX, minY, maxX, maxY] = extent4326;
 
-    // Parameters for the specific collection search
+    // Use the `parentIdentifier` parameter to specify the collection
     const params = new URLSearchParams({
       maxRecords: '50',
+      parentIdentifier: 'Landsat-8-9-C2-L2', // The official name for the Landsat 8/9 L2 collection
       productType: 'L2SP', // Landsat Collection 2 Level-2 Science Products
       cloudCover: '[0,90]',
       box: `${minX},${minY},${maxX},${maxY}`,
