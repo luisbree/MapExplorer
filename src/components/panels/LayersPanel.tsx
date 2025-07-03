@@ -9,7 +9,7 @@ import MapCaptureControl from '@/components/map-tools/MapCaptureControl';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import type { BaseLayerOptionForSelect, NominatimResult } from '@/lib/types'; 
-import { Database, Search, ImageUp, ImageOff, Loader2 } from 'lucide-react'; 
+import { Database, Search, ImageUp, ImageOff, Loader2, Printer } from 'lucide-react'; 
 
 interface LayersPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -26,6 +26,7 @@ interface LayersPanelProps {
 
   captureMap: (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => void;
   isCapturingMap: boolean;
+  onOpenPrintComposer: () => void;
   
   onFindSentinel2Footprints: (dateRange?: { startDate?: string, completionDate?: string }) => void;
   onClearSentinel2Footprints: () => void;
@@ -43,7 +44,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
   availableBaseLayers, activeBaseLayerId, onChangeBaseLayer,
   onZoomToBoundingBox,
-  captureMap, isCapturingMap,
+  captureMap, isCapturingMap, onOpenPrintComposer,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
   onFindLandsatFootprints, onClearLandsatFootprints, isFindingLandsatFootprints,
   style, 
@@ -80,6 +81,15 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
                     onChangeBaseLayer={onChangeBaseLayer}
                 />
             </div>
+             <Button 
+                onClick={onOpenPrintComposer}
+                variant="outline"
+                className="h-8 w-8 p-0 flex items-center justify-center border-white/30 text-white/90 bg-black/20 hover:bg-black/40 focus-visible:ring-primary"
+                disabled={isCapturingMap}
+                title="Abrir Compositor de Impresión"
+            >
+              <Printer className="h-4 w-4" />
+            </Button>
             <MapCaptureControl
                 onCapture={captureMap}
                 isCapturing={isCapturingMap}

@@ -25,6 +25,7 @@ import TrelloPanel from '@/components/panels/TrelloPanel';
 import WfsLibraryPanel from '@/components/panels/WfsLibraryPanel';
 import HelpPanel from '@/components/panels/HelpPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
+import PrintComposer from '@/components/print/PrintComposer'; 
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
 import { useLayerManager } from '@/hooks/layer-manager/useLayerManager';
@@ -168,6 +169,8 @@ export default function GeoMapperClient() {
   ]);
   const [isTrelloLoading, setIsTrelloLoading] = useState(false);
 
+  const [printComposerData, setPrintComposerData] = useState<{ mapImage: string; } | null>(null);
+
 
   const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
     setDiscoveredGeoServerLayers(prev => prev.map(l => {
@@ -244,7 +247,21 @@ export default function GeoMapperClient() {
     toggleInspectMode: featureInspectionHook.toggleInspectMode,
   });
 
-  const { captureMap, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
+  const { captureMap, captureMapDataUrl, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
+  
+  const handleOpenPrintComposer = async () => {
+    const mapImage = await captureMapDataUrl('jpeg-full');
+    if (mapImage) {
+        setPrintComposerData({ mapImage });
+    } else {
+        toast({
+            title: "Error de Captura",
+            description: "No se pudo generar la imagen del mapa para la impresión.",
+            variant: "destructive",
+        });
+    }
+  };
+
 
   const zoomToBoundingBox = useCallback((bbox: [number, number, number, number]) => {
     if (!mapRef.current) return;
@@ -486,6 +503,14 @@ export default function GeoMapperClient() {
 
         <WfsLoadingIndicator isVisible={isWfsLoading || wfsLibraryHook.isLoading} />
 
+        {printComposerData && (
+          <PrintComposer
+            composerData={printComposerData}
+            onClose={() => setPrintComposerData(null)}
+          />
+        )}
+
+
         {panels.layers && !panels.layers.isMinimized && (
           <LayersPanel
             panelRef={layersPanelRef}
@@ -499,6 +524,7 @@ export default function GeoMapperClient() {
             onZoomToBoundingBox={zoomToBoundingBox}
             captureMap={captureMap}
             isCapturingMap={isMapCapturing}
+            onOpenPrintComposer={handleOpenPrintComposer}
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}
