@@ -19,6 +19,16 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
       toast({ description: 'El mapa no está listo para ser capturado.' });
       return null;
     }
+
+    if (outputType !== 'jpeg-full' && activeBaseLayerId !== 'esri-satellite') {
+      toast({
+        variant: 'destructive',
+        title: 'Capa Base Incorrecta',
+        description: 'La captura por bandas de color solo está disponible con la capa base "ESRI Satelital".',
+      });
+      return null;
+    }
+
     setIsCapturing(true);
     if (download) {
       toast({ description: 'Iniciando captura del mapa...' });
@@ -26,38 +36,7 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
 
     const map = mapRef.current;
     
-    const allLayers = map.getLayers().getArray();
-    const esriLayer = allLayers.find(layer => layer.get('baseLayerId') === 'esri-satellite');
-    const currentActiveBaseLayer = allLayers.find(layer => layer.get('baseLayerId') === activeBaseLayerId);
-
-    if (!esriLayer) {
-        toast({ description: 'No se encontró la capa base satelital de ESRI.' });
-        setIsCapturing(false);
-        return null;
-    }
-
-    const wasEsriVisible = esriLayer.getVisible();
-    
     return new Promise((resolve) => {
-      const restoreOriginalStateAndFinish = (result: string | null) => {
-          if (!wasEsriVisible) {
-              esriLayer.setVisible(false);
-              if (currentActiveBaseLayer) {
-                  currentActiveBaseLayer.setVisible(true);
-              }
-          }
-          setIsCapturing(false);
-          map.renderSync();
-          resolve(result);
-      };
-
-      if (!wasEsriVisible) {
-          if (currentActiveBaseLayer) {
-              currentActiveBaseLayer.setVisible(false);
-          }
-          esriLayer.setVisible(true);
-      }
-      
       map.once('rendercomplete', () => {
         try {
           const mapCanvas = document.createElement('canvas');
@@ -74,12 +53,14 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
 
           Array.from(map.getViewport().querySelectorAll('.ol-layer canvas')).forEach(canvas => {
               if (canvas instanceof HTMLCanvasElement) {
-                  const opacity = parseFloat(canvas.style.opacity);
-                  mapContext.globalAlpha = isNaN(opacity) ? 1 : opacity;
-                  const transform = canvas.style.transform;
-                  const matrix = new DOMMatrix(transform);
-                  mapContext.setTransform(matrix);
-                  mapContext.drawImage(canvas, 0, 0);
+                  if (canvas.width > 0 && canvas.height > 0) {
+                    const opacity = parseFloat(canvas.style.opacity);
+                    mapContext.globalAlpha = isNaN(opacity) ? 1 : opacity;
+                    const transform = canvas.style.transform;
+                    const matrix = new DOMMatrix(transform);
+                    mapContext.setTransform(matrix);
+                    mapContext.drawImage(canvas, 0, 0);
+                  }
               }
           });
           
@@ -118,11 +99,13 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
             URL.revokeObjectURL(link.href);
             toast({ description: 'Captura de mapa guardada exitosamente.' });
           }
-          restoreOriginalStateAndFinish(dataUrl);
+          resolve(dataUrl);
         } catch (error) {
           console.error('Error capturing map:', error);
           toast({ description: `Error al capturar el mapa: ${error instanceof Error ? error.message : String(error)}` });
-          restoreOriginalStateAndFinish(null);
+          resolve(null);
+        } finally {
+            setIsCapturing(false);
         }
       });
       map.renderSync();
