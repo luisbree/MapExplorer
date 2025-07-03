@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello' | 'wfsLibrary' | 'help';
+type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello' | 'wfsLibrary' | 'help' | 'printComposer';
 
 interface PanelState {
   isMinimized: boolean;
@@ -21,6 +21,7 @@ interface UseFloatingPanelsProps {
   trelloPanelRef: React.RefObject<HTMLDivElement>;
   wfsLibraryPanelRef: React.RefObject<HTMLDivElement>;
   helpPanelRef: React.RefObject<HTMLDivElement>;
+  printComposerPanelRef: React.RefObject<HTMLDivElement>;
   mapAreaRef: React.RefObject<HTMLDivElement>;
   panelWidth: number;
   panelPadding: number;
@@ -37,6 +38,7 @@ export const useFloatingPanels = ({
   trelloPanelRef,
   wfsLibraryPanelRef,
   helpPanelRef,
+  printComposerPanelRef,
   mapAreaRef,
   panelWidth,
   panelPadding
@@ -51,7 +53,8 @@ export const useFloatingPanels = ({
     trello: trelloPanelRef,
     wfsLibrary: wfsLibraryPanelRef,
     help: helpPanelRef,
-  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef, wfsLibraryPanelRef, helpPanelRef]);
+    printComposer: printComposerPanelRef,
+  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef, wfsLibraryPanelRef, helpPanelRef, printComposerPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>(() => {
     const initialX = panelPadding;
@@ -67,6 +70,7 @@ export const useFloatingPanels = ({
       tools: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 3, y: initialY + cascadeOffsetY * 3 }, zIndex: initialZIndex },
       trello: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 4, y: initialY + cascadeOffsetY * 4 }, zIndex: initialZIndex },
       attributes: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 5, y: initialY + cascadeOffsetY * 5 }, zIndex: initialZIndex },
+      printComposer: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 6, y: initialY + cascadeOffsetY * 6 }, zIndex: initialZIndex },
       ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex + 2 }, // Positioned dynamically
       help: { isMinimized: true, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex }, // Positioned dynamically
     };

@@ -9,7 +9,7 @@ import { ChevronDown, ChevronUp, X as LucideX } from 'lucide-react';
 interface DraggablePanelProps {
   title: string;
   initialPosition: { x: number; y: number }; // Note: This might become controlled by useFloatingPanels solely
-  initialSize?: { width: number; height: number };
+  initialSize?: { width: number | string; height: number | string };
   minSize?: { width: number; height: number };
   maxSize?: { width?: number; height?: number };
   panelRef: React.RefObject<HTMLDivElement>;
@@ -47,36 +47,42 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
   icon: IconComponent,
   zIndex, // Destructure zIndex, though it's part of style now
 }) => {
-  const [currentSize, setCurrentSize] = useState(initialSize);
+  const [currentSize, setCurrentSize] = useState({
+      width: typeof initialSize.width === 'number' ? `${initialSize.width}px` : initialSize.width,
+      height: isCollapsed ? 'auto' : (typeof initialSize.height === 'number' ? `${initialSize.height}px` : initialSize.height),
+  });
+
+  useEffect(() => {
+    setCurrentSize(prev => ({
+        ...prev,
+        height: isCollapsed ? 'auto' : (typeof initialSize.height === 'number' ? `${initialSize.height}px` : initialSize.height)
+    }));
+  }, [isCollapsed, initialSize.height]);
 
   const handleResizeStop = useCallback(() => {
     if (panelRef.current) {
       const newWidth = panelRef.current.offsetWidth;
       const newHeight = panelRef.current.offsetHeight;
-      // Only update if size actually changed to prevent unnecessary re-renders
-      if (newWidth !== currentSize.width || newHeight !== currentSize.height) {
-        setCurrentSize({ width: newWidth, height: newHeight });
-      }
+      setCurrentSize({ width: `${newWidth}px`, height: `${newHeight}px` });
     }
-  }, [panelRef, currentSize.width, currentSize.height]);
+  }, [panelRef]);
 
 
   return (
     <div
       ref={panelRef}
-      className={`absolute bg-gray-800/70 backdrop-blur-md text-white shadow-xl rounded-lg border border-gray-700/80 flex flex-col overflow-auto ${className}`}
+      className={`absolute bg-gray-800/70 backdrop-blur-md text-white shadow-xl rounded-lg border border-gray-700/80 flex flex-col overflow-auto print:hidden ${className}`}
       style={{
-        // Position (top, left) and zIndex are now expected to be part of the style prop passed from parent
         ...style, 
-        width: `${currentSize.width}px`,
-        height: isCollapsed ? 'auto' : `${currentSize.height}px`,
+        width: currentSize.width,
+        height: currentSize.height,
         minWidth: `${minSize.width}px`,
         minHeight: isCollapsed ? 'auto' : `${minSize.height}px`,
         maxWidth: maxSize.width ? `${maxSize.width}px` : '90vw',
         maxHeight: maxSize.height ? `${maxSize.height}px` : '80vh',
         resize: isCollapsed ? 'none' : 'both',
       }}
-      onMouseUpCapture={handleResizeStop} // Use onMouseUpCapture for resize stop
+      onMouseUpCapture={handleResizeStop}
     >
       <CardHeader
         className="flex flex-row items-center justify-between p-2 bg-gray-700/80 cursor-grab rounded-t-lg select-none"

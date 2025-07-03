@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy, Printer } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -24,8 +24,8 @@ import AIPanel from '@/components/panels/AIPanel';
 import TrelloPanel from '@/components/panels/TrelloPanel';
 import WfsLibraryPanel from '@/components/panels/WfsLibraryPanel';
 import HelpPanel from '@/components/panels/HelpPanel';
+import PrintComposerPanel from '@/components/panels/PrintComposerPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
-import PrintComposer from '@/components/print/PrintComposer'; 
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
 import { useLayerManager } from '@/hooks/layer-manager/useLayerManager';
@@ -112,6 +112,7 @@ const panelToggleConfigs = [
   { id: 'tools', IconComponent: Wrench, name: "Herramientas" },
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
+  { id: 'printComposer', IconComponent: Printer, name: "Impresión" },
   { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
   { id: 'help', IconComponent: LifeBuoy, name: "Ayuda" },
 ];
@@ -127,6 +128,7 @@ export default function GeoMapperClient() {
   const trelloPanelRef = useRef<HTMLDivElement>(null);
   const wfsLibraryPanelRef = useRef<HTMLDivElement>(null);
   const helpPanelRef = useRef<HTMLDivElement>(null);
+  const printComposerPanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
@@ -140,6 +142,7 @@ export default function GeoMapperClient() {
     trelloPanelRef,
     wfsLibraryPanelRef,
     helpPanelRef,
+    printComposerPanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -168,8 +171,7 @@ export default function GeoMapperClient() {
     { role: 'assistant', content: "¡Buenas! Soy Drax, tu asistente de mapas. Pedime que cargue una capa, que la saque o que le haga zoom." }
   ]);
   const [isTrelloLoading, setIsTrelloLoading] = useState(false);
-
-  const [printComposerData, setPrintComposerData] = useState<{ mapImage: string; } | null>(null);
+  const [printComposerImage, setPrintComposerImage] = useState<string | null>(null);
 
 
   const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
@@ -249,16 +251,21 @@ export default function GeoMapperClient() {
 
   const { captureMap, captureMapDataUrl, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
   
-  const handleOpenPrintComposer = async () => {
-    const mapImage = await captureMapDataUrl('jpeg-full');
-    if (mapImage) {
-        setPrintComposerData({ mapImage });
+  const handleTogglePrintComposer = async () => {
+    if (panels.printComposer.isMinimized) {
+        const mapImage = await captureMapDataUrl('jpeg-full');
+        if (mapImage) {
+            setPrintComposerImage(mapImage);
+            togglePanelMinimize('printComposer');
+        } else {
+            toast({
+                title: "Error de Captura",
+                description: "No se pudo generar la imagen del mapa para la impresión.",
+                variant: "destructive",
+            });
+        }
     } else {
-        toast({
-            title: "Error de Captura",
-            description: "No se pudo generar la imagen del mapa para la impresión.",
-            variant: "destructive",
-        });
+        togglePanelMinimize('printComposer');
     }
   };
 
@@ -480,7 +487,13 @@ export default function GeoMapperClient() {
                           ? 'bg-primary text-primary-foreground hover:bg-primary/90 border-primary/80'
                           : 'bg-gray-700/80 text-white hover:bg-gray-600/90 border-gray-600/70'
                       }`}
-                      onClick={() => togglePanelMinimize(panelConfig.id as any)}
+                      onClick={() => {
+                        if (panelConfig.id === 'printComposer') {
+                          handleTogglePrintComposer();
+                        } else {
+                          togglePanelMinimize(panelConfig.id as any);
+                        }
+                      }}
                       aria-label={tooltipText}
                     >
                       <panelConfig.IconComponent className="h-4 w-4" />
@@ -503,14 +516,6 @@ export default function GeoMapperClient() {
 
         <WfsLoadingIndicator isVisible={isWfsLoading || wfsLibraryHook.isLoading} />
 
-        {printComposerData && (
-          <PrintComposer
-            composerData={printComposerData}
-            onClose={() => setPrintComposerData(null)}
-          />
-        )}
-
-
         {panels.layers && !panels.layers.isMinimized && (
           <LayersPanel
             panelRef={layersPanelRef}
@@ -524,7 +529,6 @@ export default function GeoMapperClient() {
             onZoomToBoundingBox={zoomToBoundingBox}
             captureMap={captureMap}
             isCapturingMap={isMapCapturing}
-            onOpenPrintComposer={handleOpenPrintComposer}
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}
@@ -603,6 +607,18 @@ export default function GeoMapperClient() {
             layerName={featureInspectionHook.currentInspectedLayerName}
             style={{ top: `${panels.attributes.position.y}px`, left: `${panels.attributes.position.x}px`, zIndex: panels.attributes.zIndex }}
           />
+        )}
+        
+        {panels.printComposer && !panels.printComposer.isMinimized && printComposerImage && (
+            <PrintComposerPanel
+                mapImage={printComposerImage}
+                panelRef={printComposerPanelRef}
+                isCollapsed={panels.printComposer.isCollapsed}
+                onToggleCollapse={() => togglePanelCollapse('printComposer')}
+                onClosePanel={() => togglePanelMinimize('printComposer')}
+                onMouseDownHeader={(e) => handlePanelMouseDown(e, 'printComposer')}
+                style={{ top: `${panels.printComposer.position.y}px`, left: `${panels.printComposer.position.x}px`, zIndex: panels.printComposer.zIndex }}
+            />
         )}
 
         {panels.ai && !panels.ai.isMinimized && (
