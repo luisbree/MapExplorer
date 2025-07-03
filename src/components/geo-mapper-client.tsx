@@ -164,7 +164,7 @@ export default function GeoMapperClient() {
   const [isWfsLoading, setIsWfsLoading] = useState(false);
   const [discoveredGeoServerLayers, setDiscoveredGeoServerLayers] = useState<GeoServerDiscoveredLayer[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { role: 'assistant', content: "Hola, soy Drax, tu asistente de mapas. Pídeme que cargue una capa, que la elimine o que haga zoom en ella." }
+    { role: 'assistant', content: "¡Buenas! Soy Drax, tu asistente de mapas. Pedime que cargue una capa, que la saque o que le haga zoom." }
   ]);
   const [isTrelloLoading, setIsTrelloLoading] = useState(false);
 
@@ -642,7 +642,3 @@ export default function GeoMapperClient() {
     </div>
   );
 }
-
-    
-
-    
