@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -8,39 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Printer, RefreshCw, Loader2 } from 'lucide-react';
 import type { Extent } from 'ol/extent';
-
-interface PrintComposerPanelProps {
-  mapImage: string;
-  mapExtent: Extent;
-  panelRef: React.RefObject<HTMLDivElement>;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
-  onClosePanel: () => void;
-  onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
-  style?: React.CSSProperties;
-  onRefresh: () => Promise<void>;
-  isRefreshing: boolean;
-}
-
-// Helper to find a "nice" interval for grid lines
-const getNiceInterval = (span: number): number => {
-    if (span === 0) return 1;
-    const exponent = Math.floor(Math.log10(span));
-    const niceFraction = span / Math.pow(10, exponent); // Should be between 1.0 and 10.0
-    
-    let niceInterval;
-    if (niceFraction < 1.5) {
-        niceInterval = 0.2;
-    } else if (niceFraction < 3) {
-        niceInterval = 0.5;
-    } else if (niceFraction < 7) {
-        niceInterval = 1;
-    } else {
-        niceInterval = 2;
-    }
-
-    return niceInterval * Math.pow(10, exponent);
-};
 
 // Helper to format degree labels
 const formatCoord = (coord: number): string => {
@@ -59,21 +25,15 @@ const Graticule: React.FC<GraticuleProps> = ({ extent }) => {
     const lonSpan = maxLon - minLon;
     const latSpan = maxLat - minLat;
 
-    const lonInterval = getNiceInterval(lonSpan);
-    const latInterval = getNiceInterval(latSpan);
-
-    const lonLines: number[] = [];
-    const latLines: number[] = [];
-
-    const startLon = Math.ceil(minLon / lonInterval) * lonInterval;
-    for (let lon = startLon; lon < maxLon; lon += lonInterval) {
-        lonLines.push(lon);
-    }
-    
-    const startLat = Math.ceil(minLat / latInterval) * latInterval;
-    for (let lat = startLat; lat < maxLat; lat += latInterval) {
-        latLines.push(lat);
-    }
+    // Calculate positions for exactly two lines per axis, creating a 3x3 grid
+    const lonLines: number[] = [
+        minLon + lonSpan / 3,
+        minLon + (2 * lonSpan) / 3,
+    ];
+    const latLines: number[] = [
+        minLat + latSpan / 3,
+        minLat + (2 * latSpan) / 3,
+    ];
 
     const lonToX = (lon: number) => ((lon - minLon) / lonSpan) * 100;
     const latToY = (lat: number) => (1 - (lat - minLat) / latSpan) * 100;
@@ -352,5 +312,3 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 };
 
 export default PrintComposerPanel;
-
-    
