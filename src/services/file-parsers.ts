@@ -70,6 +70,21 @@ export const handleFileUpload = async ({
                         case 'kml':
                             features = kmlFormat.readFeatures(content, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
                             break;
+                        case 'kmz': {
+                            const zip = await JSZip.loadAsync(content as ArrayBuffer);
+                            // Find the first .kml file in the archive. Often it's doc.kml, but not always.
+                            const kmlFile = Object.values(zip.files).find(
+                                (file) => getFileExtension(file.name) === 'kml' && !file.dir
+                            );
+
+                            if (!kmlFile) {
+                                throw new Error('No se encontró un archivo .kml dentro del .kmz.');
+                            }
+
+                            const kmlContent = await kmlFile.async('string');
+                            features = kmlFormat.readFeatures(kmlContent, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' });
+                            break;
+                        }
                         case 'zip':
                             const geojsonData = await shp(content as ArrayBuffer);
                             features = geojsonFormat.readFeatures(geojsonData);
@@ -93,7 +108,7 @@ export const handleFileUpload = async ({
 
             reader.onerror = (err) => reject(new Error(`FileReader error: ${err}`));
 
-            if (fileExtension === 'zip') {
+            if (fileExtension === 'zip' || fileExtension === 'kmz') {
                 reader.readAsArrayBuffer(file);
             } else {
                 reader.readAsText(file);
