@@ -181,7 +181,7 @@ export default function GeoMapperClient() {
     { role: 'assistant', content: "¡Buenas! Soy Drax, tu asistente de mapas. Pedime que cargue una capa, que la saque o que le haga zoom." }
   ]);
   const [isTrelloLoading, setIsTrelloLoading] = useState(false);
-  const [printComposerImage, setPrintComposerImage] = useState<string | null>(null);
+  const [printLayoutData, setPrintLayoutData] = useState<{ image: string; extent: Extent; } | null>(null);
 
 
   const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
@@ -264,9 +264,9 @@ export default function GeoMapperClient() {
 
   const handleRefreshPrintComposerImage = async () => {
       setIsRefreshingPrintComposer(true);
-      const mapImage = await captureMapDataUrl();
-      if (mapImage) {
-          setPrintComposerImage(mapImage);
+      const layoutData = await captureMapDataUrl();
+      if (layoutData) {
+          setPrintLayoutData(layoutData);
           toast({ description: "Vista del mapa en el compositor actualizada." });
       } else {
           toast({
@@ -280,9 +280,9 @@ export default function GeoMapperClient() {
   
   const handleTogglePrintComposer = async () => {
     if (panels.printComposer.isMinimized) {
-        const mapImage = await captureMapDataUrl();
-        if (mapImage) {
-            setPrintComposerImage(mapImage);
+        const layoutData = await captureMapDataUrl();
+        if (layoutData) {
+            setPrintLayoutData(layoutData);
             togglePanelMinimize('printComposer');
         } else {
             toast({
@@ -490,7 +490,7 @@ export default function GeoMapperClient() {
 
   return (
     <div className="flex h-screen w-screen flex-col bg-background text-foreground">
-      <header className="bg-gray-800/60 backdrop-blur-md text-white p-2 shadow-md flex items-center justify-between z-30">
+      <header className="bg-gray-800/80 backdrop-blur-md text-white p-2 shadow-md flex items-center justify-between z-30">
         <div className="flex items-center">
           <MapPin className="mr-2 h-6 w-6 text-primary" />
           <h1 className="text-xl font-semibold">Departamento de Estudios Ambientales y Sociales</h1>
@@ -643,9 +643,10 @@ export default function GeoMapperClient() {
           />
         )}
         
-        {panels.printComposer && !panels.printComposer.isMinimized && printComposerImage && (
+        {panels.printComposer && !panels.printComposer.isMinimized && printLayoutData && (
             <PrintComposerPanel
-                mapImage={printComposerImage}
+                mapImage={printLayoutData.image}
+                mapExtent={printLayoutData.extent}
                 panelRef={printComposerPanelRef}
                 isCollapsed={panels.printComposer.isCollapsed}
                 onToggleCollapse={() => togglePanelCollapse('printComposer')}
@@ -720,3 +721,5 @@ export default function GeoMapperClient() {
     </div>
   );
 }
+
+    

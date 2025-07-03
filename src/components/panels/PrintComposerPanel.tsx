@@ -1,15 +1,17 @@
 
 "use client";
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import DraggablePanel from './DraggablePanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Printer, RefreshCw, Loader2 } from 'lucide-react';
+import type { Extent } from 'ol/extent';
 
 interface PrintComposerPanelProps {
   mapImage: string;
+  mapExtent: Extent;
   panelRef: React.RefObject<HTMLDivElement>;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -19,6 +21,104 @@ interface PrintComposerPanelProps {
   onRefresh: () => Promise<void>;
   isRefreshing: boolean;
 }
+
+// Helper to find a "nice" interval for grid lines
+const getNiceInterval = (span: number): number => {
+    if (span === 0) return 1;
+    const exponent = Math.floor(Math.log10(span));
+    const niceFraction = span / Math.pow(10, exponent); // Should be between 1.0 and 10.0
+    
+    let niceInterval;
+    if (niceFraction < 1.5) {
+        niceInterval = 0.2;
+    } else if (niceFraction < 3) {
+        niceInterval = 0.5;
+    } else if (niceFraction < 7) {
+        niceInterval = 1;
+    } else {
+        niceInterval = 2;
+    }
+
+    return niceInterval * Math.pow(10, exponent);
+};
+
+// Helper to format degree labels
+const formatCoord = (coord: number): string => {
+    const absCoord = Math.abs(coord);
+    if (absCoord > 10) return coord.toFixed(2);
+    if (absCoord > 1) return coord.toFixed(3);
+    return coord.toFixed(4);
+};
+
+interface GraticuleProps {
+    extent: Extent; // [minLon, minLat, maxLon, maxLat]
+}
+
+const Graticule: React.FC<GraticuleProps> = ({ extent }) => {
+    const [minLon, minLat, maxLon, maxLat] = extent;
+    const lonSpan = maxLon - minLon;
+    const latSpan = maxLat - minLat;
+
+    const lonInterval = getNiceInterval(lonSpan);
+    const latInterval = getNiceInterval(latSpan);
+
+    const lonLines: number[] = [];
+    const latLines: number[] = [];
+
+    const startLon = Math.ceil(minLon / lonInterval) * lonInterval;
+    for (let lon = startLon; lon < maxLon; lon += lonInterval) {
+        lonLines.push(lon);
+    }
+    
+    const startLat = Math.ceil(minLat / latInterval) * latInterval;
+    for (let lat = startLat; lat < maxLat; lat += latInterval) {
+        latLines.push(lat);
+    }
+
+    const lonToX = (lon: number) => ((lon - minLon) / lonSpan) * 100;
+    const latToY = (lat: number) => (1 - (lat - minLat) / latSpan) * 100;
+
+    return (
+        <svg
+            width="100%"
+            height="100%"
+            className="absolute top-0 left-0 overflow-visible pointer-events-none"
+        >
+            <g stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" strokeDasharray="2 3">
+                {lonLines.map(lon => (
+                    <line key={`lon-${lon}`} x1={`${lonToX(lon)}%`} y1="0%" x2={`${lonToX(lon)}%`} y2="100%" />
+                ))}
+                {latLines.map(lat => (
+                    <line key={`lat-${lat}`} x1="0%" y1={`${latToY(lat)}%`} x2="100%" y2={`${latToY(lat)}%`} />
+                ))}
+            </g>
+
+            <g fill="#333" fontSize="8px" fontFamily="Arial, sans-serif">
+                {lonLines.map(lon => (
+                    <text key={`lon-top-${lon}`} x={`${lonToX(lon)}%`} y="-5" textAnchor="middle">
+                        {formatCoord(lon)}
+                    </text>
+                ))}
+                {lonLines.map(lon => (
+                    <text key={`lon-bottom-${lon}`} x={`${lonToX(lon)}%`} y="102%" dy="0.5em" textAnchor="middle">
+                        {formatCoord(lon)}
+                    </text>
+                ))}
+                {latLines.map(lat => (
+                    <text key={`lat-left-${lat}`} x="-5" y={`${latToY(lat)}%`} textAnchor="end" dominantBaseline="middle">
+                        {formatCoord(lat)}
+                    </text>
+                ))}
+                {latLines.map(lat => (
+                    <text key={`lat-right-${lat}`} x="101%" y={`${latToY(lat)}%`} textAnchor="start" dominantBaseline="middle">
+                        {formatCoord(lat)}
+                    </text>
+                ))}
+            </g>
+        </svg>
+    );
+};
+
 
 // Graphical components for the layout
 const DeaLogo = () => (
@@ -113,8 +213,8 @@ const ScaleBar = () => (
 );
 
 // Reusable Layout Component
-const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; title: string; subtitle: string; }>(
-  ({ mapImage, title, subtitle }, ref) => {
+const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExtent: Extent | null; title: string; subtitle: string; }>(
+  ({ mapImage, mapExtent, title, subtitle }, ref) => {
     return (
       <div ref={ref} className="bg-white shadow-lg p-4 flex flex-col text-black font-body h-full w-full">
         {/* Main Content Area */}
@@ -122,7 +222,10 @@ const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; title: 
           {/* Map Area */}
           <div className="flex-grow h-full border-r border-black relative">
             {mapImage ? (
-                <img src={mapImage} alt="Mapa Capturado" className="w-full h-full object-cover" />
+                <>
+                    <img src={mapImage} alt="Mapa Capturado" className="w-full h-full object-cover" />
+                    {mapExtent && <Graticule extent={mapExtent} />}
+                </>
             ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">Cargando imagen del mapa...</div>
             )}
@@ -166,6 +269,7 @@ PrintLayout.displayName = "PrintLayout";
 
 const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
   mapImage,
+  mapExtent,
   panelRef,
   isCollapsed,
   onToggleCollapse,
@@ -231,7 +335,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                     className="w-[1058px] h-[748px] transform-origin-top-left flex-shrink-0" 
                     style={{ transform: `scale(0.45)` }}
                 >
-                    <PrintLayout mapImage={mapImage} title={title} subtitle={subtitle} />
+                    <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
                 </div>
             </div>
         </div>
@@ -240,7 +344,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
       {/* Hidden, full-size div for printing */}
       <div id="print-layout-container" className="fixed top-0 left-0 w-screen h-screen z-[-1] invisible print:visible print:z-[9999] bg-white">
         <div className="w-[29.7cm] h-[21cm]">
-          <PrintLayout mapImage={mapImage} title={title} subtitle={subtitle} />
+          <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
         </div>
       </div>
     </>
@@ -248,3 +352,5 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 };
 
 export default PrintComposerPanel;
+
+    

@@ -4,6 +4,8 @@
 import { useState, useCallback } from 'react';
 import type { Map } from 'ol';
 import { useToast } from "@/hooks/use-toast";
+import { transformExtent } from 'ol/proj';
+import type { Extent } from 'ol/extent';
 
 interface UseMapCaptureProps {
   mapRef: React.RefObject<Map | null>;
@@ -14,7 +16,7 @@ export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
   const { toast } = useToast();
   const [isCapturing, setIsCapturing] = useState(false);
 
-  const captureMapDataUrl = useCallback(async (): Promise<string | null> => {
+  const captureMapDataUrl = useCallback(async (): Promise<{ dataUrl: string; extent: Extent; } | null> => {
     if (!mapRef.current) {
       toast({ description: 'El mapa no está listo para ser capturado.' });
       return null;
@@ -55,7 +57,12 @@ export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
           mapContext.setTransform(1, 0, 0, 1, 0, 0);
           
           const dataUrl = mapCanvas.toDataURL('image/jpeg', 0.9);
-          resolve(dataUrl);
+
+          const view = map.getView();
+          const mapExtent = view.calculateExtent(size);
+          const extent4326 = transformExtent(mapExtent, view.getProjection(), 'EPSG:4326') as Extent;
+
+          resolve({ dataUrl, extent: extent4326 });
 
         } catch (error) {
           console.error('Error capturing map:', error);
@@ -75,3 +82,5 @@ export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
     isCapturing,
   };
 };
+
+    
