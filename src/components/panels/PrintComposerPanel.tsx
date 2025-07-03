@@ -183,10 +183,10 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                 </div>
             </div>
             
-            <div className="flex-grow overflow-auto bg-gray-900 p-2 rounded-md border border-gray-700">
+            <div className="flex-grow overflow-auto bg-gray-900 p-2 rounded-md border border-gray-700 flex items-center justify-center">
                 {/* Scaled preview */}
                 <div 
-                    className="w-[1058px] h-[748px] transform-origin-top-left" 
+                    className="w-[1058px] h-[748px] transform-origin-top-left flex-shrink-0" 
                     style={{ transform: `scale(0.45)` }}
                 >
                     <PrintLayout mapImage={mapImage} title={title} subtitle={subtitle} />
