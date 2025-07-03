@@ -261,14 +261,15 @@ export default function GeoMapperClient() {
 
   const { captureMapDataUrl, isCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
 
-  // Ref to hold the latest handler function to avoid stale closures in the event listener.
-  const moveEndHandlerRef = useRef<() => void>();
-
-  // This effect updates the handler function in the ref on every render.
-  // The handler function itself is recreated on each render, so it always has the latest state.
+  // This effect sets up and cleans up the event listener for map movement.
+  // It re-attaches the listener when dependencies change, ensuring it never has a "stale" state.
   useEffect(() => {
-    moveEndHandlerRef.current = async () => {
-      // Directly access the latest state, no need to pass them to the ref.
+    if (!isMapReady || !mapRef.current) return;
+
+    const view = mapRef.current.getView();
+
+    const handleMoveEnd = async () => {
+      // Logic is directly inside the listener, using the latest state from the component's render scope.
       if (panels.printComposer.isMinimized || isCapturing) {
         return;
       }
@@ -284,27 +285,16 @@ export default function GeoMapperClient() {
         });
       }
     };
-  }); // No dependency array, so it runs on every render.
 
-  // This effect sets up and cleans up the event listener once.
-  useEffect(() => {
-    if (!isMapReady || !mapRef.current) return;
+    view.on('moveend', handleMoveEnd);
 
-    const view = mapRef.current.getView();
-    
-    // The event listener is a stable function that calls the latest handler from the ref.
-    const eventListener = () => {
-      moveEndHandlerRef.current?.();
-    };
-
-    view.on('moveend', eventListener);
-
+    // The cleanup function removes the exact listener that was added.
     return () => {
-      if (view) { // Check if view exists on cleanup
-        view.un('moveend', eventListener);
+      if (view && typeof view.un === 'function') { // Ensure view and .un are available on cleanup
+        view.un('moveend', handleMoveEnd);
       }
     };
-  }, [isMapReady, mapRef]); // Dependencies ensure this runs only once.
+  }, [isMapReady, mapRef, panels, isCapturing, captureMapDataUrl, toast]); // Dependency array ensures the listener is always fresh.
 
 
   const handleTogglePrintComposer = async () => {
