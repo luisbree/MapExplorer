@@ -145,3 +145,5 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
     </DraggablePanel>
   );
 };
+
+export default LayersPanel;
