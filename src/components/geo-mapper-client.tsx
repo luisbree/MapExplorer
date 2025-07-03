@@ -38,7 +38,7 @@ import { useMapCapture } from '@/hooks/map-tools/useMapCapture';
 import { useWfsLibrary, PREDEFINED_WFS_SERVERS } from '@/hooks/wfs-library/useWfsLibrary';
 import { useToast } from "@/hooks/use-toast";
 
-import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage } from '@/lib/types';
+import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage, BaseLayerSettings } from '@/lib/types';
 import { chatWithMapAssistant, type MapAssistantOutput } from '@/ai/flows/find-layer-flow';
 import { createTrelloCard, searchTrelloCard } from '@/ai/flows/trello-actions';
 
@@ -149,6 +149,16 @@ export default function GeoMapperClient() {
   });
 
   const [activeBaseLayerId, setActiveBaseLayerId] = useState<string>(BASE_LAYER_DEFINITIONS[0].id);
+  const [baseLayerSettings, setBaseLayerSettings] = useState<BaseLayerSettings>({
+    opacity: 1,
+    brightness: 100,
+    contrast: 100,
+  });
+  
+  const handleBaseLayerSettingsChange = useCallback((newSettings: Partial<BaseLayerSettings>) => {
+    setBaseLayerSettings(prev => ({ ...prev, ...newSettings }));
+  }, []);
+
   const handleChangeBaseLayer = useCallback((newBaseLayerId: string) => {
     setActiveBaseLayerId(newBaseLayerId);
   }, []);
@@ -530,6 +540,7 @@ export default function GeoMapperClient() {
         <MapView
           setMapInstanceAndElement={setMapInstanceAndElement}
           activeBaseLayerId={activeBaseLayerId}
+          baseLayerSettings={baseLayerSettings}
         />
 
         <WfsLoadingIndicator isVisible={isWfsLoading || wfsLibraryHook.isLoading} />
@@ -551,6 +562,8 @@ export default function GeoMapperClient() {
             onFindLandsatFootprints={layerManagerHook.findLandsatFootprintsInCurrentView}
             onClearLandsatFootprints={layerManagerHook.clearLandsatFootprintsLayer}
             isFindingLandsatFootprints={layerManagerHook.isFindingLandsatFootprints}
+            baseLayerSettings={baseLayerSettings}
+            onBaseLayerSettingsChange={handleBaseLayerSettingsChange}
             style={{ top: `${panels.layers.position.y}px`, left: `${panels.layers.position.x}px`, zIndex: panels.layers.zIndex }}
           />
         )}
@@ -591,8 +604,13 @@ export default function GeoMapperClient() {
             onRemoveLayer={layerManagerHook.removeLayer}
             onRemoveLayers={layerManagerHook.removeLayers}
             onZoomToLayerExtent={layerManagerHook.zoomToLayerExtent}
-            onShowLayerTable={layerManagerHook.handleShowLayerTable} 
-            onExtractByPolygon={layerManagerHook.handleExtractByPolygon}
+            onShowLayerTable={(layerId) => {
+              layerManagerHook.handleShowLayerTable(layerId);
+              if (panels.attributes.isMinimized) {
+                  togglePanelMinimize('attributes');
+              }
+            }}
+            onExtractByPolygon={(layerId) => layerManagerHook.handleExtractByPolygon(layerId)}
             onExtractBySelection={layerManagerHook.handleExtractBySelection}
             onExportSelection={layerManagerHook.handleExportSelection}
             isDrawingSourceEmptyOrNotPolygon={layerManagerHook.isDrawingSourceEmptyOrNotPolygon}

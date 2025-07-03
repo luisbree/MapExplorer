@@ -7,8 +7,9 @@ import BaseLayerSelector from '@/components/layer-manager/BaseLayerSelector';
 import LocationSearch from '@/components/location-search/LocationSearch';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import type { BaseLayerOptionForSelect, NominatimResult } from '@/lib/types'; 
-import { Database, Search, ImageUp, ImageOff, Loader2 } from 'lucide-react'; 
+import type { BaseLayerOptionForSelect, NominatimResult, BaseLayerSettings } from '@/lib/types'; 
+import { Database, Search, ImageUp, ImageOff, Loader2 } from 'lucide-react';
+import BaseLayerControls from '../layer-manager/BaseLayerControls';
 
 interface LayersPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -31,6 +32,9 @@ interface LayersPanelProps {
   onClearLandsatFootprints: () => void;
   isFindingLandsatFootprints: boolean;
 
+  baseLayerSettings: BaseLayerSettings;
+  onBaseLayerSettingsChange: (newSettings: Partial<BaseLayerSettings>) => void;
+
   style?: React.CSSProperties; 
 }
 
@@ -41,6 +45,7 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   onZoomToBoundingBox,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
   onFindLandsatFootprints, onClearLandsatFootprints, isFindingLandsatFootprints,
+  baseLayerSettings, onBaseLayerSettingsChange,
   style, 
 }) => {
   
@@ -66,16 +71,14 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
       <div className="space-y-3"> 
         
         <LocationSearch onLocationSelect={handleLocationSelection} />
+        
+        <BaseLayerSelector
+            availableBaseLayers={availableBaseLayers}
+            activeBaseLayerId={activeBaseLayerId}
+            onChangeBaseLayer={onChangeBaseLayer}
+        />
 
-        <div className="flex items-center gap-2"> 
-            <div className="flex-grow">
-                <BaseLayerSelector
-                    availableBaseLayers={availableBaseLayers}
-                    activeBaseLayerId={activeBaseLayerId}
-                    onChangeBaseLayer={onChangeBaseLayer}
-                />
-            </div>
-        </div>
+        <BaseLayerControls settings={baseLayerSettings} onChange={onBaseLayerSettingsChange} />
         
         <Separator className="bg-white/15" />
 

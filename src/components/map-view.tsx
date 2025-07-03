@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Map as OLMap, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
@@ -9,11 +9,13 @@ import XYZ from 'ol/source/XYZ';
 import {defaults as defaultControls} from 'ol/control';
 import { fromLonLat } from 'ol/proj';
 import type { Layer } from 'ol/layer';
+import type { BaseLayerSettings } from '@/lib/types';
 
 interface MapViewProps {
   setMapInstanceAndElement: (map: OLMap, element: HTMLDivElement) => void;
   onMapClick?: (event: any) => void; 
   activeBaseLayerId?: string; 
+  baseLayerSettings: BaseLayerSettings;
 }
 
 export type Band = 'red' | 'green' | 'blue' | 'none';
@@ -26,7 +28,6 @@ type BaseLayerDefinition = {
   createLayer?: () => TileLayer<XYZ | OSM>;
 }
 
-// Definitions for all potential base layers and views
 export const BASE_LAYER_DEFINITIONS: readonly BaseLayerDefinition[] = [
   {
     id: 'osm-standard',
@@ -83,48 +84,70 @@ export const BASE_LAYER_DEFINITIONS: readonly BaseLayerDefinition[] = [
 ] as const;
 
 
-// Function to apply a grayscale filter based on a color band
-const applyBandFilter = (layer: Layer, band: Band) => {
-  const postRenderCallback = (event: any) => {
-    const context = event.context;
-    if (!context) return;
+const applyBaseLayerEffects = (
+  layer: Layer, 
+  settings: BaseLayerSettings,
+  band: Band
+) => {
+  layer.setOpacity(settings.opacity);
 
-    try {
-      const canvas = context.canvas;
-      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imageData.data;
-      for (let i = 0; i < data.length; i += 4) {
-        let grayValue = 0;
-        switch (band) {
-          case 'red': grayValue = data[i]; break;
-          case 'green': grayValue = data[i + 1]; break;
-          case 'blue': grayValue = data[i + 2]; break;
-        }
-        data[i] = grayValue;
-        data[i + 1] = grayValue;
-        data[i + 2] = grayValue;
-      }
-      context.putImageData(imageData, 0, 0);
-    } catch (e) {
-      // This can happen due to CORS issues if crossOrigin is not set correctly on the source
-      // We'll silence it for now as it's a known potential issue with tile servers.
-    }
-  };
-
-  layer.removeEventListener('postrender', layer.get('bandFilterListener'));
-  
-  if (band !== 'none') {
-    layer.on('postrender', postRenderCallback);
-    layer.set('bandFilterListener', postRenderCallback);
-  } else {
-    layer.set('bandFilterListener', null);
+  const oldPrerenderListener = layer.get('prerenderListener');
+  if (oldPrerenderListener) {
+    layer.removeEventListener('prerender', oldPrerenderListener);
+  }
+  const oldPostrenderListener = layer.get('postrenderListener');
+  if (oldPostrenderListener) {
+    layer.removeEventListener('postrender', oldPostrenderListener);
   }
   
-  // Trigger a re-render
+  const hasEffects = band !== 'none' || settings.brightness !== 100 || settings.contrast !== 100;
+
+  if (hasEffects) {
+    const prerenderListener = (event: any) => {
+      const context = event.context;
+      if (!context) return;
+      context.filter = `brightness(${settings.brightness}%) contrast(${settings.contrast}%)`;
+    };
+
+    const postrenderListener = (event: any) => {
+      const context = event.context;
+      if (!context) return;
+
+      if (band !== 'none') {
+        try {
+          const canvas = context.canvas;
+          const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            let grayValue = 0;
+            switch (band) {
+              case 'red': grayValue = data[i]; break;
+              case 'green': grayValue = data[i + 1]; break;
+              case 'blue': grayValue = data[i + 2]; break;
+            }
+            data[i] = grayValue;
+            data[i + 1] = grayValue;
+            data[i + 2] = grayValue;
+          }
+          context.putImageData(imageData, 0, 0);
+        } catch (e) {
+          // Silence CORS errors
+        }
+      }
+      
+      context.filter = 'none';
+    };
+
+    layer.on('prerender', prerenderListener);
+    layer.on('postrender', postrenderListener);
+    layer.set('prerenderListener', prerenderListener);
+    layer.set('postrenderListener', postrenderListener);
+  }
+  
   layer.getSource()?.refresh();
 };
 
-const MapView: React.FC<MapViewProps> = ({ setMapInstanceAndElement, onMapClick, activeBaseLayerId }) => {
+const MapView: React.FC<MapViewProps> = ({ setMapInstanceAndElement, onMapClick, activeBaseLayerId, baseLayerSettings }) => {
   const mapElementRef = useRef<HTMLDivElement>(null);
   const olMapInstanceRef = useRef<OLMap | null>(null); 
   const baseLayerRefs = useRef<Record<string, TileLayer<any>>>({});
@@ -194,25 +217,20 @@ const MapView: React.FC<MapViewProps> = ({ setMapInstanceAndElement, onMapClick,
     if (!selectedDef) return;
 
     const layerIdToShow = selectedDef.parentLayerId || selectedDef.id;
+    const bandToShow = selectedDef.parentLayerId === 'esri-satellite' ? (selectedDef.band || 'none') : 'none';
 
-    // Set visibility for all "real" base layers
     Object.values(baseLayerRefs.current).forEach(layer => {
-      layer.setVisible(layer.get('baseLayerId') === layerIdToShow);
+      const isVisible = layer.get('baseLayerId') === layerIdToShow;
+      layer.setVisible(isVisible);
+      
+      if (isVisible) {
+        applyBaseLayerEffects(layer, baseLayerSettings, bandToShow);
+      } else {
+        applyBaseLayerEffects(layer, { opacity: 1, brightness: 100, contrast: 100 }, 'none');
+      }
     });
-    
-    // Find the ESRI layer to apply/remove filters
-    const esriLayer = baseLayerRefs.current['esri-satellite'];
-    if (esriLayer) {
-       if (selectedDef.parentLayerId === 'esri-satellite') {
-         // This is a band view, apply the filter
-         applyBandFilter(esriLayer, selectedDef.band || 'none');
-       } else {
-         // Any other view is selected, remove the filter
-         applyBandFilter(esriLayer, 'none');
-       }
-    }
 
-  }, [activeBaseLayerId]);
+  }, [activeBaseLayerId, baseLayerSettings]);
 
   return <div ref={mapElementRef} className="w-full h-full bg-gray-200" />;
 };

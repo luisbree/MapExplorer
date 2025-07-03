@@ -42,6 +42,12 @@ export interface BaseLayerOptionForSelect {
   name: string;
 }
 
+export interface BaseLayerSettings {
+  opacity: number;
+  brightness: number;
+  contrast: number;
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
