@@ -250,6 +250,23 @@ export default function GeoMapperClient() {
   });
 
   const { captureMap, captureMapDataUrl, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
+  const [isRefreshingPrintComposer, setIsRefreshingPrintComposer] = useState(false);
+
+  const handleRefreshPrintComposerImage = async () => {
+      setIsRefreshingPrintComposer(true);
+      const mapImage = await captureMapDataUrl('jpeg-full');
+      if (mapImage) {
+          setPrintComposerImage(mapImage);
+          toast({ description: "Vista del mapa en el compositor actualizada." });
+      } else {
+          toast({
+              title: "Error de Captura",
+              description: "No se pudo actualizar la imagen del mapa.",
+              variant: "destructive",
+          });
+      }
+      setIsRefreshingPrintComposer(false);
+  };
   
   const handleTogglePrintComposer = async () => {
     if (panels.printComposer.isMinimized) {
@@ -618,6 +635,8 @@ export default function GeoMapperClient() {
                 onClosePanel={() => togglePanelMinimize('printComposer')}
                 onMouseDownHeader={(e) => handlePanelMouseDown(e, 'printComposer')}
                 style={{ top: `${panels.printComposer.position.y}px`, left: `${panels.printComposer.position.x}px`, zIndex: panels.printComposer.zIndex }}
+                onRefresh={handleRefreshPrintComposerImage}
+                isRefreshing={isRefreshingPrintComposer}
             />
         )}
 

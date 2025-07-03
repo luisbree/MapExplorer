@@ -6,7 +6,7 @@ import DraggablePanel from './DraggablePanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Printer } from 'lucide-react';
+import { Printer, RefreshCw, Loader2 } from 'lucide-react';
 
 interface PrintComposerPanelProps {
   mapImage: string;
@@ -16,6 +16,8 @@ interface PrintComposerPanelProps {
   onClosePanel: () => void;
   onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
   style?: React.CSSProperties;
+  onRefresh: () => Promise<void>;
+  isRefreshing: boolean;
 }
 
 // Graphical components for the layout
@@ -128,6 +130,8 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
   onClosePanel,
   onMouseDownHeader,
   style,
+  onRefresh,
+  isRefreshing,
 }) => {
   const [title, setTitle] = useState("TÍTULO DEL MAPA ENCODE SANS BOLD 16PT MAYÚSCULA");
   const [subtitle, setSubtitle] = useState("Subtítulo del mapa - ENCODE SANS Medium 14pt Mayúscula - minúscula");
@@ -163,10 +167,20 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                     <Label htmlFor="map-subtitle-input" className="text-xs text-white">Subtítulo</Label>
                     <Input id="map-subtitle-input" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="h-8 text-sm bg-black/20" />
                 </div>
-                <Button onClick={handlePrint} className="w-full h-9 bg-primary hover:bg-primary/90">
-                    <Printer className="mr-2 h-4 w-4" />
-                    Imprimir / Guardar como PDF
-                </Button>
+                <div className="flex gap-2">
+                    <Button onClick={onRefresh} variant="outline" className="w-full h-9" disabled={isRefreshing}>
+                        {isRefreshing ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                        )}
+                        Actualizar Mapa
+                    </Button>
+                    <Button onClick={handlePrint} className="w-full h-9 bg-primary hover:bg-primary/90">
+                        <Printer className="mr-2 h-4 w-4" />
+                        Imprimir / PDF
+                    </Button>
+                </div>
             </div>
             
             <div className="flex-grow overflow-auto bg-gray-900 p-2 rounded-md border border-gray-700">
