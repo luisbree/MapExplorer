@@ -22,15 +22,55 @@ interface PrintComposerPanelProps {
 
 // Graphical components for the layout
 const DeaLogo = () => (
-    <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="50" cy="50" r="48" fill="none" stroke="#000" strokeWidth="4"/>
-      <circle cx="50" cy="50" r="40" fill="none" stroke="#000" strokeWidth="2"/>
-      <circle cx="50" cy="50" r="32" fill="none" stroke="#000" strokeWidth="1.5"/>
-      <circle cx="50" cy="50" r="24" fill="none" stroke="#000" strokeWidth="1"/>
-      <path d="M50 15 A 35 35 0 0 1 50 85 A 35 35 0 0 1 50 15" fill="none" stroke="#000" strokeWidth="2"/>
-      <text x="50" y="55" fontFamily="Arial, sans-serif" fontSize="20" fontWeight="bold" textAnchor="middle" fill="#000">DEA</text>
+    <svg width="220" height="70" viewBox="0 0 220 70" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink">
+      {/* DEA Text */}
+      <text x="95" y="55" fontFamily="Arial, sans-serif" fontSize="50" fill="#000" fontWeight="300">DEA</text>
+      
+      {/* Isologo */}
+      <g transform="translate(45, 35)">
+        <defs>
+          {/* Path for the curved text */}
+          <path id="dea-logo-text-path"
+                d="M -32,0 A 32,32 0 1,1 32,0 A 32,32 0 1,1 -32,0" 
+          />
+          {/* Clipping path for the pattern */}
+          <clipPath id="dea-logo-clip">
+            <circle cx="0" cy="0" r="27" />
+          </clipPath>
+        </defs>
+        
+        {/* Curved text */}
+        <text fontFamily="Arial, sans-serif" fontSize="6.8" fill="#000" letterSpacing="0.9" fontWeight="500">
+          <textPath href="#dea-logo-text-path" startOffset="76%" textAnchor="middle">
+            DEPARTAMENTO DE ESTUDIOS AMBIENTALES
+          </textPath>
+        </text>
+
+        {/* The geometric pattern, clipped */}
+        <g clipPath="url(#dea-logo-clip)" stroke="#000" strokeWidth="1.2" fill="none">
+          <circle cx="0" cy="-19" r="19" />
+          <circle cx="0" cy="19" r="19" />
+          <circle cx="-19" cy="0" r="19" />
+          <circle cx="19" cy="0" r="19" />
+          <circle cx="-13.4" cy="-13.4" r="19" />
+          <circle cx="13.4" cy="-13.4" r="19" />
+          <circle cx="-13.4" cy="13.4" r="19" />
+          <circle cx="13.4" cy="13.4" r="19" />
+        </g>
+
+        {/* Central black circle */}
+        <circle cx="0" cy="0" r="10" fill="#000" stroke="none" />
+        
+        {/* Rings drawn on top of the clipped pattern */}
+        <g stroke="#000" strokeWidth="1.2" fill="none">
+          <circle cx="0" cy="0" r="15" />
+          <circle cx="0" cy="0" r="21" />
+          <circle cx="0" cy="0" r="27" />
+        </g>
+      </g>
     </svg>
 );
+
 
 const NorthArrow = () => (
     <svg width="40" height="60" viewBox="0 0 40 60" xmlns="http://www.w3.org/2000/svg">
@@ -90,7 +130,9 @@ const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; title: 
           {/* Right Gutter */}
           <div className="w-32 flex-shrink-0 flex flex-col justify-between items-center p-2">
             <NorthArrow />
-            <DeaLogo />
+            <div className="w-full">
+                <DeaLogo />
+            </div>
           </div>
         </div>
         {/* Footer Area */}
