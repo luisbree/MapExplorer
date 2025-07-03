@@ -259,25 +259,42 @@ export default function GeoMapperClient() {
     toggleInspectMode: featureInspectionHook.toggleInspectMode,
   });
 
-  const { captureMapDataUrl } = useMapCapture({ mapRef, activeBaseLayerId });
-  const [isRefreshingPrintComposer, setIsRefreshingPrintComposer] = useState(false);
+  const { captureMapDataUrl, isCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
 
-  const handleRefreshPrintComposerImage = async () => {
-      setIsRefreshingPrintComposer(true);
-      const layoutData = await captureMapDataUrl();
-      if (layoutData) {
-          setPrintLayoutData(layoutData);
-          toast({ description: "Vista del mapa en el compositor actualizada." });
-      } else {
-          toast({
-              title: "Error de Captura",
-              description: "No se pudo actualizar la imagen del mapa.",
-              variant: "destructive",
-          });
-      }
-      setIsRefreshingPrintComposer(false);
-  };
+  const handleRefreshPrintComposerImage = useCallback(async () => {
+    if (panels.printComposer.isMinimized || isCapturing) return;
   
+    const layoutData = await captureMapDataUrl();
+    if (layoutData) {
+        setPrintLayoutData(layoutData);
+    } else {
+        toast({
+            title: "Error de Captura",
+            description: "No se pudo actualizar la imagen del mapa.",
+            variant: "destructive",
+        });
+    }
+  }, [panels.printComposer.isMinimized, isCapturing, captureMapDataUrl, toast]);
+  
+  // Effect to auto-refresh print composer on map move
+  useEffect(() => {
+    if (!isMapReady || !mapRef.current) return;
+  
+    const view = mapRef.current.getView();
+    
+    const handler = () => {
+        if (!panels.printComposer.isMinimized) {
+            handleRefreshPrintComposerImage();
+        }
+    };
+    
+    view.on('moveend', handler);
+  
+    return () => {
+      view.un('moveend', handler);
+    };
+  }, [isMapReady, mapRef, panels.printComposer.isMinimized, handleRefreshPrintComposerImage]);
+
   const handleTogglePrintComposer = async () => {
     if (panels.printComposer.isMinimized) {
         const layoutData = await captureMapDataUrl();
@@ -653,8 +670,7 @@ export default function GeoMapperClient() {
                 onClosePanel={() => togglePanelMinimize('printComposer')}
                 onMouseDownHeader={(e) => handlePanelMouseDown(e, 'printComposer')}
                 style={{ top: `${panels.printComposer.position.y}px`, left: `${panels.printComposer.position.x}px`, zIndex: panels.printComposer.zIndex }}
-                onRefresh={handleRefreshPrintComposerImage}
-                isRefreshing={isRefreshingPrintComposer}
+                isRefreshing={isCapturing}
             />
         )}
 
@@ -721,5 +737,3 @@ export default function GeoMapperClient() {
     </div>
   );
 }
-
-    

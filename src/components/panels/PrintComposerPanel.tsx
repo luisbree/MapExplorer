@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState } from 'react';
@@ -5,7 +6,7 @@ import DraggablePanel from './DraggablePanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Printer, RefreshCw, Loader2 } from 'lucide-react';
+import { Printer, Loader2 } from 'lucide-react';
 import type { Extent } from 'ol/extent';
 
 // Helper to format degree labels
@@ -172,6 +173,18 @@ const ScaleBar = () => (
   </div>
 );
 
+interface PrintComposerPanelProps {
+    mapImage: string;
+    mapExtent: Extent | null;
+    panelRef: React.RefObject<HTMLDivElement>;
+    isCollapsed: boolean;
+    onToggleCollapse: () => void;
+    onClosePanel: () => void;
+    onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
+    style?: React.CSSProperties;
+    isRefreshing: boolean;
+}
+
 // Reusable Layout Component
 const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExtent: Extent | null; title: string; subtitle: string; }>(
   ({ mapImage, mapExtent, title, subtitle }, ref) => {
@@ -236,7 +249,6 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
   onClosePanel,
   onMouseDownHeader,
   style,
-  onRefresh,
   isRefreshing,
 }) => {
   const [title, setTitle] = useState("TÍTULO DEL MAPA ENCODE SANS BOLD 16PT MAYÚSCULA");
@@ -274,14 +286,6 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                     <Input id="map-subtitle-input" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="h-8 text-sm bg-black/20" />
                 </div>
                 <div className="flex gap-2">
-                    <Button onClick={onRefresh} variant="outline" className="w-full h-9" disabled={isRefreshing}>
-                        {isRefreshing ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                        )}
-                        Actualizar Mapa
-                    </Button>
                     <Button onClick={handlePrint} className="w-full h-9 bg-primary hover:bg-primary/90">
                         <Printer className="mr-2 h-4 w-4" />
                         Imprimir / PDF
@@ -289,7 +293,12 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                 </div>
             </div>
             
-            <div className="flex-grow overflow-auto bg-gray-900 p-2 rounded-md border border-gray-700 flex items-center justify-center">
+            <div className="relative flex-grow overflow-auto bg-gray-900 p-2 rounded-md border border-gray-700 flex items-center justify-center">
+                {isRefreshing && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                        <Loader2 className="h-8 w-8 animate-spin text-white" />
+                    </div>
+                )}
                 {/* Scaled preview */}
                 <div 
                     className="w-[1058px] h-[748px] transform-origin-top-left flex-shrink-0" 
