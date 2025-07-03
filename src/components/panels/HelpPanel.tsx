@@ -37,7 +37,7 @@ const HelpPanel: React.FC<HelpPanelProps> = ({
 }) => {
   return (
     <DraggablePanel
-      title="Guía de Usuario"
+      title="Guía Rápida"
       icon={LifeBuoy}
       panelRef={panelRef}
       initialPosition={{ x: 0, y: 0 }}
@@ -58,26 +58,26 @@ const HelpPanel: React.FC<HelpPanelProps> = ({
               <HelpSectionTrigger icon={Map} title="Navegación y Datos Base" />
             </AccordionTrigger>
             <AccordionContent className="space-y-2 pl-4">
-              <p>El <strong>Panel de Datos</strong> le permite controlar la vista del mapa:</p>
+              <p>Desde el <strong>Panel de Datos</strong> podés controlar la vista del mapa:</p>
               <ul className="list-disc list-inside space-y-1 pl-2 text-xs text-gray-300">
-                <li><strong>Buscador de Ubicaciones:</strong> Escriba el nombre de una ciudad o lugar para centrar el mapa allí.</li>
-                <li><strong>Selector de Capa Base:</strong> Cambie el mapa de fondo entre vistas como OpenStreetMap, Satelital y más.</li>
-                <li><ImageUp className="inline-block h-4 w-4 mr-1" /><strong>Buscador de Escenas Satelitales:</strong> Busque huellas (footprints) de imágenes Sentinel-2 y Landsat en la vista actual del mapa. Los resultados se añaden como capas vectoriales con atributos.</li>
+                <li><strong>Buscador de Ubicaciones:</strong> Escribí el nombre de una ciudad o lugar para centrar el mapa ahí.</li>
+                <li><strong>Selector de Capa Base:</strong> Cambiá el mapa de fondo entre vistas como OpenStreetMap, Satelital y más.</li>
+                <li><ImageUp className="inline-block h-4 w-4 mr-1" /><strong>Buscador de Escenas Satelitales:</strong> Buscá las huellas (footprints) de imágenes Sentinel-2 y Landsat en la vista actual del mapa. Los resultados se agregan como capas vectoriales con sus atributos.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="layers">
             <AccordionTrigger>
-              <HelpSectionTrigger icon={Layers} title="Gestión de Capas" />
+              <HelpSectionTrigger icon={Layers} title="Manejo de Capas" />
             </AccordionTrigger>
             <AccordionContent className="space-y-2 pl-4">
-              <p>El <strong>Panel de Capas</strong> es el centro de control para todas sus capas de datos:</p>
+              <p>El <strong>Panel de Capas</strong> es tu centro de control para todos los datos:</p>
               <ul className="list-disc list-inside space-y-1 pl-2 text-xs text-gray-300">
-                <li><Plus className="inline-block h-4 w-4 mr-1" /><strong>Importar Capa:</strong> Cargue archivos locales como KML, GeoJSON o Shapefiles (en formato .zip).</li>
-                <li><Trash2 className="inline-block h-4 w-4 mr-1" /><strong>Eliminar Selección:</strong> Borre una o varias capas seleccionadas de la lista.</li>
-                <li><MousePointerClick className="inline-block h-4 w-4 mr-1" /><strong>Inspección/Selección:</strong> Active el modo interactivo para hacer clic en entidades y ver sus atributos o seleccionarlas para otras acciones.</li>
-                <li><strong>Lista de Capas:</strong> Arrastre para reordenar, use el ojo para alternar la visibilidad y acceda al menú contextual (rueda dentada) para más opciones como zoom, ver tabla de atributos, cambiar opacidad o extraer datos.</li>
+                <li><Plus className="inline-block h-4 w-4 mr-1" /><strong>Importar Capa:</strong> Cargá archivos de tu compu como KML, GeoJSON o Shapefiles (en formato .zip).</li>
+                <li><Trash2 className="inline-block h-4 w-4 mr-1" /><strong>Eliminar Selección:</strong> Borrá una o varias capas que hayas seleccionado de la lista.</li>
+                <li><MousePointerClick className="inline-block h-4 w-4 mr-1" /><strong>Inspección/Selección:</strong> Activá el modo interactivo para cliquear en las entidades, ver sus atributos o seleccionarlas para otras acciones.</li>
+                <li><strong>Lista de Capas:</strong> Arrastrá para reordenar, usá el ojo para mostrar u ocultar una capa y entrá al menú (la ruedita) para más opciones como hacer zoom, ver la tabla de atributos, cambiar la opacidad o extraer datos.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -87,10 +87,10 @@ const HelpPanel: React.FC<HelpPanelProps> = ({
               <HelpSectionTrigger icon={Wrench} title="Herramientas" />
             </AccordionTrigger>
             <AccordionContent className="space-y-2 pl-4">
-              <p>El <strong>Panel de Herramientas</strong> ofrece capacidades de dibujo y análisis:</p>
+              <p>El <strong>Panel de Herramientas</strong> te da funciones de dibujo y análisis:</p>
               <ul className="list-disc list-inside space-y-1 pl-2 text-xs text-gray-300">
-                <li><Square className="inline-block h-4 w-4 mr-1" /><strong>Herramientas de Dibujo:</strong> Dibuje polígonos, líneas o puntos en el mapa. Puede guardar sus dibujos como un archivo KML.</li>
-                <li><CloudDownload className="inline-block h-4 w-4 mr-1" /><strong>Datos de OpenStreetMap:</strong> Dibuje un polígono y luego use esta herramienta para descargar datos de OSM (como ríos, calles, etc.) dentro de esa área.</li>
+                <li><Square className="inline-block h-4 w-4 mr-1" /><strong>Herramientas de Dibujo:</strong> Dibujá polígonos, líneas o puntos en el mapa. Podés guardar tus dibujos como un archivo KML.</li>
+                <li><CloudDownload className="inline-block h-4 w-4 mr-1" /><strong>Datos de OpenStreetMap:</strong> Primero dibujá un polígono y después usá esta herramienta para bajar datos de OSM (como ríos, calles, etc.) de esa zona.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -100,13 +100,13 @@ const HelpPanel: React.FC<HelpPanelProps> = ({
               <HelpSectionTrigger icon={Sparkles} title="Asistente Drax (IA)" />
             </AccordionTrigger>
             <AccordionContent className="space-y-2 pl-4">
-              <p>Converse con <strong>Drax</strong> para controlar el mapa con lenguaje natural. Pruebe comandos como:</p>
+              <p>Chateá con <strong>Drax</strong> para manejar el mapa con lenguaje normal. Probá con comandos como:</p>
               <ul className="list-disc list-inside space-y-1 pl-2 text-xs text-gray-300">
-                <li>"Carga la capa de cuencas como WFS"</li>
-                <li>"Busca imágenes Sentinel en Buenos Aires"</li>
-                <li>"Pinta el borde de las rutas de color rojo y más grueso"</li>
-                <li>"Elimina todas las capas de hidrografía"</li>
-                <li>"Crea una tarjeta en Trello para revisar este análisis"</li>
+                <li>"Cargá la capa de cuencas como WFS"</li>
+                <li>"Buscame imágenes Sentinel en Buenos Aires"</li>
+                <li>"Pintá el borde de las rutas de color rojo y más grueso"</li>
+                <li>"Sacá todas las capas de hidrografía"</li>
+                <li>"Creá una tarjeta en Trello para revisar este análisis"</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -116,10 +116,10 @@ const HelpPanel: React.FC<HelpPanelProps> = ({
               <HelpSectionTrigger icon={ClipboardCheck} title="Integraciones" />
             </AccordionTrigger>
             <AccordionContent className="space-y-2 pl-4">
-              <p>Conecte la aplicación con otros servicios:</p>
+              <p>Conectá la aplicación con otros servicios:</p>
               <ul className="list-disc list-inside space-y-1 pl-2 text-xs text-gray-300">
-                <li><Library className="inline-block h-4 w-4 mr-1" /><strong>Biblioteca WFS:</strong> Conéctese a servidores WFS predefinidos o personalizados para cargar capas vectoriales directamente desde servicios externos.</li>
-                <li><ClipboardCheck className="inline-block h-4 w-4 mr-1" /><strong>Trello:</strong> Configure sus credenciales en el archivo `.env.local` para crear y buscar tarjetas de Trello directamente desde la aplicación o a través de Drax.</li>
+                <li><Library className="inline-block h-4 w-4 mr-1" /><strong>Biblioteca WFS:</strong> Conectate a servidores WFS que ya vienen cargados o poné uno tuyo para traer capas vectoriales desde afuera.</li>
+                <li><ClipboardCheck className="inline-block h-4 w-4 mr-1" /><strong>Trello:</strong> Configurá tus credenciales en el archivo `.env.local` para poder crear y buscar tarjetas de Trello desde la app o pidiéndoselo a Drax.</li>
               </ul>
             </AccordionContent>
           </AccordionItem>
@@ -130,5 +130,3 @@ const HelpPanel: React.FC<HelpPanelProps> = ({
 };
 
 export default HelpPanel;
-
-    
