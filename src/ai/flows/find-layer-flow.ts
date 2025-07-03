@@ -133,9 +133,7 @@ const MapAssistantOutputSchema = z.object({
     lineWidth: z.number().describe("The requested line width in pixels. Affects the stroke/outline width.").optional(),
   })).describe("A list of layers to change the style of.").optional().nullable(),
   showTableForLayer: z.string().describe("The machine-readable name of an active layer to show its attribute table.").optional().nullable(),
-  captureMap: z.enum(['jpeg-full', 'jpeg-red', 'jpeg-green', 'jpeg-blue'])
-    .describe("The type of map image to capture. 'jpeg-full' for full color, 'jpeg-red' for red band grayscale, 'jpeg-green' for green band grayscale, 'jpeg-blue' for blue band grayscale.")
-    .optional().nullable(),
+  setBaseLayer: z.string().describe("The ID of the base layer to set, e.g., 'osm-standard', 'esri-satellite', 'esri-red'.").optional().nullable(),
   zoomToBoundingBox: z.array(z.number()).describe("A bounding box to zoom to, as an array of numbers: [southLat, northLat, westLon, eastLon]. The result of using the 'searchLocation' tool.").optional().nullable(),
   findSentinel2Footprints: z.object({
     startDate: z.string().describe("The start date for the search in YYYY-MM-DD format.").optional(),
@@ -166,7 +164,6 @@ Tu conocimiento no se limita a las acciones principales que podés ejecutar. Te 
 
 Otras funcionalidades sobre las que tenés que guiar al usuario:
 - **Dibujar en el mapa**: Si te piden que dibujes, deciles que usen las 'Herramientas de Dibujo' en el panel 'Herramientas'.
-- **Cambiar el mapa base**: Si te piden cambiar el mapa base (ej. a vista satelital), guialos al selector de 'Capa Base' en el panel 'Datos'.
 - **Subir un archivo local**: Si te preguntan cómo cargar un archivo (KML, GeoJSON, Shapefile), guialos al botón 'Importar Capa' (el icono con el '+') en el panel 'Capas'.
 - **Obtener datos de OpenStreetMap (OSM)**: Si te preguntan por datos de OSM, explicá que primero tienen que dibujar un polígono con las 'Herramientas de Dibujo' y después usar la sección 'OpenStreetMap' en el panel 'Herramientas' para obtener los datos.
 
@@ -176,7 +173,7 @@ Podés hacer varias cosas según lo que te pida el usuario:
 3. HACER ZOOM a la extensión de una capa.
 4. CAMBIAR ESTILO de una o más capas que ya estén en el mapa.
 5. MOSTRAR TABLA DE ATRIBUTOS de una capa.
-6. CAPTURAR IMAGEN DEL MAPA.
+6. CAMBIAR EL MAPA BASE (ej. a vista satelital, a una banda de color o a OSM).
 7. HACER ZOOM A UN LUGAR: Buscar y centrar el mapa en una ciudad o dirección.
 8. BUSCAR HUELLAS SENTINEL-2: Buscar huellas de imágenes satelitales Sentinel-2 en la vista actual.
 9. BUSCAR HUELLAS LANDSAT: Buscar huellas de imágenes satelitales Landsat en la vista actual.
@@ -210,10 +207,10 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
   - ¡OJO! Solo podés mostrar atributos de capas 'wfs', 'vector' o 'osm'. Si te piden ver la tabla de una capa 'wms', tenés que decirles amablemente que no es posible. Por ejemplo: "Disculpá, pero no puedo mostrar los atributos de la capa 'Cuencas' porque es una imagen (WMS)."
   - Si encontrás una, respondé confirmando la acción y poné el 'name' exacto de esa capa en el campo 'showTableForLayer'.
 
-- PARA CAPTURAR MAPA: Si te piden capturar, exportar una imagen o sacar una foto del mapa, fijate qué formato quieren.
-  - Si piden una foto en general ("sacá una foto", "exportá la imagen"), poné 'jpeg-full' en el campo 'captureMap'.
-  - Si especifican una banda de color (ej. "capturá la banda roja", "dame la imagen de la banda verde en escala de grises"), poné 'jpeg-red', 'jpeg-green', o 'jpeg-blue' según corresponda. Tenés que responder que la imagen va a salir en escala de grises. Por ejemplo: "¡Dale! Acá tenés la captura de la banda roja en escala de grises."
-  - Esta acción solo funciona con la capa base Satelital de ESRI. Vos no sabés cuál es la capa base activa, así que siempre asumí que se puede. Respondé y completá el campo 'captureMap'.
+- PARA CAMBIAR EL MAPA BASE: Si te piden cambiar el mapa base (ej. a "vista satelital", "mapa gris", "banda roja"), identificá la vista que quieren.
+  - Si te piden la banda roja, verde o azul, tenés que responder que la vista va a ser en escala de grises. Ej: "¡Dale! Poniendo la vista de la banda roja en escala de grises."
+  - Los IDs disponibles son: 'osm-standard', 'carto-light', 'esri-satellite', 'esri-red', 'esri-green', 'esri-blue'. Usá el que mejor matchee.
+  - Completá el campo 'setBaseLayer' con el ID correspondiente.
 
 - PARA HACER ZOOM A UN LUGAR: Si te piden encontrar un lugar, ir a una ciudad o buscar una dirección (ej. "encontrá la ciudad de La Plata", "llevame a Madrid"), usá la herramienta 'searchLocation'.
   - Cuando la herramienta te devuelva un bounding box, tenés que completar el campo 'zoomToBoundingBox' con el array exacto que te dio la herramienta.
@@ -234,7 +231,7 @@ IMPORTANTE: Podés hacer varias acciones del MISMO tipo a la vez (ej. agregar va
 
 EXCEPCIÓN: SÍ podés combinar 'zoomToBoundingBox' y una búsqueda satelital ('findSentinel2Footprints' o 'findLandsatFootprints'). Si un usuario te pide buscar imágenes satelitales para un lugar específico con nombre (ej. "buscá imágenes Sentinel en París" o "buscá fotos de Landsat en Buenos Aires"), deberías usar la herramienta 'searchLocation' para obtener el bounding box de ese lugar. Después, tenés que completar AMBOS campos, 'zoomToBoundingBox' con el resultado Y el campo de búsqueda satelital correspondiente (ej. a {}). La aplicación está preparada para manejar esto haciendo primero el zoom y después buscando automáticamente. Tu respuesta debe confirmar ambas acciones, ej. "¡Entendido! Acercando a París y buscando imágenes Sentinel-2."
 
-Si la consulta es media confusa, dale prioridad a agregar antes que a sacar, a sacar antes que hacer zoom, a hacer zoom antes que cambiar estilo, a cambiar estilo antes que mostrar la tabla, y a mostrar la tabla antes que capturar el mapa.
+Si la consulta es media confusa, dale prioridad a agregar antes que a sacar, a sacar antes que hacer zoom, a hacer zoom antes que cambiar estilo, a cambiar estilo antes que mostrar la tabla, y a mostrar la tabla antes que cambiar el mapa base.
 
 Available Layers (for adding):
 {{#each availableLayers}}

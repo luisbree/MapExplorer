@@ -5,7 +5,6 @@ import React from 'react';
 import DraggablePanel from './DraggablePanel';
 import BaseLayerSelector from '@/components/layer-manager/BaseLayerSelector';
 import LocationSearch from '@/components/location-search/LocationSearch';
-import MapCaptureControl from '@/components/map-tools/MapCaptureControl';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import type { BaseLayerOptionForSelect, NominatimResult } from '@/lib/types'; 
@@ -24,9 +23,6 @@ interface LayersPanelProps {
 
   onZoomToBoundingBox: (bbox: [number, number, number, number]) => void;
 
-  captureMap: (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => void;
-  isCapturingMap: boolean;
-  
   onFindSentinel2Footprints: (dateRange?: { startDate?: string, completionDate?: string }) => void;
   onClearSentinel2Footprints: () => void;
   isFindingSentinelFootprints: boolean; 
@@ -43,7 +39,6 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
   panelRef, isCollapsed, onToggleCollapse, onClosePanel, onMouseDownHeader,
   availableBaseLayers, activeBaseLayerId, onChangeBaseLayer,
   onZoomToBoundingBox,
-  captureMap, isCapturingMap,
   onFindSentinel2Footprints, onClearSentinel2Footprints, isFindingSentinelFootprints,
   onFindLandsatFootprints, onClearLandsatFootprints, isFindingLandsatFootprints,
   style, 
@@ -80,10 +75,6 @@ const LayersPanel: React.FC<LayersPanelProps> = ({
                     onChangeBaseLayer={onChangeBaseLayer}
                 />
             </div>
-            <MapCaptureControl
-                onCapture={captureMap}
-                isCapturing={isCapturingMap}
-            />
         </div>
         
         <Separator className="bg-white/15" />

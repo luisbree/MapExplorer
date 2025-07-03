@@ -130,7 +130,7 @@ export default function GeoMapperClient() {
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const printComposerPanelRef = useRef<HTMLDivElement>(null);
 
-  const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
+  const { mapRef, mapElementRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
 
   const { panels, handlePanelMouseDown, togglePanelCollapse, togglePanelMinimize } = useFloatingPanels({
@@ -187,7 +187,7 @@ export default function GeoMapperClient() {
   const layerManagerHook = useLayerManager({
     mapRef,
     isMapReady,
-    drawingSourceRef,
+    drawingSourceRef: useOpenLayersMap().drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
     updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState,
     selectedFeaturesForExtraction: featureInspectionHook.selectedFeatures,
@@ -240,21 +240,21 @@ export default function GeoMapperClient() {
   const {
     isFetchingOSM, selectedOSMCategoryIds, setSelectedOSMCategoryIds, fetchOSMData,
     downloadFormat, setDownloadFormat, isDownloading, handleDownloadOSMLayers,
-  } = useOSMData({ drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
+  } = useOSMData({ drawingSourceRef: useOpenLayersMap().drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
 
   // Orchestration between drawing and feature inspection tools
   const drawingInteractions = useDrawingInteractions({
-    mapRef, isMapReady, drawingSourceRef,
+    mapRef, isMapReady, drawingSourceRef: useOpenLayersMap().drawingSourceRef,
     isInspectModeActive: featureInspectionHook.isInspectModeActive,
     toggleInspectMode: featureInspectionHook.toggleInspectMode,
   });
 
-  const { captureMap, captureMapDataUrl, isCapturing: isMapCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
+  const { captureMapDataUrl } = useMapCapture({ mapRef, activeBaseLayerId });
   const [isRefreshingPrintComposer, setIsRefreshingPrintComposer] = useState(false);
 
   const handleRefreshPrintComposerImage = async () => {
       setIsRefreshingPrintComposer(true);
-      const mapImage = await captureMapDataUrl('jpeg-full');
+      const mapImage = await captureMapDataUrl();
       if (mapImage) {
           setPrintComposerImage(mapImage);
           toast({ description: "Vista del mapa en el compositor actualizada." });
@@ -270,7 +270,7 @@ export default function GeoMapperClient() {
   
   const handleTogglePrintComposer = async () => {
     if (panels.printComposer.isMinimized) {
-        const mapImage = await captureMapDataUrl('jpeg-full');
+        const mapImage = await captureMapDataUrl();
         if (mapImage) {
             setPrintComposerImage(mapImage);
             togglePanelMinimize('printComposer');
@@ -396,10 +396,11 @@ export default function GeoMapperClient() {
             toast({description: `Drax intentó mostrar la tabla de una capa no encontrada: ${action.showTableForLayer}`});
         }
     }
-
-    if (action.captureMap) {
-      captureMap(action.captureMap);
+    
+    if (action.setBaseLayer) {
+      handleChangeBaseLayer(action.setBaseLayer);
     }
+
 
     const shouldZoom = action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4;
     const shouldFindSentinelFootprints = !!action.findSentinel2Footprints;
@@ -433,7 +434,7 @@ export default function GeoMapperClient() {
       toast({ description: `Abriendo Trello en una nueva pestaña...` });
     }
 
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, captureMap, zoomToBoundingBox]);
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, zoomToBoundingBox, handleChangeBaseLayer]);
 
   const handleCreateTrelloCard = useCallback(async (details: { title: string; description: string; listId: string }) => {
     setIsTrelloLoading(true);
@@ -544,8 +545,6 @@ export default function GeoMapperClient() {
             activeBaseLayerId={activeBaseLayerId}
             onChangeBaseLayer={handleChangeBaseLayer}
             onZoomToBoundingBox={zoomToBoundingBox}
-            captureMap={captureMap}
-            isCapturingMap={isMapCapturing}
             onFindSentinel2Footprints={layerManagerHook.findSentinel2FootprintsInCurrentView}
             onClearSentinel2Footprints={layerManagerHook.clearSentinel2FootprintsLayer}
             isFindingSentinelFootprints={layerManagerHook.isFindingSentinelFootprints}

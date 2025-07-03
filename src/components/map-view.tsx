@@ -1,13 +1,14 @@
 
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import { Map as OLMap, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
 import XYZ from 'ol/source/XYZ';
 import {defaults as defaultControls} from 'ol/control';
 import { fromLonLat } from 'ol/proj';
+import type { Layer } from 'ol/layer';
 
 interface MapViewProps {
   setMapInstanceAndElement: (map: OLMap, element: HTMLDivElement) => void;
@@ -15,8 +16,18 @@ interface MapViewProps {
   activeBaseLayerId?: string; 
 }
 
-// Definitions for all potential base layers
-export const ALL_BASE_LAYER_DEFINITIONS = [
+export type Band = 'red' | 'green' | 'blue' | 'none';
+
+type BaseLayerDefinition = {
+  id: string;
+  name: string;
+  band?: Band;
+  parentLayerId?: string;
+  createLayer?: () => TileLayer<XYZ | OSM>;
+}
+
+// Definitions for all potential base layers and views
+export const BASE_LAYER_DEFINITIONS: readonly BaseLayerDefinition[] = [
   {
     id: 'osm-standard',
     name: 'OpenStreetMap',
@@ -51,25 +62,84 @@ export const ALL_BASE_LAYER_DEFINITIONS = [
       properties: { baseLayerId: 'esri-satellite', isBaseLayer: true, name: 'ESRISatelliteBaseLayer' },
     }),
   },
+  {
+    id: 'esri-red',
+    name: 'ESRI - Banda Roja',
+    band: 'red',
+    parentLayerId: 'esri-satellite'
+  },
+  {
+    id: 'esri-green',
+    name: 'ESRI - Banda Verde',
+    band: 'green',
+    parentLayerId: 'esri-satellite'
+  },
+  {
+    id: 'esri-blue',
+    name: 'ESRI - Banda Azul',
+    band: 'blue',
+    parentLayerId: 'esri-satellite'
+  },
 ] as const;
 
-// Definitions for base layers to be shown in the selector
-// Now includes all layers from ALL_BASE_LAYER_DEFINITIONS
-export const BASE_LAYER_DEFINITIONS = [...ALL_BASE_LAYER_DEFINITIONS];
 
+// Function to apply a grayscale filter based on a color band
+const applyBandFilter = (layer: Layer, band: Band) => {
+  const postRenderCallback = (event: any) => {
+    const context = event.context;
+    if (!context) return;
+
+    try {
+      const canvas = context.canvas;
+      const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      for (let i = 0; i < data.length; i += 4) {
+        let grayValue = 0;
+        switch (band) {
+          case 'red': grayValue = data[i]; break;
+          case 'green': grayValue = data[i + 1]; break;
+          case 'blue': grayValue = data[i + 2]; break;
+        }
+        data[i] = grayValue;
+        data[i + 1] = grayValue;
+        data[i + 2] = grayValue;
+      }
+      context.putImageData(imageData, 0, 0);
+    } catch (e) {
+      // This can happen due to CORS issues if crossOrigin is not set correctly on the source
+      // We'll silence it for now as it's a known potential issue with tile servers.
+    }
+  };
+
+  layer.removeEventListener('postrender', layer.get('bandFilterListener'));
+  
+  if (band !== 'none') {
+    layer.on('postrender', postRenderCallback);
+    layer.set('bandFilterListener', postRenderCallback);
+  } else {
+    layer.set('bandFilterListener', null);
+  }
+  
+  // Trigger a re-render
+  layer.getSource()?.refresh();
+};
 
 const MapView: React.FC<MapViewProps> = ({ setMapInstanceAndElement, onMapClick, activeBaseLayerId }) => {
   const mapElementRef = useRef<HTMLDivElement>(null);
   const olMapInstanceRef = useRef<OLMap | null>(null); 
+  const baseLayerRefs = useRef<Record<string, TileLayer<any>>>({});
 
   useEffect(() => {
     if (!mapElementRef.current || olMapInstanceRef.current) { 
       return;
     }
 
-    const initialBaseLayers = ALL_BASE_LAYER_DEFINITIONS.map(def => {
-        const layer = def.createLayer();
+    const initialBaseLayers = BASE_LAYER_DEFINITIONS
+      .filter(def => def.createLayer)
+      .map(def => {
+        const layer = def.createLayer!();
         layer.setVisible(def.id === (activeBaseLayerId || BASE_LAYER_DEFINITIONS[0].id));
+        baseLayerRefs.current[def.id] = layer;
         return layer;
     });
 
@@ -118,15 +188,31 @@ const MapView: React.FC<MapViewProps> = ({ setMapInstanceAndElement, onMapClick,
   }, [onMapClick]); 
 
   useEffect(() => {
-    if (!olMapInstanceRef.current || !activeBaseLayerId) return; 
-    const currentMap = olMapInstanceRef.current;
+    if (!olMapInstanceRef.current || !activeBaseLayerId) return;
 
-    currentMap.getLayers().forEach(layer => {
-        if (layer.get('isBaseLayer')) {
-            layer.setVisible(layer.get('baseLayerId') === activeBaseLayerId);
-        }
+    const selectedDef = BASE_LAYER_DEFINITIONS.find(d => d.id === activeBaseLayerId);
+    if (!selectedDef) return;
+
+    const layerIdToShow = selectedDef.parentLayerId || selectedDef.id;
+
+    // Set visibility for all "real" base layers
+    Object.values(baseLayerRefs.current).forEach(layer => {
+      layer.setVisible(layer.get('baseLayerId') === layerIdToShow);
     });
-  }, [activeBaseLayerId]); 
+    
+    // Find the ESRI layer to apply/remove filters
+    const esriLayer = baseLayerRefs.current['esri-satellite'];
+    if (esriLayer) {
+       if (selectedDef.parentLayerId === 'esri-satellite') {
+         // This is a band view, apply the filter
+         applyBandFilter(esriLayer, selectedDef.band || 'none');
+       } else {
+         // Any other view is selected, remove the filter
+         applyBandFilter(esriLayer, 'none');
+       }
+    }
+
+  }, [activeBaseLayerId]);
 
   return <div ref={mapElementRef} className="w-full h-full bg-gray-200" />;
 };

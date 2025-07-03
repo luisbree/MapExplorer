@@ -10,29 +10,17 @@ interface UseMapCaptureProps {
   activeBaseLayerId: string;
 }
 
-export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps) => {
+export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
   const { toast } = useToast();
   const [isCapturing, setIsCapturing] = useState(false);
 
-  const performCapture = useCallback(async (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue', download: boolean): Promise<string | null> => {
+  const captureMapDataUrl = useCallback(async (): Promise<string | null> => {
     if (!mapRef.current) {
       toast({ description: 'El mapa no está listo para ser capturado.' });
       return null;
     }
 
-    if (outputType !== 'jpeg-full' && activeBaseLayerId !== 'esri-satellite') {
-      toast({
-        variant: 'destructive',
-        title: 'Capa Base Incorrecta',
-        description: 'La captura por bandas de color solo está disponible con la capa base "ESRI Satelital".',
-      });
-      return null;
-    }
-
     setIsCapturing(true);
-    if (download) {
-      toast({ description: 'Iniciando captura del mapa...' });
-    }
 
     const map = mapRef.current;
     
@@ -66,40 +54,9 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
           
           mapContext.setTransform(1, 0, 0, 1, 0, 0);
           
-          if (outputType !== 'jpeg-full') {
-              const imageData = mapContext.getImageData(0, 0, mapCanvas.width, mapCanvas.height);
-              const data = imageData.data;
-              for (let i = 0; i < data.length; i += 4) {
-                  const r = data[i];
-                  const g = data[i+1];
-                  const b = data[i+2];
-                  let grayValue = 0;
-                  
-                  switch (outputType) {
-                      case 'jpeg-red': grayValue = r; break;
-                      case 'jpeg-green': grayValue = g; break;
-                      case 'jpeg-blue': grayValue = b; break;
-                  }
-                  data[i] = grayValue;
-                  data[i+1] = grayValue;
-                  data[i+2] = grayValue;
-              }
-              mapContext.putImageData(imageData, 0, 0);
-          }
-
           const dataUrl = mapCanvas.toDataURL('image/jpeg', 0.9);
-
-          if (download) {
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = `map_capture_${outputType}_${new Date().getTime()}.jpg`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
-            toast({ description: 'Captura de mapa guardada exitosamente.' });
-          }
           resolve(dataUrl);
+
         } catch (error) {
           console.error('Error capturing map:', error);
           toast({ description: `Error al capturar el mapa: ${error instanceof Error ? error.message : String(error)}` });
@@ -111,19 +68,9 @@ export const useMapCapture = ({ mapRef, activeBaseLayerId }: UseMapCaptureProps)
       map.renderSync();
     });
 
-  }, [mapRef, toast, activeBaseLayerId]);
-
-  const captureMap = (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => {
-    performCapture(outputType, true);
-  };
-  
-  const captureMapDataUrl = (outputType: 'jpeg-full' | 'jpeg-red' | 'jpeg-green' | 'jpeg-blue') => {
-    return performCapture(outputType, false);
-  };
-
+  }, [mapRef, toast]);
 
   return {
-    captureMap,
     captureMapDataUrl,
     isCapturing,
   };
