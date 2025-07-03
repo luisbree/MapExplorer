@@ -71,7 +71,7 @@ const DraggablePanel: React.FC<DraggablePanelProps> = ({
   return (
     <div
       ref={panelRef}
-      className={`absolute bg-gray-800/70 text-white shadow-xl rounded-lg border border-gray-700/80 flex flex-col overflow-auto print:hidden ${className}`}
+      className={`absolute bg-gray-800/80 text-white shadow-xl rounded-lg border border-gray-700/80 flex flex-col overflow-auto print:hidden ${className}`}
       style={{
         ...style, 
         width: currentSize.width,
