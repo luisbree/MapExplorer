@@ -261,39 +261,64 @@ export default function GeoMapperClient() {
 
   const { captureMapDataUrl, isCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
 
-  const handleRefreshPrintComposerImage = useCallback(async () => {
-    if (panels.printComposer.isMinimized || isCapturing) return;
+  // Ref to hold the latest state and functions for the map moveend event handler
+  // This avoids stale closures
+  const printUpdateRef = useRef({
+      isMinimized: panels.printComposer.isMinimized,
+      isCapturing: isCapturing,
+      captureMapDataUrl: captureMapDataUrl,
+      setPrintLayoutData: setPrintLayoutData,
+      toast: toast
+  });
   
-    const layoutData = await captureMapDataUrl();
-    if (layoutData) {
-        setPrintLayoutData(layoutData);
-    } else {
-        toast({
-            title: "Error de Captura",
-            description: "No se pudo actualizar la imagen del mapa.",
-            variant: "destructive",
-        });
-    }
-  }, [panels.printComposer.isMinimized, isCapturing, captureMapDataUrl, toast]);
-  
-  // Effect to auto-refresh print composer on map move
+  // Keep the ref updated with the latest values on every render
+  useEffect(() => {
+      printUpdateRef.current = {
+          isMinimized: panels.printComposer.isMinimized,
+          isCapturing: isCapturing,
+          captureMapDataUrl: captureMapDataUrl,
+          setPrintLayoutData: setPrintLayoutData,
+          toast: toast,
+      };
+  }); // No dependency array ensures this runs on every render
+
+  // Effect to auto-refresh print composer on map move.
+  // The listener is attached once and uses a ref to get the latest state.
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
-  
+
     const view = mapRef.current.getView();
     
-    const handler = () => {
-        if (!panels.printComposer.isMinimized) {
-            handleRefreshPrintComposerImage();
+    const handler = async () => {
+        // Always use the latest values from the ref inside the handler
+        const { isMinimized, isCapturing, captureMapDataUrl, setPrintLayoutData, toast } = printUpdateRef.current;
+        
+        if (isMinimized || isCapturing) {
+            return;
+        }
+
+        const layoutData = await captureMapDataUrl();
+        if (layoutData) {
+            setPrintLayoutData(layoutData);
+        } else {
+            toast({
+                title: "Error de Captura",
+                description: "No se pudo actualizar la imagen del mapa.",
+                variant: "destructive",
+            });
         }
     };
     
     view.on('moveend', handler);
-  
+
     return () => {
-      view.un('moveend', handler);
+      // Make sure handler is not undefined before trying to remove it
+      if (view && handler) {
+        view.un('moveend', handler);
+      }
     };
-  }, [isMapReady, mapRef, panels.printComposer.isMinimized, handleRefreshPrintComposerImage]);
+  }, [isMapReady, mapRef]); // This effect should only run once when the map is ready
+
 
   const handleTogglePrintComposer = async () => {
     if (panels.printComposer.isMinimized) {
@@ -737,3 +762,5 @@ export default function GeoMapperClient() {
     </div>
   );
 }
+
+    
