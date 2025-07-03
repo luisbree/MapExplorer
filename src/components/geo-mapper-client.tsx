@@ -261,63 +261,50 @@ export default function GeoMapperClient() {
 
   const { captureMapDataUrl, isCapturing } = useMapCapture({ mapRef, activeBaseLayerId });
 
-  // Ref to hold the latest state and functions for the map moveend event handler
-  // This avoids stale closures
-  const printUpdateRef = useRef({
-      isMinimized: panels.printComposer.isMinimized,
-      isCapturing: isCapturing,
-      captureMapDataUrl: captureMapDataUrl,
-      setPrintLayoutData: setPrintLayoutData,
-      toast: toast
-  });
-  
-  // Keep the ref updated with the latest values on every render
-  useEffect(() => {
-      printUpdateRef.current = {
-          isMinimized: panels.printComposer.isMinimized,
-          isCapturing: isCapturing,
-          captureMapDataUrl: captureMapDataUrl,
-          setPrintLayoutData: setPrintLayoutData,
-          toast: toast,
-      };
-  }); // No dependency array ensures this runs on every render
+  // Ref to hold the latest handler function to avoid stale closures in the event listener.
+  const moveEndHandlerRef = useRef<() => void>();
 
-  // Effect to auto-refresh print composer on map move.
-  // The listener is attached once and uses a ref to get the latest state.
+  // This effect updates the handler function in the ref on every render.
+  // The handler function itself is recreated on each render, so it always has the latest state.
+  useEffect(() => {
+    moveEndHandlerRef.current = async () => {
+      // Directly access the latest state, no need to pass them to the ref.
+      if (panels.printComposer.isMinimized || isCapturing) {
+        return;
+      }
+
+      const layoutData = await captureMapDataUrl();
+      if (layoutData) {
+        setPrintLayoutData(layoutData);
+      } else {
+        toast({
+          title: "Error de Captura",
+          description: "No se pudo actualizar la imagen del mapa.",
+          variant: "destructive",
+        });
+      }
+    };
+  }); // No dependency array, so it runs on every render.
+
+  // This effect sets up and cleans up the event listener once.
   useEffect(() => {
     if (!isMapReady || !mapRef.current) return;
 
     const view = mapRef.current.getView();
     
-    const handler = async () => {
-        // Always use the latest values from the ref inside the handler
-        const { isMinimized, isCapturing, captureMapDataUrl, setPrintLayoutData, toast } = printUpdateRef.current;
-        
-        if (isMinimized || isCapturing) {
-            return;
-        }
-
-        const layoutData = await captureMapDataUrl();
-        if (layoutData) {
-            setPrintLayoutData(layoutData);
-        } else {
-            toast({
-                title: "Error de Captura",
-                description: "No se pudo actualizar la imagen del mapa.",
-                variant: "destructive",
-            });
-        }
+    // The event listener is a stable function that calls the latest handler from the ref.
+    const eventListener = () => {
+      moveEndHandlerRef.current?.();
     };
-    
-    view.on('moveend', handler);
+
+    view.on('moveend', eventListener);
 
     return () => {
-      // Make sure handler is not undefined before trying to remove it
-      if (view && handler) {
-        view.un('moveend', handler);
+      if (view) { // Check if view exists on cleanup
+        view.un('moveend', eventListener);
       }
     };
-  }, [isMapReady, mapRef]); // This effect should only run once when the map is ready
+  }, [isMapReady, mapRef]); // Dependencies ensure this runs only once.
 
 
   const handleTogglePrintComposer = async () => {
