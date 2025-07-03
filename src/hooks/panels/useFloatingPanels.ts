@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 
-type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello' | 'wfsLibrary';
+type PanelId = 'layers' | 'tools' | 'legend' | 'attributes' | 'ai' | 'trello' | 'wfsLibrary' | 'help';
 
 interface PanelState {
   isMinimized: boolean;
@@ -20,6 +20,7 @@ interface UseFloatingPanelsProps {
   aiPanelRef: React.RefObject<HTMLDivElement>;
   trelloPanelRef: React.RefObject<HTMLDivElement>;
   wfsLibraryPanelRef: React.RefObject<HTMLDivElement>;
+  helpPanelRef: React.RefObject<HTMLDivElement>;
   mapAreaRef: React.RefObject<HTMLDivElement>;
   panelWidth: number;
   panelPadding: number;
@@ -35,6 +36,7 @@ export const useFloatingPanels = ({
   aiPanelRef,
   trelloPanelRef,
   wfsLibraryPanelRef,
+  helpPanelRef,
   mapAreaRef,
   panelWidth,
   panelPadding
@@ -48,7 +50,8 @@ export const useFloatingPanels = ({
     ai: aiPanelRef,
     trello: trelloPanelRef,
     wfsLibrary: wfsLibraryPanelRef,
-  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef, wfsLibraryPanelRef]);
+    help: helpPanelRef,
+  }), [attributesPanelRef, aiPanelRef, layersPanelRef, legendPanelRef, toolsPanelRef, trelloPanelRef, wfsLibraryPanelRef, helpPanelRef]);
   
   const [panels, setPanels] = useState<Record<PanelId, PanelState>>(() => {
     const initialX = panelPadding;
@@ -65,6 +68,7 @@ export const useFloatingPanels = ({
       trello: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 4, y: initialY + cascadeOffsetY * 4 }, zIndex: initialZIndex },
       attributes: { isMinimized: true, isCollapsed: false, position: { x: initialX + cascadeOffsetX * 5, y: initialY + cascadeOffsetY * 5 }, zIndex: initialZIndex },
       ai: { isMinimized: false, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex + 2 }, // Positioned dynamically
+      help: { isMinimized: true, isCollapsed: false, position: { x: -9999, y: panelPadding }, zIndex: initialZIndex }, // Positioned dynamically
     };
   });
 
@@ -74,16 +78,22 @@ export const useFloatingPanels = ({
   const positionInitialized = useRef(false);
   
   useEffect(() => {
-    // This effect runs once to set the initial position of the AI panel on the right side.
+    // This effect runs once to set the initial position of the AI and Help panels on the right side.
     if (mapAreaRef.current && !positionInitialized.current) {
         const mapWidth = mapAreaRef.current.clientWidth;
-        const rightX = mapWidth - panelWidth - panelPadding;
+        const helpPanelWidth = 400; // Use the specific width of the help panel
+        const aiPanelX = mapWidth - panelWidth - panelPadding;
+        const helpPanelX = mapWidth - panelWidth - helpPanelWidth - (panelPadding * 2);
 
         setPanels(prev => ({
             ...prev,
             ai: {
                 ...prev.ai,
-                position: { x: rightX, y: prev.ai.position.y }
+                position: { x: aiPanelX, y: prev.ai.position.y }
+            },
+            help: {
+                ...prev.help,
+                position: { x: helpPanelX, y: prev.help.position.y }
             }
         }));
         positionInitialized.current = true;
@@ -189,3 +199,5 @@ export const useFloatingPanels = ({
     togglePanelMinimize,
   };
 };
+
+    

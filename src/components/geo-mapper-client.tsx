@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -23,6 +23,7 @@ import LegendPanel from '@/components/panels/LegendPanel';
 import AIPanel from '@/components/panels/AIPanel';
 import TrelloPanel from '@/components/panels/TrelloPanel';
 import WfsLibraryPanel from '@/components/panels/WfsLibraryPanel';
+import HelpPanel from '@/components/panels/HelpPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
@@ -111,6 +112,7 @@ const panelToggleConfigs = [
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
   { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
+  { id: 'help', IconComponent: LifeBuoy, name: "Ayuda" },
 ];
 
 
@@ -123,6 +125,7 @@ export default function GeoMapperClient() {
   const aiPanelRef = useRef<HTMLDivElement>(null);
   const trelloPanelRef = useRef<HTMLDivElement>(null);
   const wfsLibraryPanelRef = useRef<HTMLDivElement>(null);
+  const helpPanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, drawingSourceRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
   const { toast } = useToast();
@@ -135,6 +138,7 @@ export default function GeoMapperClient() {
     aiPanelRef,
     trelloPanelRef,
     wfsLibraryPanelRef,
+    helpPanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -623,9 +627,22 @@ export default function GeoMapperClient() {
             onAddLayer={wfsLibraryHook.addWfsLayerToMap}
           />
         )}
+
+        {panels.help && !panels.help.isMinimized && (
+          <HelpPanel
+            panelRef={helpPanelRef}
+            isCollapsed={panels.help.isCollapsed}
+            onToggleCollapse={() => togglePanelCollapse('help')}
+            onClosePanel={() => togglePanelMinimize('help')}
+            onMouseDownHeader={(e) => handlePanelMouseDown(e, 'help')}
+            style={{ top: `${panels.help.position.y}px`, left: `${panels.help.position.x}px`, zIndex: panels.help.zIndex }}
+          />
+        )}
       </div>
     </div>
   );
 }
+
+    
 
     
