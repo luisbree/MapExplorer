@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Library, Layers, Plus } from 'lucide-react';
+import { Loader2, Library, Layers, Plus, X as ClearIcon } from 'lucide-react';
 import type { WfsServer, WfsDiscoveredLayer } from '@/hooks/wfs-library/useWfsLibrary';
 
 interface WfsLibraryPanelProps {
@@ -54,6 +54,10 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
     setCustomUrl(''); // Clear custom URL when a predefined server is selected
   };
 
+  const handleClearCustomUrl = () => {
+    setCustomUrl('');
+  };
+
   const truncateTitle = (title: string, maxLength: number = 40) => {
     if (title.length > maxLength) {
       return title.substring(0, maxLength) + "...";
@@ -95,16 +99,27 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
 
         <div className="space-y-1">
           <Label htmlFor="custom-wfs-url" className="text-xs font-medium text-white/90">URL de Servidor Personalizado</Label>
-          <Input
-            id="custom-wfs-url"
-            placeholder="https://servidor.com/geoserver"
-            value={customUrl}
-            onChange={(e) => {
-              setCustomUrl(e.target.value);
-              setSelectedServerUrl(''); // Clear selection when typing
-            }}
-            className="text-xs h-8 border-white/30 bg-black/20 text-white/90 focus:ring-primary"
-          />
+          <div className="relative flex items-center">
+            <Input
+              id="custom-wfs-url"
+              placeholder="https://servidor.com/geoserver"
+              value={customUrl}
+              onChange={(e) => {
+                setCustomUrl(e.target.value);
+                setSelectedServerUrl(''); // Clear selection when typing
+              }}
+              className="text-xs h-8 border-white/30 bg-black/20 text-white/90 focus:ring-primary pr-8"
+            />
+            {customUrl && (
+              <button
+                onClick={handleClearCustomUrl}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-400/80 hover:text-white"
+                aria-label="Limpiar URL"
+              >
+                <ClearIcon className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <Button onClick={handleFetch} disabled={isLoading || (!customUrl.trim() && !selectedServerUrl)} className="w-full h-9">
