@@ -275,11 +275,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 
 
   const handlePrint = () => {
-    // Use a small timeout to ensure the dropdown menu has closed and is not part
-    // of the captured document, which can interfere with the print layout.
-    setTimeout(() => {
-        window.print();
-    }, 100);
+    window.print();
   };
   
   const handleDownloadJpeg = async () => {
@@ -395,7 +391,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
       </DraggablePanel>
 
       {/* Hidden, full-size div for printing and exporting */}
-      <div id="print-layout-container" className="fixed top-0 left-[-9999px] z-[-1] print:visible print:static print:w-auto print:h-auto print:z-[9999] bg-white">
+      <div id="print-layout-container" className="fixed top-0 left-[-9999px] z-[-1] bg-white">
         <div ref={printLayoutRef} className="w-[29.7cm] h-[21cm] bg-white">
           <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
         </div>
