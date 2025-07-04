@@ -275,7 +275,12 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 
 
   const handlePrint = () => {
-    window.print();
+    // A small delay is necessary to allow the dropdown menu to close
+    // before the browser's print dialog is triggered. This prevents
+    // a race condition where the print dialog opens too quickly.
+    setTimeout(() => {
+        window.print();
+    }, 100);
   };
   
   const handleDownloadJpeg = async () => {
@@ -401,3 +406,5 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 };
 
 export default PrintComposerPanel;
+
+    
