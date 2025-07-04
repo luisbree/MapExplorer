@@ -69,25 +69,24 @@ const Graticule: React.FC<GraticuleProps> = ({ extent }) => {
                 ))}
             </g>
 
-            <g fill="#333" fontSize="8px" fontFamily="Arial, sans-serif">
+            <g fill="#333" fontSize="8px" className="font-headline font-medium">
+                {/* Top labels (Longitude) */}
                 {lonLines.map(lon => (
                     <text key={`lon-top-${lon}`} x={`${lonToX(lon)}%`} y="-5" textAnchor="middle">
-                        {formatCoord(lon)}
+                        {formatCoord(lon)}°
                     </text>
                 ))}
-                {lonLines.map(lon => (
-                    <text key={`lon-bottom-${lon}`} x={`${lonToX(lon)}%`} y="102%" dy="0.5em" textAnchor="middle">
-                        {formatCoord(lon)}
-                    </text>
-                ))}
+                
+                {/* Left labels (Latitude), rotated */}
                 {latLines.map(lat => (
-                    <text key={`lat-left-${lat}`} x="-5" y={`${latToY(lat)}%`} textAnchor="end" dominantBaseline="middle">
-                        {formatCoord(lat)}
-                    </text>
-                ))}
-                {latLines.map(lat => (
-                    <text key={`lat-right-${lat}`} x="101%" y={`${latToY(lat)}%`} textAnchor="start" dominantBaseline="middle">
-                        {formatCoord(lat)}
+                    <text 
+                        key={`lat-left-${lat}`}
+                        x="-12" // Move text slightly left of the map edge
+                        y={`${latToY(lat)}%`} // Vertical center for the text block
+                        textAnchor="middle" // Center the vertical text line on the y-coordinate
+                        style={{ writingMode: 'vertical-rl', textOrientation: 'mixed' }} // CSS for vertical text
+                    >
+                        {formatCoord(lat)}°
                     </text>
                 ))}
             </g>
@@ -97,74 +96,10 @@ const Graticule: React.FC<GraticuleProps> = ({ extent }) => {
 
 
 // Graphical components for the layout
-const DeaLogo = () => (
-    <svg width="220" height="70" viewBox="0 0 220 70" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink">
-      {/* DEA Text */}
-      <text x="95" y="55" fontFamily="Arial, sans-serif" fontSize="50" fill="#000" fontWeight="300">DEA</text>
-      
-      {/* Isologo */}
-      <g transform="translate(45, 35)">
-        <defs>
-          {/* Path for the curved text */}
-          <path id="dea-logo-text-path"
-                d="M -32,0 A 32,32 0 1,1 32,0 A 32,32 0 1,1 -32,0" 
-          />
-          {/* Clipping path for the pattern */}
-          <clipPath id="dea-logo-clip">
-            <circle cx="0" cy="0" r="27" />
-          </clipPath>
-        </defs>
-        
-        {/* Curved text */}
-        <text fontFamily="Arial, sans-serif" fontSize="6.8" fill="#000" letterSpacing="0.9" fontWeight="500">
-          <textPath href="#dea-logo-text-path" startOffset="76%" textAnchor="middle">
-            DEPARTAMENTO DE ESTUDIOS AMBIENTALES
-          </textPath>
-        </text>
-
-        {/* The geometric pattern, clipped */}
-        <g clipPath="url(#dea-logo-clip)" stroke="#000" strokeWidth="1.2" fill="none">
-          <circle cx="0" cy="-19" r="19" />
-          <circle cx="0" cy="19" r="19" />
-          <circle cx="-19" cy="0" r="19" />
-          <circle cx="19" cy="0" r="19" />
-          <circle cx="-13.4" cy="-13.4" r="19" />
-          <circle cx="13.4" cy="-13.4" r="19" />
-          <circle cx="-13.4" cy="13.4" r="19" />
-          <circle cx="13.4" cy="13.4" r="19" />
-        </g>
-
-        {/* Central black circle */}
-        <circle cx="0" cy="0" r="10" fill="#000" stroke="none" />
-        
-        {/* Rings drawn on top of the clipped pattern */}
-        <g stroke="#000" strokeWidth="1.2" fill="none">
-          <circle cx="0" cy="0" r="15" />
-          <circle cx="0" cy="0" r="21" />
-          <circle cx="0" cy="0" r="27" />
-        </g>
-      </g>
-    </svg>
-);
-
-
 const NorthArrow = () => (
     <svg width="40" height="60" viewBox="0 0 40 60" xmlns="http://www.w3.org/2000/svg">
         <polygon points="20,0 30,35 20,30 10,35" fill="#333"/>
         <text x="16" y="12" fontFamily="Arial, sans-serif" fontSize="12" fontWeight="bold" fill="#333">N</text>
-    </svg>
-);
-
-const ArgentinaMap = () => (
-    <svg width="60" height="120" viewBox="0 0 150 290" xmlns="http://www.w3.org/2000/svg" stroke="#555" strokeWidth="2" fill="#E0E0E0">
-        <path d="M83.1,1.5 C79,1.5 75.3,3.5 72.8,4.7 C62,10 50,23 45,30 C38,40 35,50 35,65 C35,80 43,90 43,105 C43,115 37,128 35,135 C30,150 28,160 28,175 C28,190 33,200 33,215 C33,230 25,240 25,255 C25,270 30,280 40,285 C50,290 60,288 70,285 C80,282 90,275 100,265 C110,255 115,245 120,230 C125,215 128,200 128,185 C128,170 125,155 120,140 C115,125 110,110 105,95 C100,80 100,65 102,50 C104,35 105,20 95,10 C90,5 87.1,1.5 83.1,1.5Z"/>
-    </svg>
-);
-
-const BuenosAiresMap = () => (
-    <svg width="100" height="100" viewBox="0 0 100 90" xmlns="http://www.w3.org/2000/svg">
-        <path d="M10,80 L5,70 L15,50 L20,30 L35,15 L55,5 L75,10 L90,25 L95,45 L90,65 L70,80 L40,85 Z" fill="#009688" stroke="#333" strokeWidth="1"/>
-        <rect x="75" y="22" width="20" height="15" fill="none" stroke="red" strokeWidth="1.5"/>
     </svg>
 );
 
@@ -219,11 +154,8 @@ const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExte
             )}
           </div>
           {/* Right Gutter */}
-          <div className="w-32 flex-shrink-0 flex flex-col justify-between items-center p-2">
+          <div className="w-32 flex-shrink-0 flex flex-col justify-start items-center p-2">
             <NorthArrow />
-            <div className="w-full">
-                <DeaLogo />
-            </div>
           </div>
         </div>
         {/* Footer Area */}
@@ -235,10 +167,7 @@ const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExte
           </div>
           {/* Right Footer */}
           <div className="w-80 flex-shrink-0 flex flex-col items-end justify-between">
-            <div className="flex gap-2">
-              <div className="border border-gray-400 p-1"><ArgentinaMap/></div>
-              <div className="border border-gray-400 p-1"><BuenosAiresMap/></div>
-            </div>
+            <div /> {/* Top spacer for justify-between */}
             <div className="self-center">
               <ScaleBar />
             </div>
@@ -406,5 +335,3 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 };
 
 export default PrintComposerPanel;
-
-    
