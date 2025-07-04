@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState } from 'react';
@@ -272,7 +271,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
         showCloseButton={true}
         style={style}
         zIndex={style?.zIndex as number | undefined}
-        initialSize={{ width: 500, height: 650 }}
+        initialSize={{ width: 550, height: 650 }}
         minSize={{ width: 400, height: 400 }}
       >
         <div className="flex flex-col h-full">
@@ -321,5 +320,3 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 };
 
 export default PrintComposerPanel;
-
-    
