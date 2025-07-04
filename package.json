@@ -42,6 +42,7 @@
     "date-fns": "^3.6.0",
     "firebase": "^11.9.1",
     "genkit": "1.1.0",
+    "html-to-image": "^1.11.11",
     "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
     "nanoid": "^5.0.7",

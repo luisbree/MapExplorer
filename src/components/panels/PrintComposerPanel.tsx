@@ -1,12 +1,28 @@
+
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import DraggablePanel from './DraggablePanel';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Printer, Loader2 } from 'lucide-react';
+import { Printer, Loader2, Download } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Extent } from 'ol/extent';
+import * as htmlToImage from 'html-to-image';
+import { useToast } from '@/hooks/use-toast';
 
 // Helper to format degree labels
 const formatCoord = (coord: number): string => {
@@ -252,10 +268,48 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 }) => {
   const [title, setTitle] = useState("TÍTULO DEL MAPA ENCODE SANS BOLD 16PT MAYÚSCULA");
   const [subtitle, setSubtitle] = useState("Subtítulo del mapa - ENCODE SANS Medium 14pt Mayúscula - minúscula");
+  const [dpi, setDpi] = useState(150);
+  const [isExporting, setIsExporting] = useState(false);
+  const { toast } = useToast();
+  const printLayoutRef = useRef<HTMLDivElement>(null);
+
 
   const handlePrint = () => {
     window.print();
   };
+  
+  const handleDownloadJpeg = async () => {
+    if (!printLayoutRef.current) {
+        toast({ description: "El layout de impresión no está listo.", variant: "destructive" });
+        return;
+    }
+    setIsExporting(true);
+    toast({ description: `Generando JPEG a ${dpi} DPI... Esto puede tardar unos segundos.` });
+
+    try {
+        const dataUrl = await htmlToImage.toJpeg(printLayoutRef.current, {
+            quality: 0.98,
+            pixelRatio: dpi / 96, // Standard screen DPI is 96.
+            backgroundColor: '#ffffff',
+            // Increase canvas size to improve quality for higher DPI
+            canvasWidth: printLayoutRef.current.offsetWidth * (dpi / 96),
+            canvasHeight: printLayoutRef.current.offsetHeight * (dpi / 96),
+        });
+
+        const link = document.createElement('a');
+        link.download = `${title.replace(/ /g, '_')}_${dpi}dpi.jpeg`;
+        link.href = dataUrl;
+        link.click();
+        link.remove();
+        toast({ description: "Descarga de JPEG iniciada." });
+    } catch (error) {
+        console.error('Error al generar JPEG:', error);
+        toast({ description: "Error al generar el JPEG.", variant: "destructive" });
+    } finally {
+        setIsExporting(false);
+    }
+  };
+
 
   return (
     <>
@@ -284,11 +338,38 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                     <Label htmlFor="map-subtitle-input" className="text-xs text-white">Subtítulo</Label>
                     <Input id="map-subtitle-input" value={subtitle} onChange={(e) => setSubtitle(e.target.value)} className="h-8 text-sm bg-black/20" />
                 </div>
-                <div className="flex gap-2">
-                    <Button onClick={handlePrint} className="w-full h-9 bg-primary hover:bg-primary/90">
-                        <Printer className="mr-2 h-4 w-4" />
-                        Imprimir / PDF
-                    </Button>
+                 <div className="flex items-end gap-2 pt-1">
+                    <div>
+                        <Label htmlFor="print-dpi" className="text-xs text-white/90">DPI (JPEG)</Label>
+                        <Select value={String(dpi)} onValueChange={(val) => setDpi(Number(val))}>
+                            <SelectTrigger id="print-dpi" className="h-9 w-[150px] text-sm bg-black/20">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-gray-700 text-white border-gray-600">
+                                <SelectItem value="96" className="text-xs">96 (Borrador)</SelectItem>
+                                <SelectItem value="150" className="text-xs">150 (Estándar)</SelectItem>
+                                <SelectItem value="300" className="text-xs">300 (Alta Calidad)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button className="flex-grow h-9 bg-primary hover:bg-primary/90" disabled={isExporting}>
+                                {isExporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
+                                Imprimir / Exportar
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-gray-700 text-white border-gray-600 w-56">
+                            <DropdownMenuItem onSelect={handlePrint} className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer">
+                                <Printer className="mr-2 h-3.5 w-3.5" />
+                                Imprimir / Guardar como PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={handleDownloadJpeg} className="text-xs hover:bg-gray-600 focus:bg-gray-600 cursor-pointer">
+                                <Download className="mr-2 h-3.5 w-3.5" />
+                                Descargar como JPEG
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
             
@@ -311,7 +392,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 
       {/* Hidden, full-size div for printing */}
       <div id="print-layout-container" className="fixed top-0 left-0 w-screen h-screen z-[-1] invisible print:visible print:z-[9999] bg-white">
-        <div className="w-[29.7cm] h-[21cm]">
+        <div ref={printLayoutRef} className="w-[29.7cm] h-[21cm] bg-white">
           <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
         </div>
       </div>
