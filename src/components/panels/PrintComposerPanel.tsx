@@ -275,7 +275,11 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
 
 
   const handlePrint = () => {
-    window.print();
+    // Use a small timeout to ensure the dropdown menu has closed and is not part
+    // of the captured document, which can interfere with the print layout.
+    setTimeout(() => {
+        window.print();
+    }, 100);
   };
   
   const handleDownloadJpeg = async () => {
