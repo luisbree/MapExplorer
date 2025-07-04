@@ -390,8 +390,8 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
         </div>
       </DraggablePanel>
 
-      {/* Hidden, full-size div for printing */}
-      <div id="print-layout-container" className="fixed top-0 left-0 w-screen h-screen z-[-1] invisible print:visible print:z-[9999] bg-white">
+      {/* Hidden, full-size div for printing and exporting */}
+      <div id="print-layout-container" className="fixed top-0 left-[-9999px] z-[-1] print:visible print:static print:w-auto print:h-auto print:z-[9999] bg-white">
         <div ref={printLayoutRef} className="w-[29.7cm] h-[21cm] bg-white">
           <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
         </div>
