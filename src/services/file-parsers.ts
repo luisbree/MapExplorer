@@ -42,7 +42,7 @@ export const handleFileUpload = async ({
     selectedFile,
     selectedMultipleFiles,
     onAddLayer,
-    toast
+    toast,
 }: FileUploadParams): Promise<void> => {
 
     const geojsonFormat = new GeoJSON({ featureProjection: 'EPSG:3857' });
@@ -58,7 +58,7 @@ export const handleFileUpload = async ({
                 try {
                     const content = e.target?.result;
                     if (!content) {
-                        return reject(new Error("File content is empty."));
+                        return reject(new Error("El contenido del archivo está vacío."));
                     }
 
                     let features;
@@ -72,7 +72,6 @@ export const handleFileUpload = async ({
                             break;
                         case 'kmz': {
                             const zip = await JSZip.loadAsync(content as ArrayBuffer);
-                            // Find the first .kml file in the archive. Often it's doc.kml, but not always.
                             const kmlFile = Object.values(zip.files).find(
                                 (file) => getFileExtension(file.name) === 'kml' && !file.dir
                             );
@@ -85,12 +84,12 @@ export const handleFileUpload = async ({
                             features = kmlFormat.readFeatures(kmlContent, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' });
                             break;
                         }
-                        case 'zip':
+                        case 'zip': // This now handles both user-provided zips and our on-the-fly created ones
                             const geojsonData = await shp(content as ArrayBuffer);
                             features = geojsonFormat.readFeatures(geojsonData);
                             break;
                         default:
-                            return reject(new Error(`Unsupported file type: .${fileExtension}`));
+                            return reject(new Error(`Tipo de archivo no soportado: .${fileExtension}`));
                     }
                     
                     if (features && features.length > 0) {
@@ -106,9 +105,9 @@ export const handleFileUpload = async ({
                 }
             };
 
-            reader.onerror = (err) => reject(new Error(`FileReader error: ${err}`));
+            reader.onerror = (err) => reject(new Error(`Error de FileReader: ${err}`));
 
-            if (fileExtension === 'zip' || fileExtension === 'kmz') {
+            if (['zip', 'kmz'].includes(fileExtension)) {
                 reader.readAsArrayBuffer(file);
             } else {
                 reader.readAsText(file);
@@ -116,12 +115,12 @@ export const handleFileUpload = async ({
         });
     };
 
-    if (selectedFile) {
+    if (selectedFile) { // Single file selected
         const fileExtension = getFileExtension(selectedFile.name);
-        if (['shp', 'dbf', 'shx', 'prj'].includes(fileExtension)) {
+        if (['shp', 'dbf', 'shx', 'prj', 'cpg'].includes(fileExtension)) {
             toast({
                 title: "Shapefile Incompleto",
-                description: "Para un Shapefile, suba un .zip o seleccione todos sus archivos componentes a la vez.",
+                description: "Para cargar un Shapefile, debe seleccionar todos sus archivos (.shp, .dbf, .shx, etc.) juntos, o subir un único archivo .zip.",
                 variant: 'destructive',
             });
             return;
@@ -133,33 +132,55 @@ export const handleFileUpload = async ({
             console.error("Error processing file:", error);
             toast({ description: `Error al procesar ${selectedFile.name}: ${error.message}`, variant: 'destructive' });
         }
-    } else if (selectedMultipleFiles) {
-        // Handle Shapefile components by zipping them on the fly
-        const files = Array.from(selectedMultipleFiles);
-        const shpFile = files.find(f => getFileExtension(f.name) === 'shp');
-        const dbfFile = files.find(f => getFileExtension(f.name) === 'dbf');
+    } else if (selectedMultipleFiles) { // Multiple files selected
+        let filesToProcess = Array.from(selectedMultipleFiles);
+        const shpFile = filesToProcess.find(f => getFileExtension(f.name) === 'shp');
 
-        if (shpFile && dbfFile) {
-            const zip = new JSZip();
-            files.forEach(file => zip.file(file.name, file));
-            const zipBlob = await zip.generateAsync({ type: 'blob' });
-            // Use a specific name for the created zip to identify it in processFile
-            const zipFile = new File([zipBlob], 'shapefile-components.zip');
+        // Handle shapefile group if present
+        if (shpFile) {
+            const shpBaseName = shpFile.name.substring(0, shpFile.name.lastIndexOf('.'));
+            const allFileNames = filesToProcess.map(f => f.name);
+            const requiredDbf = `${shpBaseName}.dbf`;
+            const requiredShx = `${shpBaseName}.shx`;
 
-            try {
-                await processFile(zipFile);
-            } catch (error: any) {
-                console.error("Error processing shapefile components:", error);
-                toast({ description: `Error al procesar shapefile: ${error.message}`, variant: 'destructive' });
+            if (!allFileNames.includes(requiredDbf)) {
+                toast({ description: `Para el shapefile, falta el archivo requerido: ${requiredDbf}`, variant: 'destructive' });
+                return;
             }
-        } else {
-             for (const file of files) {
-                try {
-                    await processFile(file);
-                } catch (error: any) {
-                    console.error(`Error processing file ${file.name}:`, error);
-                    toast({ description: `Error al procesar ${file.name}: ${error.message}`, variant: 'destructive' });
-                }
+            if (!allFileNames.includes(requiredShx)) {
+                toast({ description: `Para el shapefile, falta el archivo requerido: ${requiredShx}`, variant: 'destructive' });
+                return;
+            }
+
+            // Group all files belonging to the shapefile by basename
+            const shapefileParts = filesToProcess.filter(f => f.name.startsWith(shpBaseName));
+            
+            const zip = new JSZip();
+            shapefileParts.forEach(part => zip.file(part.name, part));
+            
+            try {
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const zipFile = new File([zipBlob], `${shpBaseName}.zip`);
+                await processFile(zipFile);
+                
+                // Exclude shapefile parts from further processing
+                const shapefilePartNames = shapefileParts.map(p => p.name);
+                filesToProcess = filesToProcess.filter(f => !shapefilePartNames.includes(f.name));
+
+            } catch (err: any) {
+                 console.error("Error processing shapefile components:", err);
+                 toast({ description: `Error al procesar el Shapefile: ${err.message}`, variant: 'destructive' });
+                 return; // Stop if shapefile processing fails
+            }
+        }
+        
+        // Process any remaining files (e.g., KMLs, GeoJSONs selected alongside a shapefile)
+        for (const file of filesToProcess) {
+            try {
+                await processFile(file);
+            } catch (error: any) {
+                console.error(`Error processing file ${file.name}:`, error);
+                toast({ description: `Error al procesar ${file.name}: ${error.message}`, variant: 'destructive' });
             }
         }
     }

@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef } from 'react';
@@ -33,7 +32,6 @@ const FileUploadControl: React.FC<FileUploadControlProps> = ({
 
     setIsLoading(true);
     const files = event.target.files;
-    // let success = false; // success variable not used, can be removed
 
     if (files.length > 1) {
        await processUploadedFiles({ selectedFile: null, selectedMultipleFiles: files, onAddLayer, toast, uniqueIdPrefix });
@@ -59,7 +57,7 @@ const FileUploadControl: React.FC<FileUploadControlProps> = ({
               type="file"
               multiple
               onChange={handleFilesSelected}
-              accept=".kml,.kmz,.geojson,.json,.zip,.shp,.dbf"
+              accept=".kml,.kmz,.geojson,.json,.zip,.shp,.dbf,.shx,.prj,.cpg"
               className="hidden"
               disabled={isLoading}
             />
