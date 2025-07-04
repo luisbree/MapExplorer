@@ -34,7 +34,7 @@ import { useDrawingInteractions } from '@/hooks/drawing-tools/useDrawingInteract
 import { useOSMData } from '@/hooks/osm-integration/useOSMData';
 import { useGeoServerLayers } from '@/hooks/geoserver-connection/useGeoServerLayers';
 import { useFloatingPanels } from '@/hooks/panels/useFloatingPanels';
-import { useMapCapture } from '@/hooks/map-tools/useMapCapture';
+import { useMapCapture, type MapCaptureData } from '@/hooks/map-tools/useMapCapture';
 import { useWfsLibrary, PREDEFINED_WFS_SERVERS } from '@/hooks/wfs-library/useWfsLibrary';
 import { useToast } from "@/hooks/use-toast";
 
@@ -181,7 +181,7 @@ export default function GeoMapperClient() {
     { role: 'assistant', content: "¡Buenas! Soy Drax, tu asistente de mapas. Pedime que cargue una capa, que la saque o que le haga zoom." }
   ]);
   const [isTrelloLoading, setIsTrelloLoading] = useState(false);
-  const [printLayoutData, setPrintLayoutData] = useState<{ image: string; extent: Extent; } | null>(null);
+  const [printLayoutData, setPrintLayoutData] = useState<MapCaptureData | null>(null);
 
 
   const updateDiscoveredLayerState = useCallback((layerName: string, added: boolean, type: 'wms' | 'wfs') => {
@@ -642,6 +642,7 @@ export default function GeoMapperClient() {
             <PrintComposerPanel
                 mapImage={printLayoutData.image}
                 mapExtent={printLayoutData.extent}
+                scale={printLayoutData.scale}
                 panelRef={printComposerPanelRef}
                 isCollapsed={panels.printComposer.isCollapsed}
                 onToggleCollapse={() => togglePanelCollapse('printComposer')}

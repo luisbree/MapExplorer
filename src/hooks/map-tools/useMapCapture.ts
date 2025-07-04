@@ -12,11 +12,20 @@ interface UseMapCaptureProps {
   activeBaseLayerId: string;
 }
 
+export interface MapCaptureData {
+  image: string;
+  extent: Extent;
+  scale: {
+    barWidth: number;
+    text: string;
+  }
+}
+
 export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
   const { toast } = useToast();
   const [isCapturing, setIsCapturing] = useState(false);
 
-  const captureMapDataUrl = useCallback(async (): Promise<{ image: string; extent: Extent; } | null> => {
+  const captureMapDataUrl = useCallback(async (): Promise<MapCaptureData | null> => {
     if (!mapRef.current) {
       toast({ description: 'El mapa no está listo para ser capturado.' });
       return null;
@@ -59,10 +68,41 @@ export const useMapCapture = ({ mapRef }: UseMapCaptureProps) => {
           const imageUrl = mapCanvas.toDataURL('image/jpeg', 0.9);
 
           const view = map.getView();
+          const resolution = view.getResolution();
+          const projection = view.getProjection();
+
+          if (!resolution || !projection) {
+              throw new Error("Map view is not ready for scale calculation");
+          }
+
+          const units = projection.getUnits();
+          // We assume meters for web mercator
+          if (units !== 'm') {
+              console.warn("Scale bar is only supported for projections with meters as units.");
+          }
+
+          const maxWidthInPixels = 100; // Desired max width of the scale bar
+          const maxDistanceInMapUnits = maxWidthInPixels * resolution;
+          
+          const niceNumbers = [5, 2, 1];
+          const exponent = Math.floor(Math.log10(maxDistanceInMapUnits));
+          const powerOf10 = Math.pow(10, exponent);
+          const residual = maxDistanceInMapUnits / powerOf10;
+          const niceResidual = niceNumbers.find(n => n <= residual) || 1;
+          const niceDistance = niceResidual * powerOf10;
+
+          const distanceLabel = niceDistance >= 1000 ? `${niceDistance / 1000} km` : `${niceDistance} m`;
+          const barWidth = niceDistance / resolution;
+          
+          const scale = {
+              barWidth,
+              text: distanceLabel
+          };
+          
           const mapExtent = view.calculateExtent(size);
           const extent4326 = transformExtent(mapExtent, view.getProjection(), 'EPSG:4326') as Extent;
 
-          resolve({ image: imageUrl, extent: extent4326 });
+          resolve({ image: imageUrl, extent: extent4326, scale });
 
         } catch (error) {
           console.error('Error capturing map:', error);

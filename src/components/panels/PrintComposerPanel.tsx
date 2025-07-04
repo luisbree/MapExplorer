@@ -103,29 +103,40 @@ const NorthArrow = () => (
     </svg>
 );
 
-const ScaleBar = () => (
-  <div className="flex flex-col items-center">
-    <div className="flex items-end h-4">
-      <div className="h-1 border-b border-black"></div>
-      <div className="h-2 border-l border-r border-black w-10"></div>
-      <div className="h-2 border-r border-black w-10 bg-black"></div>
-      <div className="h-2 border-r border-black w-10"></div>
-      <div className="h-2 border-r border-black w-10 bg-black"></div>
-    </div>
-    <div className="flex justify-between w-40 text-xs mt-1">
-      <span>0</span>
-      <span>50</span>
-      <span>100</span>
-      <span>150</span>
-      <span>200</span>
-    </div>
-    <div className="text-xs">kilómetros</div>
-  </div>
-);
+const ScaleBar = ({ scale }: { scale: { barWidth: number; text: string } }) => {
+    if (!scale || !scale.barWidth) {
+        return null; // Don't render if scale info is not available
+    }
+
+    const segments = 4;
+    const segmentWidth = scale.barWidth / segments;
+    const totalDistanceText = scale.text;
+    
+    return (
+        <div className="flex flex-col items-center">
+            {/* The bar itself */}
+            <div className="flex items-end h-2 border border-black" style={{ width: `${scale.barWidth}px` }}>
+                {Array.from({ length: segments }).map((_, i) => (
+                    <div
+                        key={i}
+                        className={`h-full ${i % 2 !== 0 ? 'bg-black' : 'bg-white'}`}
+                        style={{ width: `${segmentWidth}px`, borderRight: i < segments - 1 ? '1px solid black' : 'none' }}
+                    />
+                ))}
+            </div>
+            {/* The labels */}
+            <div className="flex justify-between w-full text-[9px] font-medium mt-1" style={{ width: `${scale.barWidth}px` }}>
+                 <span>0</span>
+                 <span>{totalDistanceText}</span>
+            </div>
+        </div>
+    );
+};
 
 interface PrintComposerPanelProps {
     mapImage: string;
     mapExtent: Extent | null;
+    scale: { barWidth: number; text: string; };
     panelRef: React.RefObject<HTMLDivElement>;
     isCollapsed: boolean;
     onToggleCollapse: () => void;
@@ -136,8 +147,8 @@ interface PrintComposerPanelProps {
 }
 
 // Reusable Layout Component
-const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExtent: Extent | null; title: string; subtitle: string; }>(
-  ({ mapImage, mapExtent, title, subtitle }, ref) => {
+const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExtent: Extent | null; title: string; subtitle: string; scale: { barWidth: number; text: string; } }>(
+  ({ mapImage, mapExtent, title, subtitle, scale }, ref) => {
     return (
       <div ref={ref} className="bg-white shadow-lg p-4 flex flex-col text-black font-body h-full w-full">
         {/* Main Content Area */}
@@ -169,7 +180,7 @@ const PrintLayout = React.forwardRef<HTMLDivElement, { mapImage: string; mapExte
           <div className="w-80 flex-shrink-0 flex flex-col items-end justify-between">
             <div /> {/* Top spacer for justify-between */}
             <div className="self-center">
-              <ScaleBar />
+              <ScaleBar scale={scale} />
             </div>
             <div className="text-right text-[8px] text-gray-600">
               <p>Sistema de Coordenadas: POSGAR 2007 Argentina Faja 5</p>
@@ -187,6 +198,7 @@ PrintLayout.displayName = "PrintLayout";
 const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
   mapImage,
   mapExtent,
+  scale,
   panelRef,
   isCollapsed,
   onToggleCollapse,
@@ -318,7 +330,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
                     className="w-[1058px] h-[748px] transform-origin-top-left flex-shrink-0" 
                     style={{ transform: `scale(0.45)` }}
                 >
-                    <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
+                    <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} scale={scale} />
                 </div>
             </div>
         </div>
@@ -327,7 +339,7 @@ const PrintComposerPanel: React.FC<PrintComposerPanelProps> = ({
       {/* Hidden, full-size div for printing and exporting */}
       <div id="print-layout-container" className="fixed top-0 left-[-9999px] z-[-1] bg-white">
         <div ref={printLayoutRef} className="w-[29.7cm] h-[21cm] bg-white">
-          <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} />
+          <PrintLayout mapImage={mapImage} mapExtent={mapExtent} title={title} subtitle={subtitle} scale={scale} />
         </div>
       </div>
     </>
