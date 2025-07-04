@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { NominatimResult } from '@/lib/types';
-import { searchTrelloCard as searchTrelloCardAction, createTrelloCard, getTrelloLists } from '@/ai/flows/trello-actions';
+import { searchTrelloCard as searchTrelloCardAction } from '@/ai/flows/trello-actions';
 
 
 // Tool definition for location search
@@ -63,40 +63,6 @@ const searchTrelloCardTool = ai.defineTool(
     },
     async ({ query }) => {
         return await searchTrelloCardAction({ query });
-    }
-);
-
-// Tool definition for Trello card creation
-const createTrelloCardTool = ai.defineTool(
-    {
-        name: 'createTrelloCard',
-        description: 'Creates a new card on a specific Trello board. Use this to track tasks, ideas, or issues mentioned by the user.',
-        inputSchema: z.object({
-            title: z.string().describe('The title of the Trello card.'),
-            description: z.string().describe('The detailed description for the Trello card.').optional(),
-            listName: z.string().describe('The name of the list to add the card to, e.g., "To Do", "Ideas", "Bugs".'),
-        }),
-        outputSchema: z.object({
-            cardUrl: z.string().url().describe('The URL of the newly created Trello card.'),
-            message: z.string().describe('A confirmation message to return to the user.'),
-        }),
-    },
-    async ({ title, description, listName }) => {
-        // 1. Find the target list ID by searching across all configured boards using the action
-        const allLists = await getTrelloLists();
-        const targetList = allLists.find(list => list.name.toLowerCase() === listName.toLowerCase());
-
-        if (!targetList) {
-            const uniqueListNames = [...new Set(allLists.map(l => `'${l.name}'`))];
-            throw new Error(`La lista "${listName}" no fue encontrada en ninguno de los tableros configurados. Las listas disponibles son: ${uniqueListNames.join(', ')}.`);
-        }
-
-        // 2. Create the card using the dedicated server action
-        return await createTrelloCard({
-            title,
-            description: description || '',
-            listId: targetList.id,
-        });
     }
 );
 
@@ -155,7 +121,7 @@ const assistantPrompt = ai.definePrompt({
   name: 'mapAssistantPrompt',
   input: { schema: MapAssistantInputSchema },
   output: { schema: MapAssistantOutputSchema },
-  tools: [searchLocationTool, createTrelloCardTool, searchTrelloCardTool],
+  tools: [searchLocationTool, searchTrelloCardTool],
   system: `Sos Drax, un asistente de mapas GIS piola y gauchito.
 Tu onda es charlar con el usuario y darle una mano con lo que necesite.
 Respondé siempre de forma copada y conversacional, usando el "vos".
@@ -177,8 +143,7 @@ Podés hacer varias cosas según lo que te pida el usuario:
 7. HACER ZOOM A UN LUGAR: Buscar y centrar el mapa en una ciudad o dirección.
 8. BUSCAR HUELLAS SENTINEL-2: Buscar huellas de imágenes satelitales Sentinel-2 en la vista actual.
 9. BUSCAR HUELLAS LANDSAT: Buscar huellas de imágenes satelitales Landsat en la vista actual.
-10. CREAR TARJETA EN TRELLO: Crear una nueva tarjeta en Trello para seguir una tarea o idea.
-11. BUSCAR TARJETA EN TRELLO: Buscar una tarjeta existente en Trello y abrirla.
+10. BUSCAR TARJETA EN TRELLO: Buscar una tarjeta existente en Trello y abrirla.
 
 Analizá el mensaje del usuario y las listas de capas para decidir qué acción tomar.
 
@@ -220,8 +185,6 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
 - BUSCAR HUELLAS SENTINEL-2: Si el usuario te pide buscar imágenes Sentinel para la zona ACTUAL (ej. "buscá imágenes sentinel acá"), SÍ O SÍ tenés que completar el campo 'findSentinel2Footprints'. Si especifican un rango de fechas (ej. 'en enero de 2023'), sacá las fechas y ponelas en formato 'YYYY-MM-DD'. Si no mencionan fecha, mandá un objeto vacío \`{}\`. Tu respuesta debe confirmar la acción, por ejemplo: "¡Dale! Buscando las huellas de Sentinel-2 en esta zona." Para buscar en un lugar específico por nombre, mirá la regla de EXCEPCIÓN más abajo.
 
 - BUSCAR HUELLAS LANDSAT: Si el usuario te pide buscar imágenes Landsat para la zona ACTUAL (ej. "buscá imágenes landsat acá"), SÍ O SÍ tenés que completar el campo 'findLandsatFootprints'. Si especifican un rango de fechas (ej. 'en enero de 2023'), sacá las fechas y ponelas en formato 'YYYY-MM-DD'. Si no mencionan fecha, mandá un objeto vacío \`{}\`. Tu respuesta debe confirmar la acción, por ejemplo: "¡De una! Buscando las huellas de Landsat por acá." Para buscar en un lugar específico por nombre, mirá la regla de EXCEPCIÓN más abajo.
-
-- CREAR TARJETA EN TRELLO: Si te piden crear una tarea, nota o ticket (ej. "creá una tarjeta para investigar esto", "anotá que hay que arreglar el servidor"), usá la herramienta 'createTrelloCard'. Tenés que preguntar el título de la tarjeta y el nombre de la lista (ej. "Tareas", "Ideas", "Errores") si no te los dan. Cuando la herramienta se ejecute, SÍ O SÍ tenés que usar el campo 'message' del resultado de la herramienta como tu \`response\` conversacional, y SÍ O SÍ tenés que completar el campo 'urlToOpen' con la 'cardUrl' del resultado. No inventes tu propio mensaje de confirmación; esperá a que la herramienta termine.
 
 - BUSCAR TARJETA EN TRELLO: Si te piden encontrar, buscar o abrir una tarjeta que ya existe (ej. "buscá la tarjeta sobre el río", "abrí la tarea de investigación"), usá la herramienta 'searchTrelloCard'. Cuando la herramienta se ejecute, SÍ O SÍ tenés que usar el campo 'message' del resultado de la herramienta como tu \`response\` conversacional, y SÍ O SÍ tenés que completar el campo 'urlToOpen' con la 'cardUrl' del resultado. No inventes tu propio mensaje de confirmación; esperá a que la herramienta termine.
 

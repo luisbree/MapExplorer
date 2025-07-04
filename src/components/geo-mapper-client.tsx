@@ -40,7 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage, BaseLayerSettings } from '@/lib/types';
 import { chatWithMapAssistant, type MapAssistantOutput } from '@/ai/flows/find-layer-flow';
-import { createTrelloCard, searchTrelloCard } from '@/ai/flows/trello-actions';
+import { searchTrelloCard } from '@/ai/flows/trello-actions';
 
 
 const osmCategoryConfig: OSMCategoryConfig[] = [
@@ -465,30 +465,6 @@ export default function GeoMapperClient() {
 
   }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, zoomToBoundingBox, handleChangeBaseLayer]);
 
-  const handleCreateTrelloCard = useCallback(async (details: { title: string; description: string; listId: string }) => {
-    setIsTrelloLoading(true);
-    try {
-      const result = await createTrelloCard({
-        title: details.title,
-        description: details.description,
-        listId: details.listId,
-      });
-      
-      toast({ description: result.message });
-      
-      if (result.cardUrl) {
-        window.open(result.cardUrl, '_blank', 'noopener,noreferrer');
-        toast({ description: `Abriendo Trello en una nueva pestaña...` });
-      }
-
-    } catch (error: any) {
-      console.error("Trello card creation error:", error);
-      toast({ description: error.message || 'Error al crear la tarjeta en Trello.', variant: 'destructive' });
-    } finally {
-      setIsTrelloLoading(false);
-    }
-  }, [toast]);
-  
   const handleSearchTrelloCard = useCallback(async (searchTerm: string) => {
     setIsTrelloLoading(true);
     try {
@@ -702,7 +678,6 @@ export default function GeoMapperClient() {
             onToggleCollapse={() => togglePanelCollapse('trello')}
             onClosePanel={() => togglePanelMinimize('trello')}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'trello')}
-            onCreateCard={handleCreateTrelloCard}
             onSearchCard={handleSearchTrelloCard}
             isLoading={isTrelloLoading}
             style={{ top: `${panels.trello.position.y}px`, left: `${panels.trello.position.x}px`, zIndex: panels.trello.zIndex }}
