@@ -18,7 +18,8 @@ interface MapViewProps {
   baseLayerSettings: BaseLayerSettings;
 }
 
-export type Band = 'red' | 'green' | 'blue' | 'none';
+export type Band = 'red' | 'green' | 'blue' | 'false-color-vegetation' | 'false-color-urban' | 'none';
+
 
 type BaseLayerDefinition = {
   id: string;
@@ -52,7 +53,7 @@ export const BASE_LAYER_DEFINITIONS: readonly BaseLayerDefinition[] = [
   },
   {
     id: 'esri-satellite',
-    name: 'ESRI Satelital',
+    name: 'ESRI Satelital (Color Natural)',
     createLayer: () => new TileLayer({
       source: new XYZ({
         url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -62,6 +63,18 @@ export const BASE_LAYER_DEFINITIONS: readonly BaseLayerDefinition[] = [
       }),
       properties: { baseLayerId: 'esri-satellite', isBaseLayer: true, name: 'ESRISatelliteBaseLayer' },
     }),
+  },
+  {
+    id: 'esri-false-color-vegetation',
+    name: 'Satelital Falso Color (Vegetación)',
+    band: 'false-color-vegetation',
+    parentLayerId: 'esri-satellite'
+  },
+  {
+    id: 'esri-false-color-urban',
+    name: 'Satelital Falso Color (Urbano)',
+    band: 'false-color-urban',
+    parentLayerId: 'esri-satellite'
   },
   {
     id: 'esri-red',
@@ -118,17 +131,39 @@ const applyBaseLayerEffects = (
           const canvas = context.canvas;
           const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
           const data = imageData.data;
-          for (let i = 0; i < data.length; i += 4) {
-            let grayValue = 0;
-            switch (band) {
-              case 'red': grayValue = data[i]; break;
-              case 'green': grayValue = data[i + 1]; break;
-              case 'blue': grayValue = data[i + 2]; break;
+          
+          if (band === 'red' || band === 'green' || band === 'blue') {
+            for (let i = 0; i < data.length; i += 4) {
+              let grayValue = 0;
+              switch (band) {
+                case 'red': grayValue = data[i]; break;
+                case 'green': grayValue = data[i + 1]; break;
+                case 'blue': grayValue = data[i + 2]; break;
+              }
+              data[i] = grayValue;
+              data[i + 1] = grayValue;
+              data[i + 2] = grayValue;
             }
-            data[i] = grayValue;
-            data[i + 1] = grayValue;
-            data[i + 2] = grayValue;
+          } else if (band === 'false-color-vegetation') { // NIR(G)-R-B  -> R-G-B
+             for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                // const b = data[i + 2];
+                data[i] = g;     // Red channel gets green value (vegetation becomes red)
+                data[i + 1] = r; // Green channel gets red value
+                data[i + 2] = r; // Blue channel gets red value (suppress blue for vegetation)
+            }
+          } else if (band === 'false-color-urban') { // B-G-R -> R-G-B
+             for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                data[i] = b;     // Red channel gets blue (urban areas -> magenta/violet)
+                data[i + 1] = g; // Green stays green
+                data[i + 2] = r; // Blue gets red
+            }
           }
+          
           context.putImageData(imageData, 0, 0);
         } catch (e) {
           // Silence CORS errors
@@ -217,7 +252,7 @@ const MapView: React.FC<MapViewProps> = ({ setMapInstanceAndElement, onMapClick,
     if (!selectedDef) return;
 
     const layerIdToShow = selectedDef.parentLayerId || selectedDef.id;
-    const bandToShow = selectedDef.parentLayerId === 'esri-satellite' ? (selectedDef.band || 'none') : 'none';
+    const bandToShow = selectedDef.band || 'none';
 
     Object.values(baseLayerRefs.current).forEach(layer => {
       const isVisible = layer.get('baseLayerId') === layerIdToShow;

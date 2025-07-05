@@ -174,7 +174,7 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
 
 - PARA CAMBIAR EL MAPA BASE: Si te piden cambiar el mapa base (ej. a "vista satelital", "mapa gris", "banda roja"), identificá la vista que quieren.
   - Si te piden la banda roja, verde o azul, tenés que responder que la vista va a ser en escala de grises. Ej: "¡Dale! Poniendo la vista de la banda roja en escala de grises."
-  - Los IDs disponibles son: 'osm-standard', 'carto-light', 'esri-satellite', 'esri-red', 'esri-green', 'esri-blue'. Usá el que mejor matchee.
+  - Los IDs disponibles son: 'osm-standard', 'carto-light', 'esri-satellite', 'esri-red', 'esri-green', 'esri-blue', 'esri-false-color-vegetation', 'esri-false-color-urban'. Usá el que mejor matchee.
   - Completá el campo 'setBaseLayer' con el ID correspondiente.
 
 - PARA HACER ZOOM A UN LUGAR: Si te piden encontrar un lugar, ir a una ciudad o buscar una dirección (ej. "encontrá la ciudad de La Plata", "llevame a Madrid"), usá la herramienta 'searchLocation'.
