@@ -1,3 +1,4 @@
+
 # Map Explorer
 
 This is a Next.js application that allows users to explore maps, search for locations, and view coordinates. It's built with OpenLayers for map rendering and Google Maps API for location services.
