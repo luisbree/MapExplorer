@@ -130,7 +130,7 @@ export default function GeoMapperClient() {
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const printComposerPanelRef = useRef<HTMLDivElement>(null);
 
-  const { mapRef, mapElementRef, setMapInstanceAndElement, isMapReady } = useOpenLayersMap();
+  const { mapRef, mapElementRef, setMapInstanceAndElement, isMapReady, drawingSourceRef } = useOpenLayersMap();
   const { toast } = useToast();
 
   const { panels, handlePanelMouseDown, togglePanelCollapse, togglePanelMinimize } = useFloatingPanels({
@@ -197,7 +197,7 @@ export default function GeoMapperClient() {
   const layerManagerHook = useLayerManager({
     mapRef,
     isMapReady,
-    drawingSourceRef: useOpenLayersMap().drawingSourceRef,
+    drawingSourceRef,
     onShowTableRequest: featureInspectionHook.processAndDisplayFeatures,
     updateGeoServerDiscoveredLayerState: updateDiscoveredLayerState,
     selectedFeaturesForExtraction: featureInspectionHook.selectedFeatures,
@@ -250,11 +250,11 @@ export default function GeoMapperClient() {
   const {
     isFetchingOSM, selectedOSMCategoryIds, setSelectedOSMCategoryIds, fetchOSMData,
     downloadFormat, setDownloadFormat, isDownloading, handleDownloadOSMLayers,
-  } = useOSMData({ drawingSourceRef: useOpenLayersMap().drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
+  } = useOSMData({ drawingSourceRef: drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
 
   // Orchestration between drawing and feature inspection tools
   const drawingInteractions = useDrawingInteractions({
-    mapRef, isMapReady, drawingSourceRef: useOpenLayersMap().drawingSourceRef,
+    mapRef, isMapReady, drawingSourceRef: drawingSourceRef,
     isInspectModeActive: featureInspectionHook.isInspectModeActive,
     toggleInspectMode: featureInspectionHook.toggleInspectMode,
   });
