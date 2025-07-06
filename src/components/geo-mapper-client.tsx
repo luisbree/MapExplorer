@@ -247,10 +247,12 @@ export default function GeoMapperClient() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMapReady]);
 
-  const {
-    isFetchingOSM, selectedOSMCategoryIds, setSelectedOSMCategoryIds, fetchOSMData,
-    downloadFormat, setDownloadFormat, isDownloading, handleDownloadOSMLayers,
-  } = useOSMData({ drawingSourceRef: drawingSourceRef, addLayer: layerManagerHook.addLayer, osmCategoryConfigs: osmCategoryConfig });
+  const osmDataHook = useOSMData({ 
+    mapRef, 
+    drawingSourceRef, 
+    addLayer: layerManagerHook.addLayer, 
+    osmCategoryConfigs: osmCategoryConfig 
+  });
 
   // Orchestration between drawing and feature inspection tools
   const drawingInteractions = useDrawingInteractions({
@@ -430,17 +432,20 @@ export default function GeoMapperClient() {
       handleChangeBaseLayer(action.setBaseLayer);
     }
 
-
     const shouldZoom = action.zoomToBoundingBox && action.zoomToBoundingBox.length === 4;
     const shouldFindSentinelFootprints = !!action.findSentinel2Footprints;
     const shouldFindLandsatFootprints = !!action.findLandsatFootprints;
+    const shouldFetchOsm = action.fetchOsmForView && action.fetchOsmForView.length > 0;
 
-    const performFootprintSearch = () => {
+    const performSearchAfterZoom = () => {
       if (action.findSentinel2Footprints) {
         layerManagerHook.findSentinel2FootprintsInCurrentView(action.findSentinel2Footprints);
       }
       if (action.findLandsatFootprints) {
         layerManagerHook.findLandsatFootprintsInCurrentView(action.findLandsatFootprints);
+      }
+      if (action.fetchOsmForView) {
+        osmDataHook.fetchOSMForCurrentView(action.fetchOsmForView);
       }
     };
     
@@ -448,14 +453,18 @@ export default function GeoMapperClient() {
       const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox!;
       if ([sLat, nLat, wLon, eLon].every(c => !isNaN(c))) {
         zoomToBoundingBox([wLon, sLat, eLon, nLat]);
-        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints) {
-          setTimeout(performFootprintSearch, 1100);
+        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints || shouldFetchOsm) {
+          setTimeout(performSearchAfterZoom, 1100);
         }
       } else {
         toast({description: `Drax devolvió una ubicación inválida.`});
       }
-    } else if (shouldFindSentinelFootprints || shouldFindLandsatFootprints) {
-      performFootprintSearch();
+    } else {
+        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints) {
+            performSearchAfterZoom(); // handles non-zoom searches
+        } else if (shouldFetchOsm) {
+            osmDataHook.fetchOSMForCurrentView(action.fetchOsmForView!);
+        }
     }
     
     if (action.urlToOpen) {
@@ -463,7 +472,7 @@ export default function GeoMapperClient() {
       toast({ description: `Abriendo Trello en una nueva pestaña...` });
     }
 
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, zoomToBoundingBox, handleChangeBaseLayer]);
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, zoomToBoundingBox, handleChangeBaseLayer, osmDataHook]);
 
   const handleSearchTrelloCard = useCallback(async (searchTerm: string) => {
     setIsTrelloLoading(true);
@@ -574,15 +583,15 @@ export default function GeoMapperClient() {
             onToggleDrawingTool={drawingInteractions.toggleDrawingTool}
             onClearDrawnFeatures={drawingInteractions.clearDrawnFeatures}
             onSaveDrawnFeaturesAsKML={drawingInteractions.saveDrawnFeaturesAsKML}
-            isFetchingOSM={isFetchingOSM}
-            onFetchOSMDataTrigger={fetchOSMData}
+            isFetchingOSM={osmDataHook.isFetchingOSM}
+            onFetchOSMDataTrigger={osmDataHook.fetchOSMData}
             osmCategoriesForSelection={osmCategoriesForSelection}
-            selectedOSMCategoryIds={selectedOSMCategoryIds}
-            onSelectedOSMCategoriesChange={setSelectedOSMCategoryIds}
-            downloadFormat={downloadFormat}
-            onDownloadFormatChange={setDownloadFormat}
-            isDownloading={isDownloading}
-            onDownloadOSMLayers={() => handleDownloadOSMLayers(layerManagerHook.layers)}
+            selectedOSMCategoryIds={osmDataHook.selectedOSMCategoryIds}
+            onSelectedOSMCategoriesChange={osmDataHook.setSelectedOSMCategoryIds}
+            downloadFormat={osmDataHook.downloadFormat}
+            onDownloadFormatChange={osmDataHook.setDownloadFormat}
+            isDownloading={osmDataHook.isDownloading}
+            onDownloadOSMLayers={() => osmDataHook.handleDownloadOSMLayers(layerManagerHook.layers)}
             style={{ top: `${panels.tools.position.y}px`, left: `${panels.tools.position.x}px`, zIndex: panels.tools.zIndex }}
           />
         )}
@@ -715,5 +724,3 @@ export default function GeoMapperClient() {
     </div>
   );
 }
-
-    

@@ -1,11 +1,13 @@
+
 "use client";
 
 import { useState, useCallback } from 'react';
+import type { Map } from 'ol';
 import VectorSource from 'ol/source/Vector';
 import { useToast } from "@/hooks/use-toast";
 import type { MapLayer, OSMCategoryConfig } from '@/lib/types';
 import { nanoid } from 'nanoid';
-import { transformExtent } from 'ol/proj';
+import { transformExtent, type Extent } from 'ol/proj';
 import { get as getProjection } from 'ol/proj';
 import VectorLayer from 'ol/layer/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
@@ -17,32 +19,21 @@ import type { Geometry } from 'ol/geom';
 
 
 interface UseOSMDataProps {
+  mapRef: React.RefObject<Map | null>;
   drawingSourceRef: React.RefObject<VectorSource>;
   addLayer: (layer: MapLayer) => void;
   osmCategoryConfigs: OSMCategoryConfig[];
 }
 
-export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: UseOSMDataProps) => {
+export const useOSMData = ({ mapRef, drawingSourceRef, addLayer, osmCategoryConfigs }: UseOSMDataProps) => {
   const { toast } = useToast();
   const [isFetchingOSM, setIsFetchingOSM] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedOSMCategoryIds, setSelectedOSMCategoryIds] = useState<string[]>(['watercourses', 'water_bodies']);
   const [downloadFormat, setDownloadFormat] = useState('geojson');
 
-  const fetchOSMData = useCallback(async () => {
-    const drawingSource = drawingSourceRef.current;
-    if (!drawingSource || drawingSource.getFeatures().length === 0) {
-      toast({ description: 'Por favor, dibuje un polígono en el mapa primero.' });
-      return;
-    }
-    
-    const polygonFeature = drawingSource.getFeatures().find(f => f.getGeometry()?.getType() === 'Polygon');
-    if (!polygonFeature) {
-        toast({ description: "No se encontró un polígono. La obtención de datos OSM requiere un área poligonal." });
-        return;
-    }
-
-    if (selectedOSMCategoryIds.length === 0) {
+  const fetchAndProcessOSMData = useCallback(async (extent: Extent, categoryIds: string[]) => {
+    if (categoryIds.length === 0) {
       toast({ description: 'Por favor, seleccione al menos una categoría de OSM.' });
       return;
     }
@@ -50,17 +41,15 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
     setIsFetchingOSM(true);
     toast({ description: 'Obteniendo datos de OpenStreetMap...' });
 
-    try {
+     try {
         const mapProjection = getProjection('EPSG:3857');
         const dataProjection = getProjection('EPSG:4326');
-        const extent = polygonFeature.getGeometry()!.getExtent();
         const transformedExtent = transformExtent(extent, mapProjection!, dataProjection!);
         const bboxStr = `${transformedExtent[1]},${transformedExtent[0]},${transformedExtent[3]},${transformedExtent[2]}`;
         
-        const selectedConfigs = osmCategoryConfigs.filter(c => selectedOSMCategoryIds.includes(c.id));
+        const selectedConfigs = osmCategoryConfigs.filter(c => categoryIds.includes(c.id));
 
         const queryFragments = selectedConfigs.map(c => c.overpassQueryFragment(bboxStr)).join('');
-        // Query for JSON output with geometries. This is not GeoJSON, but a custom format.
         const overpassQuery = `[out:json][timeout:60];(${queryFragments});out geom;`;
         
         const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
@@ -70,7 +59,6 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
         }
         const osmData = await response.json();
 
-        // Convert the Overpass custom JSON format to a standard GeoJSON FeatureCollection
         const geojsonFeatures = osmData.elements.map((element: any) => {
             if (!element.type) return null;
 
@@ -96,8 +84,6 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
                     }
                 }
             }
-            // Note: Relations are complex and are skipped in this conversion for simplicity.
-
             if (!geometry) return null;
 
             return {
@@ -106,7 +92,7 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
                 properties,
                 geometry
             };
-        }).filter(Boolean); // Remove any null elements
+        }).filter(Boolean);
 
         const osmDataAsGeoJSON = {
             type: 'FeatureCollection',
@@ -120,16 +106,15 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
         
         const allFeatures = geojsonFormat.readFeatures(osmDataAsGeoJSON);
 
-        // Separate features by category
         const featuresByCategory: Record<string, Feature<Geometry>[]> = {};
         selectedConfigs.forEach(c => featuresByCategory[c.id] = []);
 
         allFeatures.forEach((feature) => {
-            const properties = feature.getProperties(); // OSM tags are in properties
+            const properties = feature.getProperties();
             for (const config of selectedConfigs) {
                 if (config.matcher(properties)) {
                     featuresByCategory[config.id].push(feature);
-                    break; // Add to first matching category only
+                    break;
                 }
             }
         });
@@ -174,7 +159,33 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
     } finally {
       setIsFetchingOSM(false);
     }
-  }, [drawingSourceRef, toast, selectedOSMCategoryIds, osmCategoryConfigs, addLayer]);
+  }, [addLayer, osmCategoryConfigs, toast]);
+
+  const fetchOSMData = useCallback(async () => {
+    const drawingSource = drawingSourceRef.current;
+    if (!drawingSource || drawingSource.getFeatures().length === 0) {
+      toast({ description: 'Por favor, dibuje un polígono en el mapa primero.' });
+      return;
+    }
+    
+    const polygonFeature = drawingSource.getFeatures().find(f => f.getGeometry()?.getType() === 'Polygon');
+    if (!polygonFeature) {
+        toast({ description: "No se encontró un polígono. La obtención de datos OSM requiere un área poligonal." });
+        return;
+    }
+    const extent = polygonFeature.getGeometry()!.getExtent();
+    fetchAndProcessOSMData(extent, selectedOSMCategoryIds);
+  }, [drawingSourceRef, toast, fetchAndProcessOSMData, selectedOSMCategoryIds]);
+
+  const fetchOSMForCurrentView = useCallback(async (categoryIds: string[]) => {
+    if (!mapRef.current) {
+        toast({ description: "El mapa no está listo." });
+        return;
+    }
+    const extent = mapRef.current.getView().calculateExtent(mapRef.current.getSize());
+    fetchAndProcessOSMData(extent, categoryIds);
+  }, [mapRef, toast, fetchAndProcessOSMData]);
+
 
   const handleDownloadOSMLayers = useCallback(async (currentLayers: MapLayer[]) => {
       const osmLayers = currentLayers.filter(l => l.type === 'osm' && 'getSource' in l.olLayer);
@@ -195,7 +206,6 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
                   const vectorLayer = layer.olLayer as VectorLayer<any>;
                   const features = vectorLayer.getSource().getFeatures();
                   const geoJson = JSON.parse(geojsonFormat.writeFeatures(features));
-                  // shp.write requires a features array
                   const shpBuffer = await shp.write(geoJson.features, 'GEOMETRY', {});
                   zip.file(`${layer.name.replace(/ /g, '_')}.zip`, shpBuffer);
               }
@@ -205,7 +215,7 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
               link.download = "osm_layers_shp.zip";
               link.click();
 
-          } else { // Handle KML and GeoJSON
+          } else { 
               let combinedString = '';
               let fileExtension = downloadFormat;
 
@@ -239,6 +249,7 @@ export const useOSMData = ({ drawingSourceRef, addLayer, osmCategoryConfigs }: U
     selectedOSMCategoryIds,
     setSelectedOSMCategoryIds,
     fetchOSMData,
+    fetchOSMForCurrentView,
     downloadFormat,
     setDownloadFormat,
     isDownloading,
