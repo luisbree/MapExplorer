@@ -352,6 +352,7 @@ export default function GeoMapperClient() {
     if (allLayersToAdd.length > 0) {
         const workspaces = new Set<string>();
         const layerTitles = new Set<string>();
+        const notFoundLayerNames: string[] = [];
 
         allLayersToAdd.forEach(layerName => {
             if (layerName.includes(':')) {
@@ -361,19 +362,35 @@ export default function GeoMapperClient() {
             } else {
                 layerTitles.add(layerName);
             }
+            
+            const layerData = discoveredGeoServerLayers.find(l => l.name === layerName);
+            if (!layerData) {
+                notFoundLayerNames.push(layerName);
+            }
         });
-
-        let toastMessage = "Drax procesará: ";
-        if (workspaces.size > 0) {
-            toastMessage += `Espacio(s) de trabajo: '${Array.from(workspaces).join("', '")}'. `;
-        }
-        toastMessage += `Capa(s): '${Array.from(layerTitles).join("', '")}'.`;
         
-        toast({
-            title: "Solicitud de Capa Recibida por Drax",
-            description: toastMessage,
-            duration: 8000 
-        });
+        let toastDescription = "";
+        if (workspaces.size > 0) {
+             toastDescription += `Espacio(s) de trabajo: '${Array.from(workspaces).join("', '")}'. `;
+        }
+        if (layerTitles.size > 0) {
+            toastDescription += `Capa(s): '${Array.from(layerTitles).join("', '")}'.`;
+        }
+        
+        if (notFoundLayerNames.length === allLayersToAdd.length) {
+            toast({
+                title: "Drax no encontró las capas",
+                description: toastDescription,
+                variant: 'destructive',
+                duration: 8000
+            });
+        } else {
+             toast({
+                title: "Solicitud de capa recibida por Drax",
+                description: toastDescription,
+                duration: 8000
+            });
+        }
     }
 
     const initialUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
@@ -383,8 +400,6 @@ export default function GeoMapperClient() {
         const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
         if (layerData) {
             handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
-        } else {
-            toast({description: `Drax sugirió una capa no encontrada: ${layerNameToAdd}`});
         }
       });
     }
@@ -394,8 +409,6 @@ export default function GeoMapperClient() {
         const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
         if (layerData) {
             handleAddGeoServerLayerAsWFS(layerData.name, layerData.title, initialUrl);
-        } else {
-            toast({description: `Drax sugirió una capa WFS no encontrada: ${layerNameToAdd}`});
         }
       });
     }

@@ -156,13 +156,14 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
       *   Un **TÉRMINO de capa**: Una o más palabras clave que describan la capa, como 'calles', 'cuenca', 'conductos'.
 
   2.  **APLICACIÓN DE REGLAS (en orden de prioridad estricto)**:
-      *   **REGLA 1 (CÓDIGO + TÉRMINO)**: Si encuentras un CÓDIGO y un TÉRMINO (ej: "cuenca de rpm001"), DEBES buscar la capa que cumpla **ambas** condiciones:
-          *   El 'name' de la capa DEBE comenzar con el código exacto seguido de dos puntos (ej: 'rpm001:').
-          *   El 'title' de la capa O la parte del 'name' después de los dos puntos debe contener el término.
+      *   **REGLA 1 (CÓDIGO + TÉRMINO)**: Si encuentras un CÓDIGO de espacio de trabajo y un TÉRMINO de capa (ej: "cuenca de rpm001"), tu proceso es:
+          a. **FILTRAR**: Primero, filtra la lista de 'Capas Disponibles' para quedarte solo con las que pertenecen a ese espacio de trabajo (su 'name' empieza con el CÓDIGO exacto seguido de dos puntos, ej: 'rpm001:').
+          b. **BUSCAR**: Dentro de esa lista filtrada, busca las capas cuyo 'title' o 'name' (la parte después de los dos puntos) contenga el TÉRMINO (ej: "cuenca").
+          c. **RESULTADO**: Si encuentras una o más coincidencias exactas, añádelas. Si no encuentras nada, NO respondas con una capa inventada. NO combines el término y el código para crear un nombre de capa que no existe en la lista.
       *   **REGLA 2 (SÓLO CÓDIGO)**: Si encuentras SÓLO un CÓDIGO (ej: "cargá todo lo de rrq002"), DEBES encontrar TODAS las capas cuyo 'name' comience EXACTAMENTE con ese código seguido de dos puntos (ej: 'rrq002:').
       *   **REGLA 3 (SÓLO TÉRMINO)**: Si encuentras SÓLO un TÉRMINO, busca esa palabra en el 'title' o en el 'name' (después de los dos puntos) de TODAS las capas disponibles.
 
-  3.  **FORMATO DEL NOMBRE**: Recuerda siempre que el 'name' de la capa tiene el formato 'espacio_de_trabajo:nombre_de_la_capa'. Tu búsqueda de código debe coincidir con la parte 'espacio_de_trabajo'.
+  3.  **FORMATO DEL NOMBRE**: Recordá siempre que el 'name' de la capa tiene el formato 'espacio_de_trabajo:nombre_de_la_capa'. Tu búsqueda de código debe coincidir con la parte 'espacio_de_trabajo'.
 
   4.  **IMPORTANTE**: El código del espacio de trabajo es un identificador único y específico. No lo confundas con texto normal. Por ejemplo, en una capa con título "Rutas Provinciales de Mendoza", la palabra "Rutas" no es un código. Un código será un patrón como 'rpm001'.
 
