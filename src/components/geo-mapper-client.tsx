@@ -223,21 +223,20 @@ export default function GeoMapperClient() {
   // Effect for initial GeoServer layer loading
   useEffect(() => {
     const loadInitialLayers = async () => {
-      const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+      const initialUrl = 'http://192.168.1.90:8080/geoserver';
       try {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
           setDiscoveredGeoServerLayers(discovered);
+          // Add all discovered layers as hidden "DEAS" layers
           discovered.forEach(layer => {
-            const isVisible = layer.name === 'cuencas_light';
-            if (isVisible) {
-              handleAddGeoServerLayerToMap(layer.name, layer.title, true, initialUrl, layer.bbox);
-            }
+            handleAddGeoServerLayerToMap(layer.name, layer.title, false, initialUrl, layer.bbox);
           });
-          toast({ description: `${discovered.length} capas de GeoServer cargadas en segundo plano.` });
+          toast({ description: `${discovered.length} capas de DEAS (WMS) cargadas en segundo plano.` });
         }
       } catch (error) {
-        console.error("Failed to load initial GeoServer layers:", error);
+        console.error("Failed to load initial DEAS layers:", error);
+        toast({ description: `No se pudieron cargar las capas de DEAS. Asegúrese de que GeoServer esté en línea en ${initialUrl}`, variant: 'destructive' });
       }
     };
     

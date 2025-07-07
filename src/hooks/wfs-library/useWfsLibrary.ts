@@ -32,10 +32,6 @@ interface UseWfsLibraryProps {
 // Predefined list of WFS servers. User will provide these later.
 export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
   {
-    name: 'DEAS',
-    url: 'http://192.168.1.90:8080/geoserver'
-  },
-  {
     name: 'INTA NODO Nacional',
     url: 'https://geo-backend.inta.gob.ar/geoserver/wfs'
   },
