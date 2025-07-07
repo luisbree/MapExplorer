@@ -159,16 +159,18 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
 
   2.  **FILTRAR Y SELECCIONAR según lo que encuentres**:
       - **CASO A (CÓDIGO + TÉRMINO)**: Si el usuario da un CÓDIGO y un TÉRMINO (ej: "la vialidad de rpm001").
-          a. Filtra la lista de 'Capas Disponibles' para quedarte **únicamente** con las que su 'name' comienza con '[CÓDIGO]:'. Por ejemplo, para "rpm001", filtra por 'rpm001:'. **La búsqueda del CÓDIGO no debe distinguir entre mayúsculas y minúsculas.**
-          b. Dentro de ese subconjunto, busca las capas donde el 'title' contenga el TÉRMINO. También busca en la parte del 'name' después de los dos puntos. **Esta búsqueda no distingue entre mayúsculas y minúsculas.**
-          c. Si encuentras una o más capas que cumplen, **COPIA EL VALOR COMPLETO Y EXACTO** del campo 'name' de CADA capa encontrada y ponlo en el array de respuesta ('layersToAdd' o 'layersToAddAsWFS'). NO abrevies, modifiques o inventes el nombre. Si el 'name' es 'rpm001:vs_provincia' y el usuario pide "vs de rpm001", tu respuesta DEBE ser 'rpm001:vs_provincia'.
-          d. **IMPORTANTE**: Si después de filtrar por código no encuentras el término, NO busques el término en toda la lista. La búsqueda se limita al espacio de trabajo especificado.
+          a. **OBLIGATORIO**: Convierte el CÓDIGO que te dio el usuario a minúsculas. Por ejemplo, si te dicen "RPM001", debes usar "rpm001".
+          b. Filtra la lista de 'Capas Disponibles' para quedarte **únicamente** con las que su 'name' (convertido a minúsculas) comienza con '[código_en_minúsculas]:'.
+          c. Dentro de ese subconjunto, busca las capas donde el 'title' o la parte del 'name' después de los dos puntos (ambos convertidos a minúsculas) contenga el TÉRMINO (también convertido a minúsculas).
+          d. Si encuentras una o más capas que cumplen, **COPIA EL VALOR COMPLETO Y EXACTO** del campo 'name' de CADA capa encontrada y ponlo en el array de respuesta ('layersToAdd' o 'layersToAddAsWFS'). NO abrevies, modifiques o inventes el nombre. Si el 'name' es 'rpm001:vs_provincia' y el usuario pide "vs de rpm001", tu respuesta DEBE ser 'rpm001:vs_provincia'.
+          e. **IMPORTANTE**: Si después de filtrar por código no encuentras el término, NO busques el término en toda la lista. La búsqueda se limita al espacio de trabajo especificado.
 
-      - **CASO B (SÓLO CÓDIGO)**: Si el usuario da SÓLO un CÓDIGO (ej: "cargame todo lo de rpm001").
-          a. Selecciona TODAS las capas de la lista 'Capas Disponibles' cuyo 'name' comience exactamente con '[CÓDIGO]:' y copia sus nombres completos y exactos. **La búsqueda del CÓDIGO no debe distinguir entre mayúsculas y minúsculas.**
+      - **CASO B (SÓLO CÓDIGO)**: Si el usuario da SÓLO un CÓDIGO (ej: "cargame todo lo de MAR004").
+          a. **OBLIGATORIO**: Convierte el CÓDIGO que te dio el usuario a minúsculas. Por ejemplo, si te dicen "MAR004", debes usar "mar004".
+          b. Selecciona TODAS las capas de la lista 'Capas Disponibles' cuyo 'name' (convertido a minúsculas) comience exactamente con '[código_en_minúsculas]:' y copia sus nombres completos y exactos.
 
       - **CASO C (SÓLO TÉRMINO)**: Si el usuario da SÓLO un TÉRMINO (ej: "buscame las de vialidad").
-          a. Busca en TODA la lista de 'Capas Disponibles' las capas donde el 'title' o el 'name' contenga el TÉRMINO. **Esta búsqueda no distingue entre mayúsculas y minúsculas**. Copia sus nombres completos y exactos.
+          a. Busca en TODA la lista de 'Capas Disponibles' las capas donde el 'title' o el 'name' (ambos convertidos a minúsculas) contenga el TÉRMINO (convertido a minúsculas). Copia sus nombres completos y exactos.
 
   3.  **NO ASUMIR**: Si el pedido es ambiguo o no encuentras una coincidencia exacta, es mejor no añadir ninguna capa y pedirle al usuario que sea más específico. NO combines partes de diferentes capas para crear un nombre que no existe.
 
