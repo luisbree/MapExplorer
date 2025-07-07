@@ -36,7 +36,7 @@ import { useOSMData } from '@/hooks/osm-integration/useOSMData';
 import { useGeoServerLayers } from '@/hooks/geoserver-connection/useGeoServerLayers';
 import { useFloatingPanels } from '@/hooks/panels/useFloatingPanels';
 import { useMapCapture, type MapCaptureData } from '@/hooks/map-tools/useMapCapture';
-import { useWfsLibrary, PREDEFINED_WFS_SERVERS } from '@/hooks/wfs-library/useWfsLibrary';
+import { useWfsLibrary } from '@/hooks/wfs-library/useWfsLibrary';
 import { useToast } from "@/hooks/use-toast";
 
 import type { OSMCategoryConfig, GeoServerDiscoveredLayer, BaseLayerOptionForSelect, MapLayer, ChatMessage, BaseLayerSettings } from '@/lib/types';
@@ -109,7 +109,7 @@ const PANEL_PADDING = 8;
 const panelToggleConfigs = [
   { id: 'legend', IconComponent: ListTree, name: "Capas en Mapa" },
   { id: 'deasCatalog', IconComponent: Server, name: "Capas Predefinidas" },
-  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca WFS" },
+  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca de Servidores" },
   { id: 'layers', IconComponent: Database, name: "Datos y Vista" },
   { id: 'tools', IconComponent: Wrench, name: "Herramientas" },
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
@@ -755,11 +755,11 @@ export default function GeoMapperClient() {
             onClosePanel={() => togglePanelMinimize('wfsLibrary')}
             onMouseDownHeader={(e) => handlePanelMouseDown(e, 'wfsLibrary')}
             style={{ top: `${panels.wfsLibrary.position.y}px`, left: `${panels.wfsLibrary.position.x}px`, zIndex: panels.wfsLibrary.zIndex }}
-            predefinedServers={PREDEFINED_WFS_SERVERS}
+            predefinedServers={wfsLibraryHook.PREDEFINED_SERVERS}
             isLoading={wfsLibraryHook.isLoading}
             discoveredLayers={wfsLibraryHook.discoveredLayers}
-            onFetchLayers={wfsLibraryHook.fetchWfsLayers}
-            onAddLayer={wfsLibraryHook.addWfsLayerToMap}
+            onFetchLayers={wfsLibraryHook.fetchCapabilities}
+            onAddLayer={wfsLibraryHook.addLayer}
           />
         )}
 

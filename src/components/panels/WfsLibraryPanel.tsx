@@ -10,7 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Library, Layers, Plus, X as ClearIcon } from 'lucide-react';
-import type { WfsServer, WfsDiscoveredLayer } from '@/hooks/wfs-library/useWfsLibrary';
+import type { OgcServer, ServerDiscoveredLayer } from '@/hooks/wfs-library/useWfsLibrary';
 
 interface WfsLibraryPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -19,11 +19,11 @@ interface WfsLibraryPanelProps {
   onClosePanel: () => void;
   onMouseDownHeader: (e: React.MouseEvent<HTMLDivElement>) => void;
   style?: React.CSSProperties;
-  predefinedServers: WfsServer[];
+  predefinedServers: OgcServer[];
   isLoading: boolean;
-  discoveredLayers: WfsDiscoveredLayer[];
+  discoveredLayers: ServerDiscoveredLayer[];
   onFetchLayers: (url: string) => void;
-  onAddLayer: (layerName: string, layerTitle: string) => void;
+  onAddLayer: (layerName: string, layerTitle: string, bbox?: [number, number, number, number]) => void;
 }
 
 const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
@@ -67,7 +67,7 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
 
   return (
     <DraggablePanel
-      title="Biblioteca WFS"
+      title="Biblioteca de Servidores"
       icon={Library}
       panelRef={panelRef}
       initialPosition={{ x: 0, y: 0 }}
@@ -140,14 +140,14 @@ const WfsLibraryPanel: React.FC<WfsLibraryPanelProps> = ({
                       variant="outline"
                       size="icon"
                       className="h-6 w-6 flex-shrink-0 bg-teal-600/30 hover:bg-teal-500/50 border-teal-500/50 text-white disabled:opacity-50"
-                      onClick={() => onAddLayer(layer.name, layer.title)}
+                      onClick={() => onAddLayer(layer.name, layer.title, layer.bbox)}
                       disabled={isLoading || layer.added}
                       title={layer.added ? "Capa ya añadida" : `Añadir "${layer.title}" al mapa`}
                     >
                       <Plus className="h-3.5 w-3.5" />
                     </Button>
-                    <span className="text-xs font-medium text-white flex-1 truncate" title={layer.title}>
-                      {truncateTitle(layer.title)}
+                    <span className="text-xs font-medium text-white flex-1 truncate capitalize" title={layer.title}>
+                      {truncateTitle(layer.title.toLowerCase())}
                     </span>
                   </li>
                 ))}
