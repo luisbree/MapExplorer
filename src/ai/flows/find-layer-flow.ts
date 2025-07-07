@@ -149,24 +149,22 @@ Podés hacer varias cosas según lo que te pida el usuario:
 
 Analizá el mensaje del usuario y las listas de capas para decidir qué acción tomar.
 
-- PARA AÑADIR: Tu tarea es identificar qué capas de la lista de 'Capas Disponibles' quiere el usuario. El 'name' de la capa tiene el formato 'espacio_de_trabajo:nombre_de_la_capa'. La búsqueda debe ser precisa y seguir estas reglas:
+- PARA AÑADIR: Tu tarea es identificar qué capas de la lista de 'Capas Disponibles' quiere el usuario. La búsqueda debe ser precisa y seguir este proceso lógico estricto:
 
-  1.  **Identificá el Espacio de Trabajo**: Primero, buscá si el usuario menciona un código alfanumérico corto que corresponda a un 'espacio_de_trabajo' (ej: 'rrq002', 'mar003', 'rpm001'). Esta es tu prioridad.
-  2.  **Identificá el Título de la Capa**: Luego, buscá si menciona un título o palabra clave (ej: 'calles', 'cuenca', 'conductos').
+  1.  **ANÁLISIS DE LA PETICIÓN**: Busca dos tipos de información en el mensaje del usuario:
+      *   Un **CÓDIGO de espacio de trabajo**: Un identificador alfanumérico corto, como 'rrq002', 'mar003', 'rpm001'.
+      *   Un **TÉRMINO de capa**: Una o más palabras clave que describan la capa, como 'calles', 'cuenca', 'conductos'.
 
-  **Reglas de Búsqueda (en orden de importancia):**
+  2.  **APLICACIÓN DE REGLAS (en orden de prioridad estricto)**:
+      *   **REGLA 1 (CÓDIGO + TÉRMINO)**: Si encuentras un CÓDIGO y un TÉRMINO (ej: "cuenca de rpm001"), DEBES buscar la capa que cumpla **ambas** condiciones:
+          *   El 'name' de la capa DEBE comenzar con el código exacto seguido de dos puntos (ej: 'rpm001:').
+          *   El 'title' de la capa O la parte del 'name' después de los dos puntos debe contener el término.
+      *   **REGLA 2 (SÓLO CÓDIGO)**: Si encuentras SÓLO un CÓDIGO (ej: "cargá todo lo de rrq002"), DEBES encontrar TODAS las capas cuyo 'name' comience EXACTAMENTE con ese código seguido de dos puntos (ej: 'rrq002:').
+      *   **REGLA 3 (SÓLO TÉRMINO)**: Si encuentras SÓLO un TÉRMINO, busca esa palabra en el 'title' o en el 'name' (después de los dos puntos) de TODAS las capas disponibles.
 
-  - **CASO 1: Búsqueda por Espacio de Trabajo y Título (la más común)**
-    - *Ejemplo*: "cargá los conductos de rrq002", "cuenca de rpm001".
-    - *Acción*: DEBES encontrar la capa que cumpla AMBAS condiciones. El 'name' debe empezar con el código del espacio de trabajo ('rrq002:') Y el título de la capa o su nombre técnico debe contener la palabra clave ('conductos').
+  3.  **FORMATO DEL NOMBRE**: Recuerda siempre que el 'name' de la capa tiene el formato 'espacio_de_trabajo:nombre_de_la_capa'. Tu búsqueda de código debe coincidir con la parte 'espacio_de_trabajo'.
 
-  - **CASO 2: Búsqueda SÓLO por Espacio de Trabajo**
-    - *Ejemplo*: "cargá todo lo de rrq002", "mostrame las capas de mar003".
-    - *Acción*: DEBES encontrar TODAS las capas en la lista cuyo 'name' comience EXACTAMENTE con el código del espacio de trabajo seguido de dos puntos (ej: 'mar003:').
-
-  - **CASO 3: Búsqueda SÓLO por Título**
-    - *Ejemplo*: "cargá la capa de calles".
-    - *Acción*: Buscá la palabra 'calles' tanto en el 'title' de la capa como en la parte del 'nombre_de_la_capa' (lo que va después de los dos puntos en el 'name').
+  4.  **IMPORTANTE**: El código del espacio de trabajo es un identificador único y específico. No lo confundas con texto normal. Por ejemplo, en una capa con título "Rutas Provinciales de Mendoza", la palabra "Rutas" no es un código. Un código será un patrón como 'rpm001'.
 
   **Tipo de Capa a Agregar (WMS vs. WFS):**
   - **Usa WFS** (campo 'layersToAddAsWFS') si el usuario pide explícitamente "vectores", "datos", "WFS", o si su intención es analizar o estilizar la capa (ej: "quiero ver los atributos de los partidos", "pintá las cuencas de azul"). WFS te da los datos crudos.
