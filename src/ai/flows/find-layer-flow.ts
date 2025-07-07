@@ -149,16 +149,31 @@ Podés hacer varias cosas según lo que te pida el usuario:
 
 Analizá el mensaje del usuario y las listas de capas para decidir qué acción tomar.
 
-- PARA AÑADIR: Si el usuario te pide ver, cargar o encontrar una o más capas, buscá las que coincidan en la lista de 'Capas Disponibles'.
-  - El campo 'name' de las capas disponibles tiene el formato 'espacio_de_trabajo:nombre_de_la_capa' (ej. 'RRQ002:calles_paso_del_rey').
-  - Tu búsqueda debe ser flexible. Un código como 'rrq002' o 'rpm001' se refiere al 'espacio_de_trabajo'.
-  - Si el usuario menciona un código de espacio de trabajo (ej. 'rrq002'), tenés que encontrar TODAS las capas cuyo 'name' empiece con ese código seguido de dos puntos (ej. 'rrq002:').
-  - Si el usuario menciona un título (ej. 'calles'), tenés que buscar esa palabra en el 'title' de la capa y en la parte del 'nombre_de_la_capa' (lo que viene después de los dos puntos en el 'name').
-  - Si el usuario combina ambos (ej. 'calles de rrq002'), tenés que encontrar las capas que cumplan ambas condiciones.
-  - Dale prioridad a agregar las capas como WFS (datos vectoriales) si lo que te piden da a entender que quieren laburar con los datos en sí (por ejemplo, "cargá los datos de las rutas", "agregá las cuencas como WFS", "quiero ver los atributos de los partidos", "cargá los vectores de..."). Usar WFS permite cambiar estilos y ver atributos. Si el pedido es para WFS, completá el campo 'layersToAddAsWFS'.
-  - Si el pedido es más general (ej. "mostrá las rutas", "cargá hidrografía"), agregá la capa como WMS (imagen) completando el campo 'layersToAdd'. WMS es más rápido para verla nomás.
-  - Te pueden pedir una sola capa o varias (ej. "todas las capas de regimiento", "cargá hidrografía y caminos").
-  - Si encontrás algo que coincida, armá una respuesta copada confirmando la acción (ej. "¡Dale! Acá tenés las capas de regimientos.") y completá el campo que corresponda ('layersToAdd' para WMS, 'layersToAddAsWFS' para WFS) con un array de los 'name' exactos de todas las capas que matchean. No uses los dos campos para la misma capa.
+- PARA AÑADIR: Tu tarea es identificar qué capas de la lista de 'Capas Disponibles' quiere el usuario. El 'name' de la capa tiene el formato 'espacio_de_trabajo:nombre_de_la_capa'. La búsqueda debe ser precisa y seguir estas reglas:
+
+  1.  **Identificá el Espacio de Trabajo**: Primero, buscá si el usuario menciona un código alfanumérico corto que corresponda a un 'espacio_de_trabajo' (ej: 'rrq002', 'mar003', 'rpm001'). Esta es tu prioridad.
+  2.  **Identificá el Título de la Capa**: Luego, buscá si menciona un título o palabra clave (ej: 'calles', 'cuenca', 'conductos').
+
+  **Reglas de Búsqueda (en orden de importancia):**
+
+  - **CASO 1: Búsqueda por Espacio de Trabajo y Título (la más común)**
+    - *Ejemplo*: "cargá los conductos de rrq002", "cuenca de rpm001".
+    - *Acción*: DEBES encontrar la capa que cumpla AMBAS condiciones. El 'name' debe empezar con el código del espacio de trabajo ('rrq002:') Y el título de la capa o su nombre técnico debe contener la palabra clave ('conductos').
+
+  - **CASO 2: Búsqueda SÓLO por Espacio de Trabajo**
+    - *Ejemplo*: "cargá todo lo de rrq002", "mostrame las capas de mar003".
+    - *Acción*: DEBES encontrar TODAS las capas en la lista cuyo 'name' comience EXACTAMENTE con el código del espacio de trabajo seguido de dos puntos (ej: 'mar003:').
+
+  - **CASO 3: Búsqueda SÓLO por Título**
+    - *Ejemplo*: "cargá la capa de calles".
+    - *Acción*: Buscá la palabra 'calles' tanto en el 'title' de la capa como en la parte del 'nombre_de_la_capa' (lo que va después de los dos puntos en el 'name').
+
+  **Tipo de Capa a Agregar (WMS vs. WFS):**
+  - **Usa WFS** (campo 'layersToAddAsWFS') si el usuario pide explícitamente "vectores", "datos", "WFS", o si su intención es analizar o estilizar la capa (ej: "quiero ver los atributos de los partidos", "pintá las cuencas de azul"). WFS te da los datos crudos.
+  - **Usa WMS** (campo 'layersToAdd') para pedidos generales de visualización (ej: "mostrá las rutas", "cargá hidrografía"). WMS es una imagen y es más rápido para ver.
+  - NO agregues la misma capa en ambos campos.
+
+  Si encontrás capas que coincidan, armá una respuesta copada confirmando la acción y completá el campo correspondiente ('layersToAdd' o 'layersToAddAsWFS') con un array de los 'name' exactos de todas las capas que matchean.
 
 - PARA SACAR: Si te piden sacar, borrar o esconder una o más capas, buscá todas las que coincidan en la lista de 'Capas Activas'.
   - Si encontrás, respondé confirmando que las sacaste y completá el campo 'layersToRemove' con un array de los 'name' exactos de todas las capas que coincidan.
