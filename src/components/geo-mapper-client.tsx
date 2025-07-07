@@ -228,7 +228,6 @@ export default function GeoMapperClient() {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
           setDiscoveredGeoServerLayers(discovered);
-          // Layers are now available for Drax to add, but are not pre-loaded onto the map.
         }
       } catch (error) {
         console.error("Failed to load initial DEAS layers:", error);
@@ -348,6 +347,35 @@ export default function GeoMapperClient() {
   }, [mapRef, toast]);
 
   const handleAiAction = useCallback((action: MapAssistantOutput) => {
+    const allLayersToAdd = [...(action.layersToAdd || []), ...(action.layersToAddAsWFS || [])];
+
+    if (allLayersToAdd.length > 0) {
+        const workspaces = new Set<string>();
+        const layerTitles = new Set<string>();
+
+        allLayersToAdd.forEach(layerName => {
+            if (layerName.includes(':')) {
+                const parts = layerName.split(':');
+                workspaces.add(parts[0]);
+                layerTitles.add(parts[1]);
+            } else {
+                layerTitles.add(layerName);
+            }
+        });
+
+        let toastMessage = "Drax procesará: ";
+        if (workspaces.size > 0) {
+            toastMessage += `Espacio(s) de trabajo: '${Array.from(workspaces).join("', '")}'. `;
+        }
+        toastMessage += `Capa(s): '${Array.from(layerTitles).join("', '")}'.`;
+        
+        toast({
+            title: "Solicitud de Capa Recibida por Drax",
+            description: toastMessage,
+            duration: 8000 
+        });
+    }
+
     const initialUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
 
     if (action.layersToAdd && action.layersToAdd.length > 0) {
