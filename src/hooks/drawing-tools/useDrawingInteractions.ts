@@ -70,11 +70,12 @@ export const useDrawingInteractions = ({
   }, [mapRef, drawingSourceRef, activeDrawTool, stopDrawingTool, isInspectModeActive, toggleInspectMode, toast]);
 
   const clearDrawnFeatures = useCallback(() => {
+    stopDrawingTool(); // Stop any active drawing tool first
     if (drawingSourceRef.current) {
       drawingSourceRef.current.clear();
       toast({ description: 'Dibujos borrados del mapa.' });
     }
-  }, [drawingSourceRef, toast]);
+  }, [drawingSourceRef, toast, stopDrawingTool]);
 
   const saveDrawnFeaturesAsKML = useCallback(() => {
     if (!drawingSourceRef.current || drawingSourceRef.current.getFeatures().length === 0) {

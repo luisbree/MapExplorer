@@ -68,7 +68,6 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
         <Button 
           onClick={onClearDrawnFeatures} 
           className={`${iconButtonBaseClass} border border-white/30 text-white/90 bg-black/20 hover:bg-red-500/20 hover:text-red-300 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary`}
-          disabled={!!activeDrawTool}
           title="Limpiar Dibujos"
           aria-label="Limpiar todos los dibujos del mapa"
         >
