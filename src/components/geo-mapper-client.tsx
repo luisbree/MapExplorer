@@ -243,8 +243,7 @@ export default function GeoMapperClient() {
     if (isMapReady) {
        loadInitialLayers();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMapReady]);
+  }, [isMapReady, handleFetchGeoServerLayers, initialGeoServerUrl, toast]);
 
   const osmDataHook = useOSMData({ 
     mapRef, 

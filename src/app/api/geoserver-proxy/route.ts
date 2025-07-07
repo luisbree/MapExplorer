@@ -10,12 +10,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Disable caching for this fetch request to ensure fresh data from GeoServer.
     const response = await fetch(geoServerUrl, {
       method: 'GET',
+      cache: 'no-store', // This is crucial for preventing Next.js from caching the proxy request
       headers: {
-        // Set a user-agent, as some servers may reject requests without one.
         'User-Agent': 'MapExplorerApp/1.0 (Proxy)',
-        // Some servers are strict and also require an Accept header.
         'Accept': 'application/xml, text/xml, */*',
       },
     });
@@ -33,20 +33,25 @@ export async function GET(request: NextRequest) {
     }
 
     const contentType = response.headers.get('content-type') || 'application/octet-stream';
-    const data = await response.text(); // Or response.arrayBuffer() if binary
+    const data = await response.text();
+
+    const responseHeaders = new Headers();
+    responseHeaders.set('Content-Type', contentType);
+    // Also add caching headers to the response to the client browser
+    responseHeaders.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    responseHeaders.set('Pragma', 'no-cache');
+    responseHeaders.set('Expires', '0');
+
 
     return new NextResponse(data, {
       status: 200,
-      headers: {
-        'Content-Type': contentType,
-      },
+      headers: responseHeaders,
     });
   } catch (error: any) {
     console.error('Proxy error:', error);
     
     let details = `The application server failed to connect to the GeoServer URL. This could be due to a network issue (e.g., firewall, incorrect IP address) or the GeoServer being offline. URL: ${geoServerUrl}`;
     
-    // Check for specific Node.js fetch error causes for more specific feedback
     if (error.cause && typeof error.cause === 'object' && 'code' in error.cause) {
       const cause = error.cause as { code: string };
       const hostname = new URL(geoServerUrl).hostname;
