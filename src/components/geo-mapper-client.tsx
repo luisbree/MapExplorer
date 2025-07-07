@@ -228,15 +228,11 @@ export default function GeoMapperClient() {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
           setDiscoveredGeoServerLayers(discovered);
-          // Add all discovered layers as hidden "DEAS" layers
-          discovered.forEach(layer => {
-            handleAddGeoServerLayerToMap(layer.name, layer.title, false, initialUrl, layer.bbox);
-          });
-          toast({ description: `${discovered.length} capas de DEAS (WMS) cargadas en segundo plano.` });
+          // Layers are now available for Drax to add, but are not pre-loaded onto the map.
         }
       } catch (error) {
         console.error("Failed to load initial DEAS layers:", error);
-        toast({ description: `No se pudieron cargar las capas de DEAS. Asegúrese de que GeoServer esté en línea en ${initialUrl}`, variant: 'destructive' });
+        toast({ description: `No se pudo obtener la lista de capas de DEAS. Es posible que el asistente no las encuentre.`, variant: 'destructive' });
       }
     };
     
