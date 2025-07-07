@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy, Printer } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy, Printer, Server } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -25,6 +25,7 @@ import TrelloPanel from '@/components/panels/TrelloPanel';
 import WfsLibraryPanel from '@/components/panels/WfsLibraryPanel';
 import HelpPanel from '@/components/panels/HelpPanel';
 import PrintComposerPanel from '@/components/panels/PrintComposerPanel';
+import DeasCatalogPanel from '@/components/panels/DeasCatalogPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
@@ -106,9 +107,10 @@ const PANEL_WIDTH = 350;
 const PANEL_PADDING = 8;
 
 const panelToggleConfigs = [
-  { id: 'legend', IconComponent: ListTree, name: "Capas" },
-  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca" },
-  { id: 'layers', IconComponent: Database, name: "Datos" },
+  { id: 'legend', IconComponent: ListTree, name: "Capas en Mapa" },
+  { id: 'deasCatalog', IconComponent: Server, name: "Capas Predefinidas" },
+  { id: 'wfsLibrary', IconComponent: Library, name: "Biblioteca WFS" },
+  { id: 'layers', IconComponent: Database, name: "Datos y Vista" },
   { id: 'tools', IconComponent: Wrench, name: "Herramientas" },
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
@@ -129,6 +131,7 @@ export default function GeoMapperClient() {
   const wfsLibraryPanelRef = useRef<HTMLDivElement>(null);
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const printComposerPanelRef = useRef<HTMLDivElement>(null);
+  const deasCatalogPanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, setMapInstanceAndElement, isMapReady, drawingSourceRef } = useOpenLayersMap();
   const { toast } = useToast();
@@ -143,6 +146,7 @@ export default function GeoMapperClient() {
     wfsLibraryPanelRef,
     helpPanelRef,
     printComposerPanelRef,
+    deasCatalogPanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -220,12 +224,13 @@ export default function GeoMapperClient() {
     addLayer: layerManagerHook.addLayer,
   });
 
+  const initialGeoServerUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
+
   // Effect for initial GeoServer layer loading
   useEffect(() => {
     const loadInitialLayers = async () => {
-      const initialUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
       try {
-        const discovered = await handleFetchGeoServerLayers(initialUrl);
+        const discovered = await handleFetchGeoServerLayers(initialGeoServerUrl);
         if (discovered && discovered.length > 0) {
           setDiscoveredGeoServerLayers(discovered);
         }
@@ -347,13 +352,24 @@ export default function GeoMapperClient() {
   }, [mapRef, toast]);
 
   const handleAiAction = useCallback((action: MapAssistantOutput) => {
-    const initialUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
+    if (action.response) {
+      // This is a special case to handle the toast for layer searching
+      if (action.response.startsWith("Buscando capas para el espacio de trabajo")) {
+          const parts = action.response.split("'");
+          if (parts.length >= 5) {
+              toast({
+                  title: `Búsqueda: ${parts[1]}`,
+                  description: `Capas: ${parts[3]}`,
+              });
+          }
+      }
+    }
 
     if (action.layersToAdd && action.layersToAdd.length > 0) {
       action.layersToAdd.forEach(layerNameToAdd => {
         const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
         if (layerData) {
-            handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialUrl, layerData.bbox);
+            handleAddGeoServerLayerToMap(layerData.name, layerData.title, true, initialGeoServerUrl, layerData.bbox);
         } else {
             toast({
                 title: "Capa WMS no encontrada",
@@ -368,7 +384,7 @@ export default function GeoMapperClient() {
       action.layersToAddAsWFS.forEach(layerNameToAdd => {
         const layerData = discoveredGeoServerLayers.find(l => l.name === layerNameToAdd);
         if (layerData) {
-            handleAddGeoServerLayerAsWFS(layerData.name, layerData.title, initialUrl);
+            handleAddGeoServerLayerAsWFS(layerData.name, layerData.title, initialGeoServerUrl);
         } else {
             toast({
                 title: "Capa WFS no encontrada",
@@ -485,7 +501,7 @@ export default function GeoMapperClient() {
       toast({ description: `Abriendo Trello en una nueva pestaña...` });
     }
 
-  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, zoomToBoundingBox, handleChangeBaseLayer, osmDataHook]);
+  }, [discoveredGeoServerLayers, handleAddGeoServerLayerToMap, handleAddGeoServerLayerAsWFS, toast, layerManagerHook, zoomToBoundingBox, handleChangeBaseLayer, osmDataHook, initialGeoServerUrl]);
 
   const handleSearchTrelloCard = useCallback(async (searchTerm: string) => {
     setIsTrelloLoading(true);
@@ -503,6 +519,19 @@ export default function GeoMapperClient() {
       setIsTrelloLoading(false);
     }
   }, [toast]);
+
+  const handleDeasLayerToggle = useCallback((layer: GeoServerDiscoveredLayer, isChecked: boolean) => {
+      if (isChecked) {
+          handleAddGeoServerLayerToMap(layer.name, layer.title, true, initialGeoServerUrl, layer.bbox);
+      } else {
+          const layerToRemove = layerManagerHook.layers.find(
+              (activeLayer) => activeLayer.olLayer.get('gsLayerName') === layer.name
+          );
+          if (layerToRemove) {
+              layerManagerHook.removeLayer(layerToRemove.id);
+          }
+      }
+  }, [handleAddGeoServerLayerToMap, layerManagerHook, initialGeoServerUrl]);
 
 
   return (
@@ -583,6 +612,19 @@ export default function GeoMapperClient() {
             onBaseLayerSettingsChange={handleBaseLayerSettingsChange}
             style={{ top: `${panels.layers.position.y}px`, left: `${panels.layers.position.x}px`, zIndex: panels.layers.zIndex }}
           />
+        )}
+
+        {panels.deasCatalog && !panels.deasCatalog.isMinimized && (
+            <DeasCatalogPanel
+                panelRef={deasCatalogPanelRef}
+                isCollapsed={panels.deasCatalog.isCollapsed}
+                onToggleCollapse={() => togglePanelCollapse('deasCatalog')}
+                onClosePanel={() => togglePanelMinimize('deasCatalog')}
+                onMouseDownHeader={(e) => handlePanelMouseDown(e, 'deasCatalog')}
+                discoveredLayers={discoveredGeoServerLayers}
+                onLayerToggle={handleDeasLayerToggle}
+                style={{ top: `${panels.deasCatalog.position.y}px`, left: `${panels.deasCatalog.position.x}px`, zIndex: panels.deasCatalog.zIndex }}
+            />
         )}
 
         {panels.tools && !panels.tools.isMinimized && (
