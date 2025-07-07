@@ -318,17 +318,21 @@ export default function GeoMapperClient() {
   };
 
 
-  const zoomToBoundingBox = useCallback((bbox: [number, number, number, number]) => {
-    if (!mapRef.current) return;
+  const zoomToBoundingBox = useCallback((bbox: [number, number, number, number], onZoomComplete?: (completed: boolean) => void) => {
+    if (!mapRef.current) {
+        onZoomComplete?.(false);
+        return;
+    }
     const extent4326: Extent = [bbox[0], bbox[1], bbox[2], bbox[3]];
     try {
         const extent3857 = transformExtent(extent4326, 'EPSG:4326', 'EPSG:3857');
 
         if (extent3857 && extent3857.every(isFinite) && (extent3857[2] - extent3857[0] > 0.000001) && (extent3857[3] - extent3857[1] > 0.000001)) {
             mapRef.current.getView().fit(extent3857, {
-            padding: [50, 50, 50, 50],
-            duration: 1000,
-            maxZoom: 17,
+                padding: [50, 50, 50, 50],
+                duration: 1000,
+                maxZoom: 17,
+                callback: onZoomComplete,
             });
             setTimeout(() => {
               toast({ description: "Ubicación encontrada y centrada en el mapa." });
@@ -337,12 +341,14 @@ export default function GeoMapperClient() {
             setTimeout(() => {
               toast({ description: "No se pudo determinar una extensión válida para la ubicación." });
             }, 0);
+            onZoomComplete?.(false);
         }
     } catch (error) {
         console.error("Error transforming extent or fitting view:", error);
         setTimeout(() => {
           toast({ description: "Error al procesar la ubicación seleccionada." });
         }, 0);
+        onZoomComplete?.(false);
     }
   }, [mapRef, toast]);
 
@@ -452,10 +458,17 @@ export default function GeoMapperClient() {
     if (shouldZoom) {
       const [sLat, nLat, wLon, eLon] = action.zoomToBoundingBox!;
       if ([sLat, nLat, wLon, eLon].every(c => !isNaN(c))) {
-        zoomToBoundingBox([wLon, sLat, eLon, nLat]);
-        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints || shouldFetchOsm) {
-          setTimeout(performSearchAfterZoom, 1100);
-        }
+        const afterZoomAction = (shouldFindSentinelFootprints || shouldFindLandsatFootprints || shouldFetchOsm)
+            ? (completed: boolean) => {
+                if (completed) {
+                    performSearchAfterZoom();
+                } else {
+                    toast({ description: "El zoom fue cancelado, no se realizarán búsquedas adicionales." });
+                }
+              }
+            : undefined;
+
+        zoomToBoundingBox([wLon, sLat, eLon, nLat], afterZoomAction);
       } else {
         toast({description: `Drax devolvió una ubicación inválida.`});
       }
