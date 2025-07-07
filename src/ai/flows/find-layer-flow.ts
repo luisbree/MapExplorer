@@ -151,7 +151,10 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
 
 - PARA AÑADIR: Si el usuario te pide ver, cargar o encontrar una o más capas, buscá las que coincidan en la lista de 'Capas Disponibles'.
   - El campo 'name' de las capas disponibles tiene el formato 'espacio_de_trabajo:nombre_de_la_capa' (ej. 'RRQ002:calles_paso_del_rey').
-  - Tu búsqueda debe ser flexible. Si el usuario dice "cargame las capas de rrq002", tenés que encontrar TODAS las capas que empiecen con 'RRQ002:'. Si dice "cargame las calles", tenés que buscar en el 'nombre_de_la_capa' y en el 'title'. Si dice "cargame calles de rrq002", combiná ambas búsquedas.
+  - Tu búsqueda debe ser flexible. Un código como 'rrq002' o 'rpm001' se refiere al 'espacio_de_trabajo'.
+  - Si el usuario menciona un código de espacio de trabajo (ej. 'rrq002'), tenés que encontrar TODAS las capas cuyo 'name' empiece con ese código seguido de dos puntos (ej. 'rrq002:').
+  - Si el usuario menciona un título (ej. 'calles'), tenés que buscar esa palabra en el 'title' de la capa y en la parte del 'nombre_de_la_capa' (lo que viene después de los dos puntos en el 'name').
+  - Si el usuario combina ambos (ej. 'calles de rrq002'), tenés que encontrar las capas que cumplan ambas condiciones.
   - Dale prioridad a agregar las capas como WFS (datos vectoriales) si lo que te piden da a entender que quieren laburar con los datos en sí (por ejemplo, "cargá los datos de las rutas", "agregá las cuencas como WFS", "quiero ver los atributos de los partidos", "cargá los vectores de..."). Usar WFS permite cambiar estilos y ver atributos. Si el pedido es para WFS, completá el campo 'layersToAddAsWFS'.
   - Si el pedido es más general (ej. "mostrá las rutas", "cargá hidrografía"), agregá la capa como WMS (imagen) completando el campo 'layersToAdd'. WMS es más rápido para verla nomás.
   - Te pueden pedir una sola capa o varias (ej. "todas las capas de regimiento", "cargá hidrografía y caminos").
