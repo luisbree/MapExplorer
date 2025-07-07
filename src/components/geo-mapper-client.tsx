@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -224,7 +223,7 @@ export default function GeoMapperClient() {
     addLayer: layerManagerHook.addLayer,
   });
 
-  const initialGeoServerUrl = 'http://192.168.1.90:8080/geoserver/';
+  const initialGeoServerUrl = 'http://www.minfra.gba.gob.ar/humedales/geoserver/';
 
   // Effect for initial GeoServer layer loading
   useEffect(() => {
@@ -353,15 +352,14 @@ export default function GeoMapperClient() {
 
   const handleAiAction = useCallback((action: MapAssistantOutput) => {
     if (action.response) {
-      // This is a special case to handle the toast for layer searching
-      if (action.response.startsWith("Buscando capas para el espacio de trabajo")) {
-          const parts = action.response.split("'");
-          if (parts.length >= 5) {
-              toast({
-                  title: `Búsqueda: ${parts[1]}`,
-                  description: `Capas: ${parts[3]}`,
-              });
-          }
+      if (/(carg|busc|añad|mostr|quit|elimin|zoom|estilo|tabla|mapa|base|sentinel|landsat|trello)/i.test(action.response) && 
+            ![action.layersToAdd, action.layersToAddAsWFS, action.layersToRemove, action.layersToStyle, action.zoomToLayer, action.showTableForLayer, action.setBaseLayer, action.zoomToBoundingBox, action.findSentinel2Footprints, action.findLandsatFootprints, action.fetchOsmForView, action.urlToOpen].some(field => field && (Array.isArray(field) ? field.length > 0 : true))) {
+          toast({
+              title: "Drax no identificó una acción",
+              description: "No se encontró una capa o acción que coincida con tu pedido. Intenta ser más específico.",
+              variant: "destructive",
+              duration: 6000,
+          });
       }
     }
 
