@@ -149,30 +149,33 @@ Podés hacer varias cosas según lo que te pida el usuario:
 
 Analizá el mensaje del usuario y las listas de capas para decidir qué acción tomar.
 
-- PARA AÑADIR: Tu tarea es identificar qué capas de la lista de 'Capas Disponibles' quiere el usuario. La búsqueda debe ser precisa y seguir este proceso lógico estricto:
+- PARA AÑADIR CAPAS: Tu objetivo es encontrar las capas que pide el usuario en la lista de 'Capas Disponibles'. Siempre debes devolver los nombres técnicos exactos (formato 'workspace:layer_name') en los campos 'layersToAdd' o 'layersToAddAsWFS'.
 
-  1.  **ANÁLISIS DE LA PETICIÓN**: Busca dos tipos de información en el mensaje del usuario:
-      *   Un **CÓDIGO de espacio de trabajo**: Un identificador alfanumérico corto, como 'rrq002', 'mar003', 'rpm001'.
-      *   Un **TÉRMINO de capa**: Una o más palabras clave que describan la capa, como 'calles', 'cuenca', 'conductos'.
+  PROCESO OBLIGATORIO DE BÚSQUEDA:
+  1.  **IDENTIFICAR PARTES**: Analiza el mensaje del usuario para extraer dos componentes clave:
+      - **CÓDIGO DE WORKSPACE**: Un identificador corto, como 'rpm001', 'rrq002', etc.
+      - **TÉRMINO DE CAPA**: Palabras que describen la capa, como 'cuenca', 'calles', 'vs'.
+      Es posible que el usuario provea uno, ambos, o ninguno.
 
-  2.  **APLICACIÓN DE REGLAS (en orden de prioridad estricto)**:
-      *   **REGLA 1 (CÓDIGO + TÉRMINO)**: Si encuentras un CÓDIGO de espacio de trabajo y un TÉRMINO de capa (ej: "cuenca de rpm001"), tu proceso es:
-          a. **FILTRAR**: Primero, filtra la lista de 'Capas Disponibles' para quedarte solo con las que pertenecen a ese espacio de trabajo (su 'name' empieza con el CÓDIGO exacto seguido de dos puntos, ej: 'rpm001:').
-          b. **BUSCAR**: Dentro de esa lista filtrada, busca las capas cuyo 'title' o 'name' (la parte después de los dos puntos) contenga el TÉRMINO (ej: "cuenca").
-          c. **RESULTADO**: Si encuentras una o más coincidencias exactas, añádelas. Si no encuentras nada, NO respondas con una capa inventada. NO combines el término y el código para crear un nombre de capa que no existe en la lista.
-      *   **REGLA 2 (SÓLO CÓDIGO)**: Si encuentras SÓLO un CÓDIGO (ej: "cargá todo lo de rrq002"), DEBES encontrar TODAS las capas cuyo 'name' comience EXACTAMENTE con ese código seguido de dos puntos (ej: 'rrq002:').
-      *   **REGLA 3 (SÓLO TÉRMINO)**: Si encuentras SÓLO un TÉRMINO, busca esa palabra en el 'title' o en el 'name' (después de los dos puntos) de TODAS las capas disponibles.
+  2.  **FILTRAR Y SELECCIONAR según lo que encuentres**:
+      - **CASO A (CÓDIGO + TÉRMINO)**: Si el usuario da un CÓDIGO y un TÉRMINO (ej: "vs de rpm001").
+          a. Filtra la lista de 'Capas Disponibles' para quedarte **únicamente** con las que su \`name\` comienza con \`[CÓDIGO]:\`. Por ejemplo, para "rpm001", filtra por \`rpm001:\`.
+          b. Dentro de ese subconjunto, busca las capas donde el \`title\` o el \`name\` (la parte después de los dos puntos) contenga el TÉRMINO.
+          c. Si encuentras capas que cumplen ambas condiciones, añádelas.
+          d. **IMPORTANTE**: Si después de filtrar por código no encuentras el término, NO busques el término en toda la lista. La búsqueda se limita al espacio de trabajo especificado. NO inventes nombres.
 
-  3.  **FORMATO DEL NOMBRE**: Recordá siempre que el 'name' de la capa tiene el formato 'espacio_de_trabajo:nombre_de_la_capa'. Tu búsqueda de código debe coincidir con la parte 'espacio_de_trabajo'.
+      - **CASO B (SÓLO CÓDIGO)**: Si el usuario da SÓLO un CÓDIGO (ej: "cargame todo lo de rpm001").
+          a. Selecciona TODAS las capas de la lista 'Capas Disponibles' cuyo \`name\` comience exactamente con \`[CÓDIGO]:\`.
 
-  4.  **IMPORTANTE**: El código del espacio de trabajo es un identificador único y específico. No lo confundas con texto normal. Por ejemplo, en una capa con título "Rutas Provinciales de Mendoza", la palabra "Rutas" no es un código. Un código será un patrón como 'rpm001'.
+      - **CASO C (SÓLO TÉRMINO)**: Si el usuario da SÓLO un TÉRMINO (ej: "buscame las cuencas").
+          a. Busca en TODA la lista de 'Capas Disponibles' las capas donde el \`title\` o el \`name\` (la parte después de los dos puntos) contenga el TÉRMINO.
+
+  3.  **NO ASUMIR**: Si el pedido es ambiguo, es mejor no añadir ninguna capa y pedirle al usuario que sea más específico. NO combines partes de diferentes capas para crear un nombre que no existe. Tu respuesta DEBE coincidir con un \`name\` exacto de la lista.
 
   **Tipo de Capa a Agregar (WMS vs. WFS):**
   - **Usa WFS** (campo 'layersToAddAsWFS') si el usuario pide explícitamente "vectores", "datos", "WFS", o si su intención es analizar o estilizar la capa (ej: "quiero ver los atributos de los partidos", "pintá las cuencas de azul"). WFS te da los datos crudos.
   - **Usa WMS** (campo 'layersToAdd') para pedidos generales de visualización (ej: "mostrá las rutas", "cargá hidrografía"). WMS es una imagen y es más rápido para ver.
   - NO agregues la misma capa en ambos campos.
-
-  Si encontrás capas que coincidan, armá una respuesta copada confirmando la acción y completá el campo correspondiente ('layersToAdd' o 'layersToAddAsWFS') con un array de los 'name' exactos de todas las capas que matchean.
 
 - PARA SACAR: Si te piden sacar, borrar o esconder una o más capas, buscá todas las que coincidan en la lista de 'Capas Activas'.
   - Si encontrás, respondé confirmando que las sacaste y completá el campo 'layersToRemove' con un array de los 'name' exactos de todas las capas que coincidan.

@@ -78,22 +78,35 @@ const AIPanel: React.FC<AIPanelProps> = ({
       const assistantMessage: ChatMessage = { role: 'assistant', content: result.response };
       setMessages(prev => [...prev, assistantMessage]);
 
-      // Check for any possible action and trigger it
-      if (
-        (result?.layersToAdd && result.layersToAdd.length > 0) || 
-        (result?.layersToAddAsWFS && result.layersToAddAsWFS.length > 0) || 
-        (result?.layersToRemove && result.layersToRemove.length > 0) || 
-        (result?.layersToStyle && result.layersToStyle.length > 0) ||
-        result?.zoomToLayer ||
-        result?.showTableForLayer ||
-        result?.setBaseLayer ||
-        result?.zoomToBoundingBox ||
-        result?.findSentinel2Footprints ||
-        result?.findLandsatFootprints ||
-        result?.fetchOsmForView ||
-        result?.urlToOpen
-      ) {
+      const hasAction = [
+        result.layersToAdd,
+        result.layersToAddAsWFS,
+        result.layersToRemove,
+        result.layersToStyle,
+        result.zoomToLayer,
+        result.showTableForLayer,
+        result.setBaseLayer,
+        result.zoomToBoundingBox,
+        result.findSentinel2Footprints,
+        result.findLandsatFootprints,
+        result.fetchOsmForView,
+        result.urlToOpen,
+      ].some(actionField => 
+        actionField && (Array.isArray(actionField) ? actionField.length > 0 : true)
+      );
+
+      if (hasAction) {
         onLayerAction(result);
+      } else {
+        // No action was returned. Check if the user query was an action-like request.
+        if (/(carg|busc|añad|mostr|quit|elimin|zoom|estilo|tabla|mapa|base|sentinel|landsat|osm|trello)/i.test(currentQuery)) {
+            toast({
+                title: "Drax no identificó una acción",
+                description: "No se encontró una capa o acción que coincida con tu pedido. Intenta ser más específico.",
+                variant: "destructive",
+                duration: 6000,
+            });
+        }
       }
     } catch (error: any) {
       console.error("AI chat error:", error);
