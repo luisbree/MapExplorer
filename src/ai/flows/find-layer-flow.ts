@@ -153,26 +153,22 @@ Analizá el mensaje del usuario y las listas de capas para decidir qué acción 
 
   PROCESO OBLIGATORIO DE BÚSQUEDA:
   1.  **IDENTIFICAR PARTES**: Analiza el mensaje del usuario para extraer dos componentes clave:
-      - **CÓDIGO DE WORKSPACE**: Un identificador corto, como 'rpm001', 'rrq002', etc.
-      - **TÉRMINO DE CAPA**: Palabras que describen la capa, como 'cuenca', 'calles', 'vialidad'.
-      Es posible que el usuario provea uno, ambos, o ninguno.
+      - **CÓDIGO DE WORKSPACE**: Un identificador corto con letras y números, como 'rpm001', 'rrq002', 'mar004', etc. Puede que el usuario no lo provea.
+      - **TÉRMINO DE CAPA**: Palabras que describen la capa, como 'cuenca', 'calles', 'vialidad'. Puede que el usuario no lo provea.
+      
+  2.  **PREPARAR BÚSQUEDA**:
+      - Convierte tanto el CÓDIGO DE WORKSPACE como el TÉRMINO DE CAPA a minúsculas para una búsqueda insensible a mayúsculas/minúsculas. Si el usuario dice "MAR004", debes usar "mar004".
+      
+  3.  **FILTRAR Y SELECCIONAR**:
+      - Empieza con la lista completa de 'Capas Disponibles'.
+      - **Si el usuario proveyó un CÓDIGO DE WORKSPACE**: Filtra la lista. Quédate únicamente con las capas cuyo 'name' (convertido a minúsculas) comience con el CÓDIGO DE WORKSPACE en minúsculas seguido de dos puntos. Por ejemplo, si el código es "mar004", el prefijo a buscar es "mar004:".
+      - **Si el usuario proveyó un TÉRMINO DE CAPA**: De la lista ya filtrada (o de la lista completa si no había código), filtra de nuevo. Quédate con las capas donde el 'title' (convertido a minúsculas) o el 'name' (convertido a minúsculas) contenga el TÉRMINO DE CAPA.
+      - **RESULTADO**: Las capas que queden después de estos filtros son las que debes añadir. Si no hay TÉRMINO DE CAPA, el resultado son todas las capas del CÓDIGO DE WORKSPACE.
+      
+  4.  **DEVOLVER RESULTADO**:
+      - Si encuentras una o más capas que cumplen los filtros, **COPIA EL VALOR COMPLETO Y EXACTO** del campo 'name' de CADA capa encontrada y ponlo en el array de respuesta ('layersToAdd' o 'layersToAddAsWFS').
+      - **NO ASUMIR**: Si no encuentras una coincidencia exacta, NO añadas ninguna capa. Responde amablemente que no encontraste lo que te pidió y no completes ninguna acción. NO combines partes de diferentes capas para crear un nombre que no existe.
 
-  2.  **FILTRAR Y SELECCIONAR según lo que encuentres**:
-      - **CASO A (CÓDIGO + TÉRMINO)**: Si el usuario da un CÓDIGO y un TÉRMINO (ej: "la vialidad de rpm001").
-          a. **OBLIGATORIO**: Convierte el CÓDIGO que te dio el usuario a minúsculas. Por ejemplo, si te dicen "RPM001", debes usar "rpm001".
-          b. Filtra la lista de 'Capas Disponibles' para quedarte **únicamente** con las que su 'name' (convertido a minúsculas) comienza con '[código_en_minúsculas]:'.
-          c. Dentro de ese subconjunto, busca las capas donde el 'title' o la parte del 'name' después de los dos puntos (ambos convertidos a minúsculas) contenga el TÉRMINO (también convertido a minúsculas).
-          d. Si encuentras una o más capas que cumplen, **COPIA EL VALOR COMPLETO Y EXACTO** del campo 'name' de CADA capa encontrada y ponlo en el array de respuesta ('layersToAdd' o 'layersToAddAsWFS'). NO abrevies, modifiques o inventes el nombre. Si el 'name' es 'rpm001:vs_provincia' y el usuario pide "vs de rpm001", tu respuesta DEBE ser 'rpm001:vs_provincia'.
-          e. **IMPORTANTE**: Si después de filtrar por código no encuentras el término, NO busques el término en toda la lista. La búsqueda se limita al espacio de trabajo especificado.
-
-      - **CASO B (SÓLO CÓDIGO)**: Si el usuario da SÓLO un CÓDIGO (ej: "cargame todo lo de MAR004").
-          a. **OBLIGATORIO**: Convierte el CÓDIGO que te dio el usuario a minúsculas. Por ejemplo, si te dicen "MAR004", debes usar "mar004".
-          b. Selecciona TODAS las capas de la lista 'Capas Disponibles' cuyo 'name' (convertido a minúsculas) comience exactamente con '[código_en_minúsculas]:' y copia sus nombres completos y exactos.
-
-      - **CASO C (SÓLO TÉRMINO)**: Si el usuario da SÓLO un TÉRMINO (ej: "buscame las de vialidad").
-          a. Busca en TODA la lista de 'Capas Disponibles' las capas donde el 'title' o el 'name' (ambos convertidos a minúsculas) contenga el TÉRMINO (convertido a minúsculas). Copia sus nombres completos y exactos.
-
-  3.  **NO ASUMIR**: Si el pedido es ambiguo o no encuentras una coincidencia exacta, es mejor no añadir ninguna capa y pedirle al usuario que sea más específico. NO combines partes de diferentes capas para crear un nombre que no existe.
 
   **Tipo de Capa a Agregar (WMS vs. WFS):**
   - **Usa WFS** (campo 'layersToAddAsWFS') si el usuario pide explícitamente "vectores", "datos", "WFS", o si su intención es analizar o estilizar la capa (ej: "quiero ver los atributos de los partidos", "pintá las cuencas de azul"). WFS te da los datos crudos.
@@ -270,3 +266,4 @@ const mapAssistantFlow = ai.defineFlow(
     return output;
   }
 );
+
