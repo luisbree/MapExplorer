@@ -223,7 +223,7 @@ export default function GeoMapperClient() {
   // Effect for initial GeoServer layer loading
   useEffect(() => {
     const loadInitialLayers = async () => {
-      const initialUrl = 'http://192.168.1.90:8080/geoserver';
+      const initialUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
       try {
         const discovered = await handleFetchGeoServerLayers(initialUrl);
         if (discovered && discovered.length > 0) {
@@ -352,7 +352,7 @@ export default function GeoMapperClient() {
   }, [mapRef, toast]);
 
   const handleAiAction = useCallback((action: MapAssistantOutput) => {
-    const initialUrl = 'https://www.minfra.gba.gob.ar/ambientales/geoserver';
+    const initialUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
 
     if (action.layersToAdd && action.layersToAdd.length > 0) {
       action.layersToAdd.forEach(layerNameToAdd => {
