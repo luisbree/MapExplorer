@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -59,8 +60,8 @@ export const PREDEFINED_WFS_SERVERS: WfsServer[] = [
     url: 'http://mapasdis.ms.gba.gov.ar:8080/geoserver/wfs'
   },
   {
-    name: 'Ministerio de Infraestructura - Humedales',
-    url: 'http://www.minfra.gba.gob.ar/humedales/geoserver/wfs',
+    name: 'Ministerio de Infraestructura - Ambientales',
+    url: 'http://www.minfra.gba.gob.ar/ambientales/geoserver/wfs',
   },
   {
     name: 'INDEC',
