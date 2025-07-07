@@ -1,10 +1,9 @@
-
 "use client";
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Map } from 'ol';
 import type VectorSource from 'ol/source/Vector';
-import Draw from 'ol/interaction/Draw';
+import Draw, { createBox } from 'ol/interaction/Draw';
 import KML from 'ol/format/KML';
 import { useToast } from "@/hooks/use-toast";
 
@@ -35,7 +34,7 @@ export const useDrawingInteractions = ({
     setActiveDrawTool(null);
   }, [mapRef]);
 
-  const toggleDrawingTool = useCallback((toolType: 'Polygon' | 'LineString' | 'Point') => {
+  const toggleDrawingTool = useCallback((toolType: 'Polygon' | 'LineString' | 'Point' | 'Rectangle') => {
     if (!mapRef.current || !drawingSourceRef.current) return;
 
     // If the same tool is clicked again, stop it
@@ -50,16 +49,23 @@ export const useDrawingInteractions = ({
       toggleInspectMode(); 
     }
 
-    const newDrawInteraction = new Draw({
+    const drawOptions: any = {
       source: drawingSourceRef.current,
       type: toolType,
-    });
+    };
+
+    if (toolType === 'Rectangle') {
+      drawOptions.type = 'Circle'; // OL uses 'Circle' type with a geometry function for boxes
+      drawOptions.geometryFunction = createBox();
+    }
+
+    const newDrawInteraction = new Draw(drawOptions);
 
     mapRef.current.addInteraction(newDrawInteraction);
     drawInteractionRef.current = newDrawInteraction;
     setActiveDrawTool(toolType);
     
-    toast({ description: `Herramienta de dibujo de ${toolType} activada.` });
+    toast({ description: `Herramienta de dibujo de ${toolType === 'Rectangle' ? 'Rectángulo' : toolType} activada.` });
 
   }, [mapRef, drawingSourceRef, activeDrawTool, stopDrawingTool, isInspectModeActive, toggleInspectMode, toast]);
 

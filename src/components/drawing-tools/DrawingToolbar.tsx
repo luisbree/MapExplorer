@@ -1,13 +1,12 @@
-
 "use client";
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Square, PenLine, Dot, Eraser, Save } from 'lucide-react'; 
+import { Square, PenLine, Dot, Eraser, Save, RectangleVertical } from 'lucide-react'; 
 
 interface DrawingToolbarProps {
   activeDrawTool: string | null;
-  onToggleDrawingTool: (toolType: 'Polygon' | 'LineString' | 'Point') => void;
+  onToggleDrawingTool: (toolType: 'Polygon' | 'LineString' | 'Point' | 'Rectangle') => void;
   // onStopDrawingTool prop removed as it's no longer directly used by this component
   onClearDrawnFeatures: () => void;
   onSaveDrawnFeaturesAsKML: () => void;
@@ -31,10 +30,20 @@ const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
           className={`${iconButtonBaseClass} ${
             activeDrawTool === 'Polygon' ? activeClass : inactiveClass
           }`}
-          title={activeDrawTool === 'Polygon' ? "Detener dibujo de Polígono" : "Dibujar Polígono"}
+          title={activeDrawTool === 'Polygon' ? "Detener dibujo de Polígono" : "Dibujar Polígono (para obtener datos OSM)"}
           aria-label={activeDrawTool === 'Polygon' ? "Detener dibujo de polígono" : "Dibujar Polígono (para obtener datos OSM)"}
         >
           <Square className="h-4 w-4" />
+        </Button>
+        <Button 
+          onClick={() => onToggleDrawingTool('Rectangle')} 
+          className={`${iconButtonBaseClass} ${
+            activeDrawTool === 'Rectangle' ? activeClass : inactiveClass
+          }`}
+          title={activeDrawTool === 'Rectangle' ? "Detener dibujo de Rectángulo" : "Dibujar Rectángulo"}
+          aria-label={activeDrawTool === 'Rectangle' ? "Detener dibujo de Rectángulo" : "Dibujar Rectángulo"}
+        >
+          <RectangleVertical className="h-4 w-4" />
         </Button>
         <Button 
           onClick={() => onToggleDrawingTool('LineString')} 

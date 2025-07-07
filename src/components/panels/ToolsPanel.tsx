@@ -1,4 +1,3 @@
-
 "use client";
 
 import React from 'react';
@@ -30,7 +29,7 @@ interface ToolsPanelProps {
 
   // Drawing props
   activeDrawTool: string | null;
-  onToggleDrawingTool: (toolType: 'Polygon' | 'LineString' | 'Point') => void;
+  onToggleDrawingTool: (toolType: 'Polygon' | 'LineString' | 'Point' | 'Rectangle') => void;
   onClearDrawnFeatures: () => void;
   onSaveDrawnFeaturesAsKML: () => void;
 
