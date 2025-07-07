@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
@@ -223,7 +224,7 @@ export default function GeoMapperClient() {
     addLayer: layerManagerHook.addLayer,
   });
 
-  const initialGeoServerUrl = 'http://www.minfra.gba.gob.ar/humedales/geoserver/';
+  const initialGeoServerUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
 
   // Effect for initial GeoServer layer loading
   useEffect(() => {
