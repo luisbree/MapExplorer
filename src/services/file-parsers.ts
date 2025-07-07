@@ -1,4 +1,3 @@
-
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
@@ -17,20 +16,25 @@ interface FileUploadParams {
     uniqueIdPrefix: string;
 }
 
-const getFileExtension = (filename: string) => {
+const getFileExtension = (filename: string): string => {
     return filename.slice(((filename.lastIndexOf(".") - 1) >>> 0) + 2).toLowerCase();
 };
 
-const createVectorLayer = (features: any[], fileName: string): MapLayer => {
+const getBaseName = (filename: string): string => {
+    const lastDotIndex = filename.lastIndexOf('.');
+    return lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
+};
+
+const createVectorLayer = (features: any[], layerName: string): MapLayer => {
     const source = new VectorSource({ features });
-    const layerId = `${fileName}-${nanoid()}`;
+    const layerId = `${layerName}-${nanoid()}`;
     const olLayer = new VectorLayer({
         source,
-        properties: { id: layerId, name: fileName, type: 'vector' },
+        properties: { id: layerId, name: layerName, type: 'vector' },
     });
     return {
         id: layerId,
-        name: fileName,
+        name: layerName,
         olLayer,
         visible: true,
         opacity: 1,
@@ -48,140 +52,153 @@ export const handleFileUpload = async ({
     const geojsonFormat = new GeoJSON({ featureProjection: 'EPSG:3857' });
     const kmlFormat = new KML({ extractStyles: true, showPointNames: true });
 
-    const processFile = async (file: File) => {
-        const fileName = file.name;
-        const fileExtension = getFileExtension(fileName);
-        const reader = new FileReader();
-
-        return new Promise<void>((resolve, reject) => {
-            reader.onload = async (e) => {
-                try {
-                    const content = e.target?.result;
-                    if (!content) {
-                        return reject(new Error("El contenido del archivo está vacío."));
-                    }
-
-                    let features;
-                    switch (fileExtension) {
-                        case 'geojson':
-                        case 'json':
-                            features = geojsonFormat.readFeatures(content);
-                            break;
-                        case 'kml':
-                            features = kmlFormat.readFeatures(content, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
-                            break;
-                        case 'kmz': {
-                            const zip = await JSZip.loadAsync(content as ArrayBuffer);
-                            const kmlFile = Object.values(zip.files).find(
-                                (file) => getFileExtension(file.name) === 'kml' && !file.dir
-                            );
-
-                            if (!kmlFile) {
-                                throw new Error('No se encontró un archivo .kml dentro del .kmz.');
-                            }
-
-                            const kmlContent = await kmlFile.async('string');
-                            features = kmlFormat.readFeatures(kmlContent, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' });
-                            break;
-                        }
-                        case 'zip': // This now handles both user-provided zips and our on-the-fly created ones
-                            const geojsonData = await shp(content as ArrayBuffer);
-                            features = geojsonFormat.readFeatures(geojsonData);
-                            break;
-                        default:
-                            return reject(new Error(`Tipo de archivo no soportado: .${fileExtension}`));
-                    }
-                    
-                    if (features && features.length > 0) {
-                        onAddLayer(createVectorLayer(features, fileName));
-                        toast({ description: `Capa "${fileName}" cargada con ${features.length} entidades.` });
-                    } else {
-                       toast({ description: `No se encontraron entidades en "${fileName}".` });
-                    }
-                    resolve();
-
-                } catch (err) {
-                    reject(err);
-                }
-            };
-
-            reader.onerror = (err) => reject(new Error(`Error de FileReader: ${err}`));
-
-            if (['zip', 'kmz'].includes(fileExtension)) {
-                reader.readAsArrayBuffer(file);
-            } else {
-                reader.readAsText(file);
-            }
-        });
-    };
-
-    if (selectedFile) { // Single file selected
-        const fileExtension = getFileExtension(selectedFile.name);
-        if (['shp', 'dbf', 'shx', 'prj', 'cpg'].includes(fileExtension)) {
-            toast({
-                title: "Shapefile Incompleto",
-                description: "Para cargar un Shapefile, debe seleccionar todos sus archivos (.shp, .dbf, .shx, etc.) juntos, o subir un único archivo .zip.",
-                variant: 'destructive',
-            });
-            return;
-        }
+    // This function processes a single file content and adds it to the map
+    const processAndAddLayer = async (content: string | ArrayBuffer, file: File, layerNameOverride?: string) => {
+        const fileExtension = getFileExtension(file.name);
+        const nameForLayer = layerNameOverride || getBaseName(file.name);
+        let features;
 
         try {
-            await processFile(selectedFile);
-        } catch (error: any) {
-            console.error("Error processing file:", error);
-            toast({ description: `Error al procesar ${selectedFile.name}: ${error.message}`, variant: 'destructive' });
+            switch (fileExtension) {
+                case 'geojson':
+                case 'json':
+                    features = geojsonFormat.readFeatures(content as string);
+                    break;
+                case 'kml':
+                    features = kmlFormat.readFeatures(content as string, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857'});
+                    break;
+                case 'zip':
+                case 'kmz': {
+                    let geojsonData: any;
+                    try {
+                        geojsonData = await shp(content as ArrayBuffer);
+                    } catch (shpError) {
+                        // Fallback for KMZ files that are not shapefile zips
+                        if (fileExtension === 'kmz') {
+                            try {
+                                const zip = await JSZip.loadAsync(content as ArrayBuffer);
+                                const kmlFile = Object.values(zip.files).find(f => getFileExtension(f.name) === 'kml' && !f.dir);
+                                if (!kmlFile) throw new Error('No se encontró un archivo .kml dentro del .kmz.');
+                                const kmlContent = await kmlFile.async('string');
+                                features = kmlFormat.readFeatures(kmlContent, { dataProjection: 'EPSG:4326', featureProjection: 'EPSG:3857' });
+                                // End of KMZ fallback logic, skip the rest of the switch case
+                                if (features && features.length > 0) {
+                                    onAddLayer(createVectorLayer(features, nameForLayer));
+                                    toast({ description: `Capa "${nameForLayer}" cargada con ${features.length} entidades.` });
+                                } else {
+                                    toast({ description: `No se encontraron entidades en "${nameForLayer}".` });
+                                }
+                                return; // Exit after successful KMZ processing
+                            } catch (kmzError) {
+                                throw new Error(`No se pudo procesar el archivo ${fileExtension} como Shapefile ni como KMZ.`);
+                            }
+                        }
+                        // If not a KMZ or if KMZ fallback fails, rethrow the original shpError
+                        throw shpError;
+                    }
+                    
+                    if (Array.isArray(geojsonData)) {
+                       features = geojsonData.flatMap(data => geojsonFormat.readFeatures(data));
+                    } else {
+                       features = geojsonFormat.readFeatures(geojsonData);
+                    }
+                    break;
+                }
+                default:
+                    throw new Error(`Tipo de archivo no soportado: .${fileExtension}`);
+            }
+
+            if (features && features.length > 0) {
+                onAddLayer(createVectorLayer(features, nameForLayer));
+                toast({ description: `Capa "${nameForLayer}" cargada con ${features.length} entidades.` });
+            } else {
+               toast({ description: `No se encontraron entidades en "${nameForLayer}".` });
+            }
+        } catch (err: any) {
+            throw err;
         }
-    } else if (selectedMultipleFiles) { // Multiple files selected
-        let filesToProcess = Array.from(selectedMultipleFiles);
-        const shpFile = filesToProcess.find(f => getFileExtension(f.name) === 'shp');
+    };
+    
+    // --- Main Logic ---
+    let files = selectedFile ? [selectedFile] : Array.from(selectedMultipleFiles || []);
+    if (files.length === 0) return;
 
-        // Handle shapefile group if present
-        if (shpFile) {
-            const shpBaseName = shpFile.name.substring(0, shpFile.name.lastIndexOf('.'));
-            const allFileNames = filesToProcess.map(f => f.name);
-            const requiredDbf = `${shpBaseName}.dbf`;
-            const requiredShx = `${shpBaseName}.shx`;
+    // --- Shapefile bundling logic ---
+    const shapefileGroups: { [basename: string]: File[] } = {};
+    const otherFiles: File[] = [];
+    const shpBasenames = new Set<string>();
 
-            if (!allFileNames.includes(requiredDbf)) {
-                toast({ description: `Para el shapefile, falta el archivo requerido: ${requiredDbf}`, variant: 'destructive' });
-                return;
-            }
-            if (!allFileNames.includes(requiredShx)) {
-                toast({ description: `Para el shapefile, falta el archivo requerido: ${requiredShx}`, variant: 'destructive' });
-                return;
-            }
-
-            // Group all files belonging to the shapefile by basename
-            const shapefileParts = filesToProcess.filter(f => f.name.startsWith(shpBaseName));
-            
-            const zip = new JSZip();
-            shapefileParts.forEach(part => zip.file(part.name, part));
-            
-            try {
-                const zipBlob = await zip.generateAsync({ type: 'blob' });
-                const zipFile = new File([zipBlob], `${shpBaseName}.zip`);
-                await processFile(zipFile);
-                
-                // Exclude shapefile parts from further processing
-                const shapefilePartNames = shapefileParts.map(p => p.name);
-                filesToProcess = filesToProcess.filter(f => !shapefilePartNames.includes(f.name));
-
-            } catch (err: any) {
-                 console.error("Error processing shapefile components:", err);
-                 toast({ description: `Error al procesar el Shapefile: ${err.message}`, variant: 'destructive' });
-                 return; // Stop if shapefile processing fails
-            }
+    // First, identify all potential shapefile groups by finding .shp files
+    for (const file of files) {
+        if (getFileExtension(file.name) === 'shp') {
+            shpBasenames.add(getBaseName(file.name));
         }
+    }
+
+    // Now, segregate all files into their respective shapefile groups or as "other" files
+    for (const file of files) {
+        const basename = getBaseName(file.name);
+        const fileExtension = getFileExtension(file.name);
+        const isShapefileComponent = ['shp', 'shx', 'dbf', 'prj', 'cpg', 'sbn', 'sbx'].includes(fileExtension);
         
-        // Process any remaining files (e.g., KMLs, GeoJSONs selected alongside a shapefile)
-        for (const file of filesToProcess) {
-            try {
-                await processFile(file);
-            } catch (error: any) {
-                console.error(`Error processing file ${file.name}:`, error);
-                toast({ description: `Error al procesar ${file.name}: ${error.message}`, variant: 'destructive' });
+        if (shpBasenames.has(basename) && isShapefileComponent) {
+            if (!shapefileGroups[basename]) {
+                shapefileGroups[basename] = [];
             }
+            shapefileGroups[basename].push(file);
+        } else {
+            otherFiles.push(file);
+        }
+    }
+
+    // Process each identified shapefile group
+    for (const basename in shapefileGroups) {
+        const groupFiles = shapefileGroups[basename];
+        const fileNames = groupFiles.map(f => f.name);
+
+        // Check for required files (.shp is guaranteed, check .dbf, .shx)
+        if (!fileNames.includes(`${basename}.dbf`) || !fileNames.includes(`${basename}.shx`)) {
+            toast({ description: `Faltan archivos para el Shapefile "${basename}". Se requieren .shp, .dbf y .shx.`, variant: 'destructive' });
+            continue; // Skip this group
+        }
+
+        const zip = new JSZip();
+        groupFiles.forEach(file => {
+            zip.file(file.name, file.slice());
+        });
+
+        try {
+            const zipBlob = await zip.generateAsync({ type: 'blob' });
+            const zipFile = new File([zipBlob], `${basename}.zip`);
+            const arrayBuffer = await zipFile.arrayBuffer();
+            await processAndAddLayer(arrayBuffer, zipFile, basename);
+        } catch(err: any) {
+            console.error(`Error processing shapefile group ${basename}:`, err);
+            toast({ description: `Error al procesar el Shapefile "${basename}": ${err.message}`, variant: 'destructive' });
+        }
+    }
+
+    // --- Process remaining files ---
+    for (const file of otherFiles) {
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                if (!e.target?.result) throw new Error("File content is empty.");
+                await processAndAddLayer(e.target.result, file);
+            } catch (err: any) {
+                console.error(`Error processing file ${file.name}:`, err);
+                toast({ description: `Error al procesar ${file.name}: ${err.message}`, variant: 'destructive' });
+            }
+        };
+        reader.onerror = () => {
+             toast({ description: `No se pudo leer el archivo ${file.name}.`, variant: 'destructive' });
+        };
+        
+        const ext = getFileExtension(file.name);
+        if (['zip', 'kmz'].includes(ext)) {
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.readAsText(file);
         }
     }
 };
