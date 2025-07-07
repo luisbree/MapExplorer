@@ -86,9 +86,12 @@ const AIPanel: React.FC<AIPanelProps> = ({
         (result?.layersToStyle && result.layersToStyle.length > 0) ||
         result?.zoomToLayer ||
         result?.showTableForLayer ||
-        result?.captureMap ||
+        result?.setBaseLayer ||
         result?.zoomToBoundingBox ||
-        result?.findSentinel2Footprints
+        result?.findSentinel2Footprints ||
+        result?.findLandsatFootprints ||
+        result?.fetchOsmForView ||
+        result?.urlToOpen
       ) {
         onLayerAction(result);
       }

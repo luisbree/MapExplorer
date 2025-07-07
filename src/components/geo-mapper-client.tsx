@@ -473,10 +473,8 @@ export default function GeoMapperClient() {
         toast({description: `Drax devolvió una ubicación inválida.`});
       }
     } else {
-        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints) {
+        if (shouldFindSentinelFootprints || shouldFindLandsatFootprints || shouldFetchOsm) {
             performSearchAfterZoom(); // handles non-zoom searches
-        } else if (shouldFetchOsm) {
-            osmDataHook.fetchOSMForCurrentView(action.fetchOsmForView!);
         }
     }
     
