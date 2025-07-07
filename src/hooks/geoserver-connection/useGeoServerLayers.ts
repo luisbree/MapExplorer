@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useEffect } from 'react';
@@ -37,7 +36,7 @@ export const useGeoServerLayers = ({
     }
     
     const getCapabilitiesUrl = `${urlToUse.trim()}/wms?service=WMS&version=1.3.0&request=GetCapabilities`;
-    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}`;
+    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}&cacheBust=${Date.now()}`;
 
     try {
       const response = await fetch(proxyUrl);
@@ -142,7 +141,7 @@ export const useGeoServerLayers = ({
 
     setIsWfsLoading(true);
     const wfsUrl = `${urlToUse}/wfs?service=WFS&version=1.1.0&request=GetFeature&typename=${layerName}&outputFormat=application/json&srsname=EPSG:3857`;
-    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(wfsUrl)}`;
+    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(wfsUrl)}&cacheBust=${Date.now()}`;
 
     try {
       const response = await fetch(proxyUrl);

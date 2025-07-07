@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -100,7 +99,7 @@ export const useWfsLibrary = ({
 
     const baseUrl = urlToUse.split('?')[0].replace(/\/$/, ''); // Get URL without existing params and trailing slash
     const getCapabilitiesUrl = `${baseUrl}?service=WFS&version=2.0.0&request=GetCapabilities`;
-    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}`;
+    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getCapabilitiesUrl)}&cacheBust=${Date.now()}`;
 
     try {
       const response = await fetch(proxyUrl);
@@ -145,7 +144,7 @@ export const useWfsLibrary = ({
     setIsLoading(true);
     const baseUrl = activeServerUrl.split('?')[0].replace(/\/$/, '');
     const getFeatureUrl = `${baseUrl}?service=WFS&version=1.1.0&request=GetFeature&typename=${layerName}&outputFormat=application/json&srsname=EPSG:3857`;
-    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getFeatureUrl)}`;
+    const proxyUrl = `/api/geoserver-proxy?url=${encodeURIComponent(getFeatureUrl)}&cacheBust=${Date.now()}`;
 
     try {
       const response = await fetch(proxyUrl);
