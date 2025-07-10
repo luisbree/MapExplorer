@@ -43,7 +43,9 @@ const geeTileLayerFlow = ai.defineFlow(
         max: 3000,
       };
 
-      const mapDetails = await promisify(image.getMap.bind(image))(visParams);
+      const getMapFn = promisify(image.getMap.bind(image));
+      const mapDetails = await getMapFn(visParams);
+      
       const tileUrl = mapDetails.urlFormat.replace('{x}', '{x}').replace('{y}', '{y}').replace('{z}', '{z}');
 
       return { tileUrl };
@@ -65,56 +67,48 @@ const geeTileLayerFlow = ai.defineFlow(
 // --- Earth Engine Initialization ---
 let eeInitialized: Promise<void> | null = null;
 
-function initializeEe(): Promise<void> {
-  if (eeInitialized) {
-    return eeInitialized;
+async function authenticateAndInitialize() {
+  const authType = process.env.EE_AUTH_TYPE;
+
+  if (authType === 'SERVICE_ACCOUNT') {
+    const serviceAccountKey = process.env.EE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountKey) {
+      throw new Error('EE_SERVICE_ACCOUNT_KEY is not set in environment variables for GEE authentication.');
+    }
+    try {
+      const keyObject = JSON.parse(serviceAccountKey);
+      
+      const privateKeyAuth = promisify(ee.data.authenticateViaPrivateKey).bind(ee.data);
+      await privateKeyAuth(keyObject);
+
+    } catch (e: any) {
+      throw new Error(`Failed to authenticate with Earth Engine Service Account: ${e.message}`);
+    }
+  } else {
+    try {
+      const adcAuth = promisify(ee.data.authenticateViaAADC).bind(ee.data);
+      await adcAuth({});
+    } catch(e: any) {
+       throw new Error(`Authentication via Application Default Credentials failed. Ensure your environment is configured correctly (e.g., via 'gcloud auth application-default login'). Error: ${e.message}`);
+    }
   }
 
-  eeInitialized = new Promise((resolve, reject) => {
-    const authType = process.env.EE_AUTH_TYPE;
+  // After authentication, initialize the library
+  try {
+    const initialize = promisify(ee.initialize).bind(ee);
+    await initialize(null, null);
+    console.log('Earth Engine initialized successfully.');
+  } catch (e: any) {
+    throw new Error(`Failed to initialize Earth Engine after authentication: ${e.message}`);
+  }
+}
 
-    const onEeInitSuccess = () => {
-        console.log('Earth Engine initialized successfully.');
-        resolve();
-    };
-    const onEeInitFailure = (err: any) => {
-        console.error('EE Initialization error:', err);
-        eeInitialized = null; // Reset for next attempt
-        reject(new Error('Failed to initialize Earth Engine.'));
-    };
-
-    if (authType === 'SERVICE_ACCOUNT') {
-      const serviceAccountKey = process.env.EE_SERVICE_ACCOUNT_KEY;
-      if (!serviceAccountKey) {
-        return reject(new Error('EE_SERVICE_ACCOUNT_KEY is not set in environment variables for GEE authentication.'));
-      }
-      try {
-        const keyObject = JSON.parse(serviceAccountKey);
-        ee.data.authenticateViaPrivateKey(
-          keyObject,
-          () => ee.initialize(null, null, onEeInitSuccess, onEeInitFailure),
-          (err: any) => {
-            console.error('EE Authentication error:', err);
-            eeInitialized = null; // Reset for next attempt
-            reject(new Error('Failed to authenticate with Earth Engine using Service Account.'));
-          }
-        );
-      } catch (e) {
-          return reject(new Error('Failed to parse EE_SERVICE_ACCOUNT_KEY. Please ensure it is a valid JSON string.'));
-      }
-    } else {
-      // Attempt ADC if no specific auth method is defined
-      ee.data.authenticateViaAADC(
-        {}, 
-        () => ee.initialize(null, null, onEeInitSuccess, onEeInitFailure),
-        (err: any) => {
-          console.error('EE ADC Authentication error:', err);
-          eeInitialized = null; // Reset for next attempt
-          reject(new Error('Authentication via Application Default Credentials failed. Ensure your environment is configured correctly (e.g., via `gcloud auth application-default login`).'));
-        }
-      );
-    }
-  });
-
+function initializeEe(): Promise<void> {
+  if (eeInitialized === null) {
+    eeInitialized = authenticateAndInitialize().catch(err => {
+      eeInitialized = null; // Reset on failure to allow retry
+      throw err;
+    });
+  }
   return eeInitialized;
 }
