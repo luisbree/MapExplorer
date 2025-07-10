@@ -17,6 +17,36 @@ Then, open `.env.local` and add your Google Maps API key. You can get one from t
 NEXT_PUBLIC_GOOGLE_MAPS_API_KEY="YOUR_GOOGLE_MAPS_API_KEY"
 ```
 
+### Google Earth Engine (GEE) Integration
+
+The application uses Google Earth Engine for on-the-fly satellite imagery processing. You must configure authentication for this feature to work. You can use either a Service Account (recommended for production) or Application Default Credentials (for local development).
+
+#### Option 1: Service Account (Recommended)
+
+1.  **Create a Service Account**: In the [Google Cloud Console](https://console.cloud.google.com/iam-admin/serviceaccounts), create a service account for your project.
+2.  **Grant Permissions**: Grant the service account the "Earth Engine Resource User" role.
+3.  **Create a Key**: Create a JSON key for the service account and download it.
+4.  **Set Environment Variables**: Open your `.env.local` file and add the following variables:
+
+    ```
+    # Indicates you are using a service account
+    EE_AUTH_TYPE="SERVICE_ACCOUNT"
+
+    # Paste the entire content of the downloaded JSON key file as a single line string
+    EE_SERVICE_ACCOUNT_KEY='{"type": "service_account", "project_id": "...", ...}'
+    ```
+
+    **Important**: The JSON key must be a single-line string. You can use an online tool to convert your multi-line JSON key to a single line.
+
+#### Option 2: Application Default Credentials (Local Development)
+
+1.  **Install gcloud CLI**: If you haven't already, [install the Google Cloud CLI](https://cloud.google.com/sdk/docs/install).
+2.  **Authenticate**: Run the following command in your terminal and follow the prompts to log in with your Google account that has access to Earth Engine:
+    ```bash
+    gcloud auth application-default login
+    ```
+3.  **No Environment Variables Needed**: The application will automatically detect these credentials if `EE_AUTH_TYPE` is not set to `SERVICE_ACCOUNT`.
+
 ### Trello Integration (Optional)
 
 The application can integrate with Trello to create cards from the AI assistant. To enable this, you need to provide your Trello API credentials.
@@ -59,3 +89,4 @@ npm run dev
 ```
 
 Open [http://localhost:9002](http://localhost:9002) with your browser to see the result.
+
