@@ -63,58 +63,58 @@ const geeTileLayerFlow = ai.defineFlow(
 
 
 // --- Earth Engine Initialization ---
-let eeInitialized = false;
+let eeInitialized: Promise<void> | null = null;
 
-async function initializeEe() {
-  if (eeInitialized) return;
+function initializeEe(): Promise<void> {
+  if (eeInitialized) {
+    return eeInitialized;
+  }
 
-  const authType = process.env.EE_AUTH_TYPE;
+  eeInitialized = new Promise((resolve, reject) => {
+    const authType = process.env.EE_AUTH_TYPE;
 
-  if (authType === 'SERVICE_ACCOUNT') {
-    const serviceAccountKey = process.env.EE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
-        throw new Error('EE_SERVICE_ACCOUNT_KEY is not set in environment variables for GEE authentication.');
-    }
-    const keyObject = JSON.parse(serviceAccountKey);
-    
-    await promisify(ee.data.authenticateViaPrivateKey)(
-      keyObject,
-      () => {
-        ee.initialize(null, null, () => {
-          eeInitialized = true;
-        }, (err:any) => {
-            console.error('EE Initialization error:', err);
-            throw new Error('Failed to initialize Earth Engine.');
-        });
-      },
-      (err:any) => {
-        console.error('EE Authentication error:', err);
-        throw new Error('Failed to authenticate with Earth Engine using Service Account.');
+    const onEeInitSuccess = () => {
+        console.log('Earth Engine initialized successfully.');
+        resolve();
+    };
+    const onEeInitFailure = (err: any) => {
+        console.error('EE Initialization error:', err);
+        eeInitialized = null; // Reset for next attempt
+        reject(new Error('Failed to initialize Earth Engine.'));
+    };
+
+    if (authType === 'SERVICE_ACCOUNT') {
+      const serviceAccountKey = process.env.EE_SERVICE_ACCOUNT_KEY;
+      if (!serviceAccountKey) {
+        return reject(new Error('EE_SERVICE_ACCOUNT_KEY is not set in environment variables for GEE authentication.'));
       }
-    );
-  } else {
-    // Attempt ADC if no specific auth method is defined
-    await promisify(ee.data.authenticateViaAADC)({}, () => {
-        ee.initialize(null, null, () => {
-          eeInitialized = true;
-        }, (err: any) => {
-             console.error('EE Initialization error with ADC:', err);
-             throw new Error('Failed to initialize Earth Engine with Application Default Credentials.');
-        });
-    }, (err: any) => {
-        console.error('EE ADC Authentication error:', err);
-        throw new Error('Authentication via Application Default Credentials failed. Ensure your environment is configured correctly (e.g., via `gcloud auth application-default login`).');
-    });
-  }
+      try {
+        const keyObject = JSON.parse(serviceAccountKey);
+        ee.data.authenticateViaPrivateKey(
+          keyObject,
+          () => ee.initialize(null, null, onEeInitSuccess, onEeInitFailure),
+          (err: any) => {
+            console.error('EE Authentication error:', err);
+            eeInitialized = null; // Reset for next attempt
+            reject(new Error('Failed to authenticate with Earth Engine using Service Account.'));
+          }
+        );
+      } catch (e) {
+          return reject(new Error('Failed to parse EE_SERVICE_ACCOUNT_KEY. Please ensure it is a valid JSON string.'));
+      }
+    } else {
+      // Attempt ADC if no specific auth method is defined
+      ee.data.authenticateViaAADC(
+        {}, 
+        () => ee.initialize(null, null, onEeInitSuccess, onEeInitFailure),
+        (err: any) => {
+          console.error('EE ADC Authentication error:', err);
+          eeInitialized = null; // Reset for next attempt
+          reject(new Error('Authentication via Application Default Credentials failed. Ensure your environment is configured correctly (e.g., via `gcloud auth application-default login`).'));
+        }
+      );
+    }
+  });
 
-  // Wait for initialization to complete. This is a bit of a hack.
-  // A better solution would be a more robust promise-based initialization.
-  let attempts = 0;
-  while (!eeInitialized && attempts < 20) {
-      await new Promise(resolve => setTimeout(resolve, 250));
-      attempts++;
-  }
-  if (!eeInitialized) {
-      throw new Error("Earth Engine initialization timed out.");
-  }
+  return eeInitialized;
 }
