@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy, Printer, Server } from 'lucide-react';
+import { MapPin, Database, Wrench, ListTree, ListChecks, Sparkles, ClipboardCheck, Library, LifeBuoy, Printer, Server, BrainCircuit } from 'lucide-react';
 import { Style, Fill, Stroke, Circle as CircleStyle } from 'ol/style';
 import { transformExtent } from 'ol/proj';
 import type { Extent } from 'ol/extent';
@@ -26,6 +26,7 @@ import WfsLibraryPanel from '@/components/panels/WfsLibraryPanel';
 import HelpPanel from '@/components/panels/HelpPanel';
 import PrintComposerPanel from '@/components/panels/PrintComposerPanel';
 import DeasCatalogPanel from '@/components/panels/DeasCatalogPanel';
+import GeeProcessingPanel from '@/components/panels/GeeProcessingPanel';
 import WfsLoadingIndicator from '@/components/feedback/WfsLoadingIndicator';
 
 import { useOpenLayersMap } from '@/hooks/map-core/useOpenLayersMap';
@@ -115,6 +116,7 @@ const panelToggleConfigs = [
   { id: 'trello', IconComponent: ClipboardCheck, name: "Trello" },
   { id: 'attributes', IconComponent: ListChecks, name: "Atributos" },
   { id: 'printComposer', IconComponent: Printer, name: "Impresión" },
+  { id: 'gee', IconComponent: BrainCircuit, name: "Procesamiento GEE" },
   { id: 'ai', IconComponent: Sparkles, name: "Asistente IA" },
   { id: 'help', IconComponent: LifeBuoy, name: "Ayuda" },
 ];
@@ -132,6 +134,7 @@ export default function GeoMapperClient() {
   const helpPanelRef = useRef<HTMLDivElement>(null);
   const printComposerPanelRef = useRef<HTMLDivElement>(null);
   const deasCatalogPanelRef = useRef<HTMLDivElement>(null);
+  const geePanelRef = useRef<HTMLDivElement>(null);
 
   const { mapRef, mapElementRef, setMapInstanceAndElement, isMapReady, drawingSourceRef } = useOpenLayersMap();
   const { toast } = useToast();
@@ -147,6 +150,7 @@ export default function GeoMapperClient() {
     helpPanelRef,
     printComposerPanelRef,
     deasCatalogPanelRef,
+    geePanelRef,
     mapAreaRef,
     panelWidth: PANEL_WIDTH,
     panelPadding: PANEL_PADDING,
@@ -243,7 +247,7 @@ export default function GeoMapperClient() {
     if (isMapReady) {
        loadInitialLayers();
     }
-  }, [isMapReady, handleFetchGeoServerLayers, initialGeoServerUrl, toast]);
+  }, [isMapReady, handleFetchGeoServerLayers, toast]);
 
   const osmDataHook = useOSMData({ 
     mapRef, 
@@ -713,6 +717,19 @@ export default function GeoMapperClient() {
                 style={{ top: `${panels.printComposer.position.y}px`, left: `${panels.printComposer.position.x}px`, zIndex: panels.printComposer.zIndex }}
                 isRefreshing={isCapturing}
             />
+        )}
+
+        {panels.gee && !panels.gee.isMinimized && (
+          <GeeProcessingPanel
+            panelRef={geePanelRef}
+            isCollapsed={panels.gee.isCollapsed}
+            onToggleCollapse={() => togglePanelCollapse('gee')}
+            onClosePanel={() => togglePanelMinimize('gee')}
+            onMouseDownHeader={(e) => handlePanelMouseDown(e, 'gee')}
+            onAddGeeLayer={layerManagerHook.addGeeLayerToMap}
+            mapRef={mapRef}
+            style={{ top: `${panels.gee.position.y}px`, left: `${panels.gee.position.x}px`, zIndex: panels.gee.zIndex }}
+          />
         )}
 
         {panels.ai && !panels.ai.isMinimized && (

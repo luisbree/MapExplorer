@@ -13,7 +13,7 @@ export interface MapLayer {
   olLayer: Layer<Source, any>;
   visible: boolean;
   opacity: number;
-  type: 'wms' | 'wfs' | 'vector' | 'osm' | 'drawing' | 'sentinel' | 'landsat';
+  type: 'wms' | 'wfs' | 'vector' | 'osm' | 'drawing' | 'sentinel' | 'landsat' | 'gee';
   isDeas?: boolean;
 }
 

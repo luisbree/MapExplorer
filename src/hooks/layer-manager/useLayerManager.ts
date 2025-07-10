@@ -5,6 +5,8 @@ import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { Map } from 'ol';
 import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
+import TileLayer from 'ol/layer/Tile';
+import XYZ from 'ol/source/XYZ';
 import type Feature from 'ol/Feature';
 import type { Geometry } from 'ol/geom';
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +94,39 @@ export const useLayerManager = ({
     });
 
   }, [mapRef]);
+
+  const addGeeLayerToMap = useCallback((tileUrl: string, layerName: string) => {
+    if (!mapRef.current) return;
+
+    const layerId = `gee-${nanoid()}`;
+    
+    const geeSource = new XYZ({
+      url: tileUrl,
+      crossOrigin: 'anonymous',
+      // GEE tiles are often in EPSG:3857, which is the default for XYZ, so no projection needed.
+    });
+
+    const geeLayer = new TileLayer({
+      source: geeSource,
+      properties: {
+        id: layerId,
+        name: layerName,
+        type: 'gee',
+      }
+    });
+
+    addLayer({
+      id: layerId,
+      name: layerName,
+      olLayer: geeLayer,
+      visible: true,
+      opacity: 1,
+      type: 'gee'
+    });
+    
+    toast({ description: `Capa de Google Earth Engine "${layerName}" añadida.` });
+
+  }, [mapRef, addLayer, toast]);
 
   const removeLayers = useCallback((layerIds: string[]) => {
     if (!mapRef.current || layerIds.length === 0) return;
@@ -294,23 +329,21 @@ export const useLayerManager = ({
         } else {
             toast({ description: "La capa no tiene entidades para hacer zoom." });
         }
-    } else if (layer.olLayer.get('bbox')) { // Check for WMS layers with a bbox
-        const bbox4326: [number, number, number, number] = layer.olLayer.get('bbox');
-        try {
-            const extent3857 = transformExtent(bbox4326, 'EPSG:4326', 'EPSG:3857');
-            if (extent3857 && extent3857.every(isFinite) && (extent3857[2] - extent3857[0] > 0) && (extent3857[3] - extent3857[1] > 0)) {
-                mapRef.current.getView().fit(extent3857, {
-                    padding: [50, 50, 50, 50],
-                    duration: 1000,
-                    maxZoom: 16
-                });
-            } else {
-                toast({ description: 'La extensión de la capa WMS no es válida.' });
-            }
-        } catch (e) {
-            console.error('Error transforming WMS extent:', e);
-            toast({ description: 'Error al calcular la extensión de la capa WMS.' });
+    } else if (layer.olLayer instanceof TileLayer) {
+        const source = layer.olLayer.getSource();
+        if (source instanceof XYZ) {
+          // For XYZ/Tile layers, we can't get a precise extent easily.
+          // The best we can do is zoom to the layer's defined bbox if available.
+           const bbox4326 = layer.olLayer.get('bbox');
+           if (bbox4326) {
+               try {
+                  const extent3857 = transformExtent(bbox4326, 'EPSG:4326', 'EPSG:3857');
+                  mapRef.current.getView().fit(extent3857, { padding: [50, 50, 50, 50], duration: 1000, maxZoom: 16 });
+                  return;
+              } catch (e) { console.error(e) }
+           }
         }
+        toast({ description: "No se puede hacer zoom automático a este tipo de capa." });
     } else {
         toast({ description: "No se puede hacer zoom a la extensión de este tipo de capa." });
     }
@@ -610,6 +643,7 @@ export const useLayerManager = ({
   return {
     layers,
     addLayer,
+    addGeeLayerToMap,
     removeLayer,
     removeLayers,
     reorderLayers,
