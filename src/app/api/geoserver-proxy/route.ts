@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       cache: 'no-store', // This is crucial for preventing Next.js from caching the proxy request
       headers: {
         'User-Agent': 'MapExplorerApp/1.0 (Proxy)',
-        'Accept': 'application/xml, text/xml, */*',
+        'Accept': 'application/xml, text/xml, application/json, */*',
       },
     });
 
