@@ -4,32 +4,13 @@
  * @fileOverview A flow for generating Google Earth Engine tile layers.
  *
  * - getGeeTileLayer - Generates a tile layer URL for a given Area of Interest.
- * - GeeTileLayerInput - The input type for the GEE flow.
- * - GeeTileLayerOutput - The return type for the GEE flow.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'zod';
 import ee from '@google/earthengine';
 import { promisify } from 'util';
-
-const GeeAoiSchema = z.object({
-    minLon: z.number(),
-    minLat: z.number(),
-    maxLon: z.number(),
-    maxLat: z.number(),
-});
-
-export const GeeTileLayerInputSchema = z.object({
-  aoi: GeeAoiSchema.describe("The Area of Interest as a bounding box."),
-  zoom: z.number().describe("The current zoom level of the map."),
-});
-export type GeeTileLayerInput = z.infer<typeof GeeTileLayerInputSchema>;
-
-export const GeeTileLayerOutputSchema = z.object({
-  tileUrl: z.string().url().describe("The XYZ tile URL template for the generated GEE layer."),
-});
-export type GeeTileLayerOutput = z.infer<typeof GeeTileLayerOutputSchema>;
+import type { GeeTileLayerInput, GeeTileLayerOutput } from './gee-types';
+import { GeeTileLayerInputSchema, GeeTileLayerOutputSchema } from './gee-types';
 
 // Main exported function for the frontend to call
 export async function getGeeTileLayer(input: GeeTileLayerInput): Promise<GeeTileLayerOutput> {
