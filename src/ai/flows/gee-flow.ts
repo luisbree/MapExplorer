@@ -55,7 +55,8 @@ const geeTileLayerFlow = ai.defineFlow(
         } else if (error.message && error.message.includes('computation timed out')) {
             throw new Error('El procesamiento en Earth Engine tardó demasiado. Intente con un área más pequeña.');
         }
-        throw new Error('Ocurrió un error al generar la capa de Earth Engine.');
+        // Throw the original error message for better diagnostics
+        throw new Error(`Ocurrió un error al generar la capa de Earth Engine: ${error.message || 'Error desconocido'}`);
     }
   }
 );
