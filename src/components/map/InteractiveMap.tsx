@@ -25,7 +25,7 @@ const InteractiveMap: React.FC = () => {
           center: fromLonLat([0, 0]), // Default center (lon, lat)
           zoom: 2, // Default zoom level
         }),
-        controls: defaultControls({ attributionOptions: { collapsible: true } }),
+        controls: defaultControls({ attributionOptions: { collapsible: false } }),
       });
       setMap(initialMap);
 

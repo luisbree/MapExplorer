@@ -123,6 +123,17 @@ body {
   z-index: 10000; /* Ensure it's on top */
 }
 
+/* Custom style to move attribution to the bottom right */
+.ol-attribution {
+  bottom: 0.5em;
+  right: 0.5em;
+  left: auto; /* Override default left positioning */
+  max-width: calc(100% - 3em); /* Prevent overlap with zoom controls */
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 @media print {
   body * {
     visibility: hidden;

@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useEffect, useRef } from 'react';
+import 'ol/ol.css'; // Import OpenLayers CSS
 import { Map as OLMap, View } from 'ol';
 import TileLayer from 'ol/layer/Tile';
 import OSM from 'ol/source/OSM';
