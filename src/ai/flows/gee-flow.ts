@@ -11,11 +11,24 @@ import ee from '@google/earthengine';
 import { promisify } from 'util';
 import type { GeeTileLayerInput, GeeTileLayerOutput } from './gee-types';
 import { GeeTileLayerInputSchema, GeeTileLayerOutputSchema } from './gee-types';
+import { z } from 'zod';
 
 // Main exported function for the frontend to call
 export async function getGeeTileLayer(input: GeeTileLayerInput): Promise<GeeTileLayerOutput> {
   return geeTileLayerFlow(input);
 }
+
+// New exported function for authentication
+export async function authenticateWithGee(): Promise<{ success: boolean; message: string; }> {
+    try {
+        await initializeEe();
+        return { success: true, message: 'Autenticación con Google Earth Engine exitosa.' };
+    } catch (error: any) {
+        // Re-throw the error so the frontend can catch the specific message
+        throw new Error(`Fallo en la autenticación con GEE: ${error.message}`);
+    }
+}
+
 
 // Define the Genkit flow
 const geeTileLayerFlow = ai.defineFlow(

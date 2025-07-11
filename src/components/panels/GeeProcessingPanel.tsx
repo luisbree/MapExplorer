@@ -4,9 +4,9 @@
 import React, { useState } from 'react';
 import DraggablePanel from './DraggablePanel';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Loader2, Image as ImageIcon } from 'lucide-react';
+import { BrainCircuit, Loader2, Image as ImageIcon, ShieldCheck, CheckCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
-import { getGeeTileLayer } from '@/ai/flows/gee-flow';
+import { getGeeTileLayer, authenticateWithGee } from '@/ai/flows/gee-flow';
 import type { Map } from 'ol';
 import { transformExtent } from 'ol/proj';
 
@@ -31,23 +31,54 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
   mapRef,
   style,
 }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+
+  const handleAuthentication = async () => {
+    setIsAuthenticating(true);
+    try {
+      const result = await authenticateWithGee();
+      if (result.success) {
+        toast({
+          title: "Autenticación Exitosa",
+          description: result.message,
+        });
+        setIsAuthenticated(true);
+      } else {
+        // This case might not be hit if errors are always thrown, but it's good practice.
+        throw new Error('La autenticación no tuvo éxito pero no arrojó un error.');
+      }
+    } catch (error: any) {
+      console.error("GEE Authentication Error:", error);
+      toast({
+        title: "Error de Autenticación",
+        description: error.message || "Ocurrió un error desconocido durante la autenticación.",
+        variant: "destructive",
+      });
+      setIsAuthenticated(false);
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
 
   const handleGenerateLayer = async () => {
     if (!mapRef.current) {
         toast({ description: "El mapa no está listo.", variant: "destructive" });
         return;
     }
-    setIsLoading(true);
+    if (!isAuthenticated) {
+        toast({ description: "Debe autenticarse con GEE primero.", variant: "destructive" });
+        return;
+    }
+    setIsGenerating(true);
     
     try {
         const view = mapRef.current.getView();
         const extent = view.calculateExtent(mapRef.current.getSize()!);
-        const center = view.getCenter() || [0,0];
         const zoom = view.getZoom() || 2;
         
-        // Transform extent to EPSG:4326 for GEE
         const extent4326 = transformExtent(extent, view.getProjection(), 'EPSG:4326');
 
         const result = await getGeeTileLayer({
@@ -74,7 +105,7 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -100,14 +131,27 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
                 Genera una composición de bandas 8 (NIR), 4 (Rojo) y 3 (Verde) para la vista actual del mapa.
             </p>
         </div>
-        <Button onClick={handleGenerateLayer} disabled={isLoading} className="w-full">
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <ImageIcon className="mr-2 h-4 w-4" />
-          )}
-          {isLoading ? "Procesando en GEE..." : "Generar y Añadir Capa"}
-        </Button>
+        <div className="space-y-2">
+          <Button onClick={handleAuthentication} disabled={isAuthenticating || isAuthenticated} className="w-full">
+            {isAuthenticating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : isAuthenticated ? (
+              <CheckCircle className="mr-2 h-4 w-4 text-green-400" />
+            ) : (
+              <ShieldCheck className="mr-2 h-4 w-4" />
+            )}
+            {isAuthenticating ? "Autenticando..." : isAuthenticated ? "Autenticado" : "1. Autenticar con GEE"}
+          </Button>
+
+          <Button onClick={handleGenerateLayer} disabled={isGenerating || !isAuthenticated} className="w-full">
+            {isGenerating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <ImageIcon className="mr-2 h-4 w-4" />
+            )}
+            {isGenerating ? "Procesando..." : "2. Generar y Añadir Capa"}
+          </Button>
+        </div>
       </div>
     </DraggablePanel>
   );
