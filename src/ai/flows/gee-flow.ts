@@ -88,7 +88,7 @@ async function authenticateAndInitialize() {
   if (authType === 'SERVICE_ACCOUNT') {
     const serviceAccountKey = process.env.EE_SERVICE_ACCOUNT_KEY;
     if (!serviceAccountKey) {
-      throw new Error('EE_SERVICE_ACCOUNT_KEY is not set in environment variables for GEE authentication.');
+      throw new Error('La variable de entorno EE_SERVICE_ACCOUNT_KEY no está configurada para la autenticación GEE.');
     }
     try {
       const keyObject = JSON.parse(serviceAccountKey);
@@ -97,14 +97,17 @@ async function authenticateAndInitialize() {
       await privateKeyAuth(keyObject);
 
     } catch (e: any) {
-      throw new Error(`Failed to authenticate with Earth Engine Service Account: ${e.message}`);
+      if (e instanceof SyntaxError) {
+        throw new Error('No se pudo parsear el JSON de la clave de la cuenta de servicio (EE_SERVICE_ACCOUNT_KEY). Verifique que sea una cadena JSON válida de una sola línea.');
+      }
+      throw new Error(`Fallo en la autenticación con la cuenta de servicio de Earth Engine: ${e.message}`);
     }
   } else {
     try {
       const adcAuth = promisify(ee.data.authenticateViaAADC).bind(ee.data);
       await adcAuth({});
     } catch(e: any) {
-       throw new Error(`Authentication via Application Default Credentials failed. Ensure your environment is configured correctly (e.g., via 'gcloud auth application-default login'). Error: ${e.message}`);
+       throw new Error(`La autenticación a través de Credenciales Predeterminadas de Aplicación falló. Asegúrese de que su entorno esté configurado correctamente (por ejemplo, a través de 'gcloud auth application-default login'). Error: ${e.message}`);
     }
   }
 
@@ -114,7 +117,7 @@ async function authenticateAndInitialize() {
     await initialize(null, null);
     console.log('Earth Engine initialized successfully.');
   } catch (e: any) {
-    throw new Error(`Failed to initialize Earth Engine after authentication: ${e.message}`);
+    throw new Error(`Fallo al inicializar Earth Engine después de la autenticación: ${e.message}`);
   }
 }
 
