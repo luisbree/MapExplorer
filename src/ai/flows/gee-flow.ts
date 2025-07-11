@@ -91,7 +91,7 @@ const geeTileLayerFlow = ai.defineFlow(
           visParams = {
             min: 0,
             max: 100,
-            palette: ['rgba(255, 255, 255, 0)', 'lightblue', 'blue'] // Transparent to light blue to dark blue
+            palette: ['#FFFFFF', 'lightblue', 'blue'] // White to light blue to dark blue
           };
           break;
 
