@@ -24,7 +24,9 @@ export async function authenticateWithGee(): Promise<{ success: boolean; message
         await initializeEe();
         return { success: true, message: 'Autenticación con Google Earth Engine exitosa.' };
     } catch (error: any) {
-        // Re-throw the error so the frontend can catch the specific message
+        // Re-throw the error so the frontend can catch the specific message and its details.
+        // The previous implementation was catching the error and returning an object,
+        // which breaks the error propagation chain for Next.js Server Actions.
         throw new Error(`Fallo en la autenticación con GEE: ${error.message}`);
     }
 }
