@@ -2,7 +2,7 @@ import VectorSource from 'ol/source/Vector';
 import VectorLayer from 'ol/layer/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
 import KML from 'ol/format/KML';
-import JSZip from 'jszip';
+const JSZip = require('jszip');
 import shp from 'shpjs';
 import { nanoid } from 'nanoid';
 import type { MapLayer } from '@/lib/types';
