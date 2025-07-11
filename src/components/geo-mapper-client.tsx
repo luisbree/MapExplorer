@@ -228,7 +228,7 @@ export default function GeoMapperClient() {
     addLayer: layerManagerHook.addLayer,
   });
 
-  const initialGeoServerUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver/';
+  const initialGeoServerUrl = 'http://www.minfra.gba.gob.ar/ambientales/geoserver';
 
   // Effect for initial GeoServer layer loading
   useEffect(() => {
@@ -794,3 +794,5 @@ export default function GeoMapperClient() {
     </div>
   );
 }
+
+    
