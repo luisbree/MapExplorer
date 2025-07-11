@@ -111,6 +111,9 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
                 case 'BSI':
                     layerName = 'Índice de Suelo Desnudo (BSI) GEE';
                     break;
+                case 'JRC_WATER_OCCURRENCE':
+                    layerName = 'Agua Superficial (JRC)';
+                    break;
                 default:
                     layerName = 'Capa GEE';
             }
@@ -148,7 +151,7 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
     >
       <div className="bg-white/5 rounded-md p-3 space-y-3">
         <div>
-            <h3 className="text-sm font-semibold text-white mb-2">Composición de Bandas Sentinel-2</h3>
+            <h3 className="text-sm font-semibold text-white mb-2">Composición de Bandas / Índices</h3>
             <RadioGroup defaultValue={selectedCombination} onValueChange={(value: BandCombination) => setSelectedCombination(value)}>
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="URBAN_FALSE_COLOR" id="urban-combo" />
@@ -161,6 +164,10 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
                <div className="flex items-center space-x-2">
                 <RadioGroupItem value="BSI" id="bsi-combo" />
                 <Label htmlFor="bsi-combo" className="text-xs font-normal">Índice de Suelo Desnudo (BSI)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="JRC_WATER_OCCURRENCE" id="jrc-combo" />
+                <Label htmlFor="jrc-combo" className="text-xs font-normal">Agua Superficial (JRC)</Label>
               </div>
             </RadioGroup>
         </div>

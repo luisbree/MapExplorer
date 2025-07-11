@@ -46,20 +46,21 @@ const geeTileLayerFlow = ai.defineFlow(
       const { aoi, bandCombination } = input;
       const geometry = ee.Geometry.Rectangle([aoi.minLon, aoi.minLat, aoi.maxLon, aoi.maxLat]);
       
-      const imageCollection = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
-        .filterBounds(geometry)
-        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20));
-
-      const image = imageCollection
-        .filterDate('2023-01-01', '2023-12-31')
-        .median();
-
       let finalImage;
       let visParams: { bands?: string[]; min: number; max: number; gamma?: number, palette?: string[] };
       
+      // Sentinel-2 Image Collection for relevant combinations
+      const s2ImageCollection = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+        .filterBounds(geometry)
+        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20));
+
+      const s2Image = s2ImageCollection
+        .filterDate('2023-01-01', '2023-12-31')
+        .median();
+
       switch (bandCombination) {
         case 'SWIR_FALSE_COLOR':
-          finalImage = image;
+          finalImage = s2Image;
           visParams = {
             bands: ['B12', 'B8A', 'B4'], // SWIR, NIR, Red
             min: 0,
@@ -69,13 +70,13 @@ const geeTileLayerFlow = ai.defineFlow(
 
         case 'BSI':
           // Bare Soil Index formula: BSI = ((B11+B4) - (B8+B2)) / ((B11+B4) + (B8+B2))
-          finalImage = image.expression(
+          finalImage = s2Image.expression(
             '((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2))',
             {
-              'B11': image.select('B11'), // SWIR 1
-              'B4': image.select('B4'),   // Red
-              'B8': image.select('B8'),   // NIR
-              'B2': image.select('B2')    // Blue
+              'B11': s2Image.select('B11'), // SWIR 1
+              'B4': s2Image.select('B4'),   // Red
+              'B8': s2Image.select('B8'),   // NIR
+              'B2': s2Image.select('B2')    // Blue
             }
           ).rename('BSI');
           visParams = {
@@ -85,9 +86,18 @@ const geeTileLayerFlow = ai.defineFlow(
           };
           break;
         
+        case 'JRC_WATER_OCCURRENCE':
+          finalImage = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence');
+          visParams = {
+            min: 0,
+            max: 100,
+            palette: ['rgba(255, 255, 255, 0)', 'lightblue', 'blue'] // Transparent to light blue to dark blue
+          };
+          break;
+
         case 'URBAN_FALSE_COLOR':
         default:
-          finalImage = image;
+          finalImage = s2Image;
           visParams = {
             bands: ['B8', 'B4', 'B3'], // NIR, Red, Green -> False Color for Urban
             min: 0,
