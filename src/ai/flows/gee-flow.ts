@@ -57,9 +57,18 @@ const geeTileLayerFlow = ai.defineFlow(
         min: 0,
         max: 3000,
       };
-
-      const getMapFn = promisify(image.getMap.bind(image));
-      const mapDetails = await getMapFn(visParams);
+      
+      const mapDetails = await new Promise<any>((resolve, reject) => {
+        image.getMap(visParams, (map: any, error: string | null) => {
+            if (error) {
+                return reject(new Error(error));
+            }
+            if (!map || !map.urlFormat) {
+                return reject(new Error('Respuesta inválida de getMap.'));
+            }
+            resolve(map);
+        });
+      });
       
       const tileUrl = mapDetails.urlFormat.replace('{x}', '{x}').replace('{y}', '{y}').replace('{z}', '{z}');
 
