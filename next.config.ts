@@ -18,6 +18,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Add experimental flags
+  experimental: {
+    // This option allows requests from specified origins during development.
+    // It's a security measure to prevent cross-site request forgery.
+    // We're adding a wildcard to allow any subdomain from cloudworkstations.dev.
+    allowedDevOrigins: ["*.cloudworkstations.dev"],
+
+    // This option excludes specified packages from the server-side bundle.
+    // It's necessary for packages like 'handlebars' that use unsupported Node.js APIs.
+    serverComponentsExternalPackages: ['@google/earthengine', 'handlebars'],
+  },
 };
 
 export default nextConfig;
