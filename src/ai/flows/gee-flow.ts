@@ -46,24 +46,48 @@ const geeTileLayerFlow = ai.defineFlow(
       const { aoi, bandCombination } = input;
       const geometry = ee.Geometry.Rectangle([aoi.minLon, aoi.minLat, aoi.maxLon, aoi.maxLat]);
       
-      const image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+      const imageCollection = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
         .filterBounds(geometry)
-        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20))
+        .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20));
+
+      const image = imageCollection
         .filterDate('2023-01-01', '2023-12-31')
         .median();
 
-      let visParams: { bands: string[]; min: number; max: number; gamma?: number };
+      let finalImage;
+      let visParams: { bands?: string[]; min: number; max: number; gamma?: number, palette?: string[] };
       
       switch (bandCombination) {
         case 'SWIR_FALSE_COLOR':
+          finalImage = image;
           visParams = {
             bands: ['B12', 'B8A', 'B4'], // SWIR, NIR, Red
             min: 0,
             max: 3000,
           };
           break;
+
+        case 'BSI':
+          // Bare Soil Index formula: BSI = ((B11+B4) - (B8+B2)) / ((B11+B4) + (B8+B2))
+          finalImage = image.expression(
+            '((B11 + B4) - (B8 + B2)) / ((B11 + B4) + (B8 + B2))',
+            {
+              'B11': image.select('B11'), // SWIR 1
+              'B4': image.select('B4'),   // Red
+              'B8': image.select('B8'),   // NIR
+              'B2': image.select('B2')    // Blue
+            }
+          ).rename('BSI');
+          visParams = {
+            min: -1, 
+            max: 1, 
+            palette: ['#2ca25f', '#ffffbf', '#fdae61', '#d7191c'] // Green -> Yellow -> Orange -> Red (vegetation to bare soil)
+          };
+          break;
+        
         case 'URBAN_FALSE_COLOR':
         default:
+          finalImage = image;
           visParams = {
             bands: ['B8', 'B4', 'B3'], // NIR, Red, Green -> False Color for Urban
             min: 0,
@@ -73,7 +97,7 @@ const geeTileLayerFlow = ai.defineFlow(
       }
       
       const mapDetails = await new Promise<any>((resolve, reject) => {
-        image.getMap(visParams, (map: any, error: string | null) => {
+        finalImage.getMap(visParams, (map: any, error: string | null) => {
             if (error) {
                 return reject(new Error(error));
             }

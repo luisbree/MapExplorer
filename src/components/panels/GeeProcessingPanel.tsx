@@ -100,9 +100,20 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
         });
         
         if (result && result.tileUrl) {
-            const layerName = selectedCombination === 'URBAN_FALSE_COLOR' 
-                ? 'Sentinel-2 (Urbano) GEE'
-                : 'Sentinel-2 (SWIR) GEE';
+            let layerName;
+            switch(selectedCombination) {
+                case 'URBAN_FALSE_COLOR':
+                    layerName = 'Sentinel-2 (Urbano) GEE';
+                    break;
+                case 'SWIR_FALSE_COLOR':
+                    layerName = 'Sentinel-2 (SWIR) GEE';
+                    break;
+                case 'BSI':
+                    layerName = 'Índice de Suelo Desnudo (BSI) GEE';
+                    break;
+                default:
+                    layerName = 'Capa GEE';
+            }
             onAddGeeLayer(result.tileUrl, layerName);
         } else {
             throw new Error("La respuesta del servidor no contenía una URL de teselas.");
@@ -146,6 +157,10 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="SWIR_FALSE_COLOR" id="swir-combo" />
                 <Label htmlFor="swir-combo" className="text-xs font-normal">Falso Color (SWIR - B12, B8A, B4)</Label>
+              </div>
+               <div className="flex items-center space-x-2">
+                <RadioGroupItem value="BSI" id="bsi-combo" />
+                <Label htmlFor="bsi-combo" className="text-xs font-normal">Índice de Suelo Desnudo (BSI)</Label>
               </div>
             </RadioGroup>
         </div>
