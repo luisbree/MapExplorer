@@ -43,7 +43,7 @@ const geeTileLayerFlow = ai.defineFlow(
     try {
       await initializeEe();
 
-      const { aoi } = input;
+      const { aoi, bandCombination } = input;
       const geometry = ee.Geometry.Rectangle([aoi.minLon, aoi.minLat, aoi.maxLon, aoi.maxLat]);
       
       const image = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
@@ -52,11 +52,25 @@ const geeTileLayerFlow = ai.defineFlow(
         .filterDate('2023-01-01', '2023-12-31')
         .median();
 
-      const visParams = {
-        bands: ['B8', 'B4', 'B3'], // NIR, Red, Green -> False Color for Urban
-        min: 0,
-        max: 3000,
-      };
+      let visParams: { bands: string[]; min: number; max: number; gamma?: number };
+      
+      switch (bandCombination) {
+        case 'SWIR_FALSE_COLOR':
+          visParams = {
+            bands: ['B12', 'B8A', 'B4'], // SWIR, NIR, Red
+            min: 0,
+            max: 3000,
+          };
+          break;
+        case 'URBAN_FALSE_COLOR':
+        default:
+          visParams = {
+            bands: ['B8', 'B4', 'B3'], // NIR, Red, Green -> False Color for Urban
+            min: 0,
+            max: 3000,
+          };
+          break;
+      }
       
       const mapDetails = await new Promise<any>((resolve, reject) => {
         image.getMap(visParams, (map: any, error: string | null) => {

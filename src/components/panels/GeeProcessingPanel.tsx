@@ -4,11 +4,15 @@
 import React, { useState } from 'react';
 import DraggablePanel from './DraggablePanel';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { BrainCircuit, Loader2, Image as ImageIcon, ShieldCheck, CheckCircle } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 import { getGeeTileLayer, authenticateWithGee } from '@/ai/flows/gee-flow';
 import type { Map } from 'ol';
 import { transformExtent } from 'ol/proj';
+import type { GeeTileLayerInput } from '@/ai/flows/gee-types';
+
 
 interface GeeProcessingPanelProps {
   panelRef: React.RefObject<HTMLDivElement>;
@@ -20,6 +24,8 @@ interface GeeProcessingPanelProps {
   mapRef: React.RefObject<Map | null>;
   style?: React.CSSProperties;
 }
+
+type BandCombination = GeeTileLayerInput['bandCombination'];
 
 const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
   panelRef,
@@ -34,6 +40,7 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [selectedCombination, setSelectedCombination] = useState<BandCombination>('URBAN_FALSE_COLOR');
   const { toast } = useToast();
 
   const handleAuthentication = async () => {
@@ -88,11 +95,15 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
                 maxLon: extent4326[2],
                 maxLat: extent4326[3],
             },
-            zoom: zoom
+            zoom: zoom,
+            bandCombination: selectedCombination,
         });
         
         if (result && result.tileUrl) {
-            onAddGeeLayer(result.tileUrl, 'Sentinel-2 (8-4-3) GEE');
+            const layerName = selectedCombination === 'URBAN_FALSE_COLOR' 
+                ? 'Sentinel-2 (Urbano) GEE'
+                : 'Sentinel-2 (SWIR) GEE';
+            onAddGeeLayer(result.tileUrl, layerName);
         } else {
             throw new Error("La respuesta del servidor no contenía una URL de teselas.");
         }
@@ -126,12 +137,19 @@ const GeeProcessingPanel: React.FC<GeeProcessingPanelProps> = ({
     >
       <div className="bg-white/5 rounded-md p-3 space-y-3">
         <div>
-            <h3 className="text-sm font-semibold text-white mb-1">Sentinel-2 Falso Color (Urbano)</h3>
-            <p className="text-xs text-gray-300/80 mb-2">
-                Genera una composición de bandas 8 (NIR), 4 (Rojo) y 3 (Verde) para la vista actual del mapa.
-            </p>
+            <h3 className="text-sm font-semibold text-white mb-2">Composición de Bandas Sentinel-2</h3>
+            <RadioGroup defaultValue={selectedCombination} onValueChange={(value: BandCombination) => setSelectedCombination(value)}>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="URBAN_FALSE_COLOR" id="urban-combo" />
+                <Label htmlFor="urban-combo" className="text-xs font-normal">Falso Color (Urbano - B8, B4, B3)</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="SWIR_FALSE_COLOR" id="swir-combo" />
+                <Label htmlFor="swir-combo" className="text-xs font-normal">Falso Color (SWIR - B12, B8A, B4)</Label>
+              </div>
+            </RadioGroup>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 pt-2 border-t border-white/10">
           <Button onClick={handleAuthentication} disabled={isAuthenticating || isAuthenticated} className="w-full">
             {isAuthenticating ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

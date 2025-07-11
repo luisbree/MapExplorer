@@ -19,6 +19,7 @@ const GeeAoiSchema = z.object({
 export const GeeTileLayerInputSchema = z.object({
   aoi: GeeAoiSchema.describe("The Area of Interest as a bounding box."),
   zoom: z.number().describe("The current zoom level of the map."),
+  bandCombination: z.enum(['URBAN_FALSE_COLOR', 'SWIR_FALSE_COLOR']).describe("The band combination to use for the layer."),
 });
 export type GeeTileLayerInput = z.infer<typeof GeeTileLayerInputSchema>;
 
