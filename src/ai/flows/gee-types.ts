@@ -23,6 +23,6 @@ export const GeeTileLayerInputSchema = z.object({
 export type GeeTileLayerInput = z.infer<typeof GeeTileLayerInputSchema>;
 
 export const GeeTileLayerOutputSchema = z.object({
-  tileUrl: z.string().url().describe("The XYZ tile URL template for the generated GEE layer."),
+  tileUrl: z.string().describe("The XYZ tile URL template for the generated GEE layer."),
 });
 export type GeeTileLayerOutput = z.infer<typeof GeeTileLayerOutputSchema>;
